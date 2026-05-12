@@ -1,25 +1,37 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
-const dotenv = require('dotenv');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./modules/auth/auth.routes');
+const userRoutes = require('./modules/user/user.routes');
+const studentRoutes = require('./modules/student/student.routes');
 const teacherRoutes = require('./modules/teacher/teacher.routes');
-dotenv.config();
-
-
-
+const parentRoutes = require('./modules/parent/parent.routes');
+const groupRoutes = require('./modules/group/group.routes');
 
 const app = express();
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/teachers', teacherRoutes);
-
 const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-// Connect to MongoDB
-connectDB();
+
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/teachers', teacherRoutes);
+app.use('/api/parents', parentRoutes);
+app.use('/api/groups', groupRoutes);
+app.use(errorHandler);
+
+const start = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+start();

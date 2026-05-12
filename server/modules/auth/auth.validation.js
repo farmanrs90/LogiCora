@@ -5,8 +5,8 @@ const registerValidation = Joi.object({
   surname: Joi.string().allow('').optional(),
   email: Joi.string().email().required(),
   phone: Joi.string().min(7).max(20).required(),
+  role: Joi.string().valid('student', 'parent',).default('student'),
   password: Joi.string().min(6).max(128).required(),
-  role: Joi.string().valid('student', 'teacher', 'admin', 'parent', 'manager').optional(),
   ageGroup: Joi.string().valid('3-5', '6-8', '9-11', '12-14', '15-17').required(),
 });
 

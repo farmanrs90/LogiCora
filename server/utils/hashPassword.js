@@ -1,12 +1,15 @@
-// Password hashing placeholder
 const bcrypt = require('bcrypt');
-const hashedPassword = async (plainPassword) => {
-    return await bcrypt.hash(plainPassword, 12);
+
+const saltRounds = 12;
+
+const hashPassword = async (plainPassword) => {
+    return bcrypt.hash(plainPassword, saltRounds);
 };
 const comparePassword = async (plainPassword, hashedPassword) => {
-    return await bcrypt.compare(plainPassword, hashedPassword);
+    return bcrypt.compare(plainPassword, hashedPassword);
 };
+
 module.exports = {
-    hashedPassword,
-    comparePassword
+    hashPassword,
+    comparePassword,
 };
