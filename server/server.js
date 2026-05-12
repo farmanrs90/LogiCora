@@ -4,6 +4,7 @@ const connectDB = require('./config/db');
 const dotenv = require('dotenv');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./modules/auth/auth.routes');
+const teacherRoutes = require('./modules/teacher/teacher.routes');
 dotenv.config();
 
 
@@ -12,7 +13,7 @@ dotenv.config();
 const app = express();
 // Routes
 app.use('/api/auth', authRoutes);
-
+app.use('/api/teachers', teacherRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.use(cors());
