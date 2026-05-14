@@ -48,6 +48,10 @@ const teacherSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        canPublish: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true, versionKey: false }
 );

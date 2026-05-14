@@ -16,7 +16,7 @@ const studentSchema = new mongoose.Schema(
     },
     school: {
       type: String,
-      required: true,
+      default: '',
     },
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -32,14 +32,7 @@ const studentSchema = new mongoose.Schema(
       enum: ['visual', 'auditory', 'kinesthetic', 'reading_writing'],
       default: 'visual',
     },
-    progress: [
-      {
-        assessmentId: mongoose.Schema.Types.ObjectId,
-        score: Number,
-        timeSpent: Number,
-        completedAt: Date,
-      },
-    ],
+    
     points: {
       type: Number,
       default: 0,
