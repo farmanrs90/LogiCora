@@ -1,9 +1,6 @@
-// teacher.routes placeholder
 const express = require('express');
 const router = express.Router();
 module.exports = router;
-const express = require('express');
-const router = express.Router();
 
 const teacherController = require('./teacher.controller');
 const { createTeacherValidation, updateTeacherValidation } = require('./teacher.validation');

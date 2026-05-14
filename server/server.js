@@ -9,6 +9,7 @@ const studentRoutes = require('./modules/student/student.routes');
 const teacherRoutes = require('./modules/teacher/teacher.routes');
 const parentRoutes = require('./modules/parent/parent.routes');
 const groupRoutes = require('./modules/group/group.routes');
+const assessmentRoutes = require('./modules/assessment/assessment.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,6 +22,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/parents', parentRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/assessments', assessmentRoutes);
 app.use(errorHandler);
 
 const start = async () => {

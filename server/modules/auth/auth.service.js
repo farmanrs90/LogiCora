@@ -1,6 +1,6 @@
 const User = require('../user/user.model');
 const { hashPassword, comparePassword } = require('../../utils/hashPassword');
-const { generateAccessToken } = require('../../utils/generateToken');
+const  generateAccessToken  = require('../../utils/generateToken');
 
 const registerUser = async (payload) => {
   const { name, surname, email, phone, password, role, ageGroup } = payload;
