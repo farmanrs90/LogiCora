@@ -10,7 +10,8 @@ const teacherRoutes = require('./modules/teacher/teacher.routes');
 const parentRoutes = require('./modules/parent/parent.routes');
 const groupRoutes = require('./modules/group/group.routes');
 const assessmentRoutes = require('./modules/assessment/assessment.routes');
-
+const gamificationRoutes = require('./modules/gamification/gamification.routes');
+const questionRoutes = require('./modules/question/question.routes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(cors());
@@ -23,6 +24,8 @@ app.use('/api/teachers', teacherRoutes);
 app.use('/api/parents', parentRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/assessments', assessmentRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/questions', questionRoutes);
 app.use(errorHandler);
 
 const start = async () => {

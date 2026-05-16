@@ -2,6 +2,7 @@ const Assessment = require('./assessment.model');
 const Question = require('../question/question.model');
 const Submission = require('./submission.model');
 const Student = require('../student/student.model');
+const { awardXP } = require('../gamification/gamification.service');
 
 const createAssessment = async (userId, payload) => {
   const assessment = await Assessment.create({
@@ -154,11 +155,17 @@ const submitAssessment = async (assessmentId, userId, answers, timeSpent) => {
     timeSpent,
   });
 
-  await Student.findByIdAndUpdate(student._id, {
-    $inc: { points: score },
+
+  const submissionCount = await Submission.countDocuments({ studentId: student._id });
+
+  const gamificationResult = await awardXP(student._id, {
+    score,
+    percentage,
+    assessmentId,
+    submissionCount,
   });
 
-  return submission;
+  return { submission, gamification: gamificationResult }; 
 };
 
 const getMySubmission = async (assessmentId, userId) => {
