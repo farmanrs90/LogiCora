@@ -15,6 +15,7 @@ const questionRoutes = require('./modules/question/question.routes');
 const attendanceRoutes = require('./modules/attendance/attendance.routes');
 const paymentRoutes = require('./modules/payment/payment.routes');
 const notificationRoutes = require('./modules/notification/notification.routes');
+const competitionRoutes = require('./modules/competition/competition.routes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(cors());
@@ -32,6 +33,7 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/competitions', competitionRoutes);
 app.use(errorHandler);
 
 const start = async () => {
