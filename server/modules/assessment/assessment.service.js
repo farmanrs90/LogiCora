@@ -3,6 +3,7 @@ const Question = require('../question/question.model');
 const Submission = require('./submission.model');
 const Student = require('../student/student.model');
 const { awardXP } = require('../gamification/gamification.service');
+const { sendToStudent } = require('../notification/notification.service');
 
 const createAssessment = async (userId, payload) => {
   const assessment = await Assessment.create({
@@ -105,6 +106,7 @@ const submitAssessment = async (assessmentId, userId, answers, timeSpent) => {
     error.statusCode = 400;
     throw error;
   }
+  
 
   const student = await Student.findOne({ userId });
   if (!student) {
@@ -164,6 +166,7 @@ const submitAssessment = async (assessmentId, userId, answers, timeSpent) => {
     assessmentId,
     submissionCount,
   });
+  
 
   return { submission, gamification: gamificationResult }; 
 };
