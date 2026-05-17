@@ -106,7 +106,6 @@ const submitAssessment = async (assessmentId, userId, answers, timeSpent) => {
     error.statusCode = 400;
     throw error;
   }
-  
 
   const student = await Student.findOne({ userId });
   if (!student) {
@@ -157,7 +156,6 @@ const submitAssessment = async (assessmentId, userId, answers, timeSpent) => {
     timeSpent,
   });
 
-
   const submissionCount = await Submission.countDocuments({ studentId: student._id });
 
   const gamificationResult = await awardXP(student._id, {
@@ -166,9 +164,15 @@ const submitAssessment = async (assessmentId, userId, answers, timeSpent) => {
     assessmentId,
     submissionCount,
   });
-  
 
-  return { submission, gamification: gamificationResult }; 
+  await sendToStudent(student._id, {
+    type: 'assessment_result',
+    title: 'Test nəticən hazırdır',
+    message: `${assessment.title} testindən ${percentage}% aldın`,
+    meta: { assessmentId, score, percentage },
+  });
+
+  return { submission, gamification: gamificationResult };
 };
 
 const getMySubmission = async (assessmentId, userId) => {
