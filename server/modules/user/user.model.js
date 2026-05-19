@@ -23,45 +23,10 @@ const userSchema = new mongoose.Schema(
       enum: ['physical', 'cognitive', 'emotional', 'sensory', 'autism', 'other', ''],
       default: '',
     },
-    school: { 
-      type: String, default: '' },
-    parentName: { 
-      type: String, default: '' },
-    parentContact: { 
-      type: String, default: '' },
-    profileCompleted: { 
-      type: Boolean, default: false },
-    hobbies: {
-       type: [String], default: [] },
-    points: { 
-      type: Number, default: 0 },
-    level: {
-       type: Number, default: 1 },
-    isPhoneVerified: { 
-      type: Boolean, default: false },
-    streak: {
-      type: Number,
-      default: 0,
-    },
-    lastLoginDate: {
-      type: Date,
-      default: null,
-    },
-    gems: {
-      type: Number,
-      default: 0,
-    },
-    hearts: {
-      type: Number,
-      default: 5,
-      min: 0,
-      max: 5,
-    },
-    league: {
-      type: String,
-      enum: ['bronze', 'silver', 'gold', 'diamond'],
-      default: 'bronze',
-    },
+    profileCompleted: { type: Boolean, default: false },
+    hobbies: { type: [String], default: [] },
+    isPhoneVerified: { type: Boolean, default: false },
+    lastLoginDate: { type: Date, default: null },
     language: {
       type: String,
       enum: ['az', 'ru', 'en'],
@@ -72,7 +37,11 @@ const userSchema = new mongoose.Schema(
       enum: ['light', 'dark'],
       default: 'light',
     },
-
+    refreshToken: {
+      type: String,
+      select: false,
+      default: null,
+    },
   },
   { timestamps: true, versionKey: false }
 );

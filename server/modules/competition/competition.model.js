@@ -74,7 +74,6 @@ const competitionSchema = new mongoose.Schema(
   { timestamps: true, versionKey: false }
 );
 
-competitionSchema.index({ pin: 1 });
 competitionSchema.index({ createdBy: 1, status: 1 });
 
 module.exports = mongoose.model('Competition', competitionSchema);
