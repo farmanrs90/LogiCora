@@ -1,9 +1,33 @@
 import { Navigate } from 'react-router-dom'
-import { TOKEN_KEY, ROUTES } from '../constants'
+import { useAuth } from '../context/AuthContext'
+import Spinner from './Spinner'
+import { APP_ROUTES } from '../constants'
+import type { Role } from '../types'
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem(TOKEN_KEY)
-  if (!token) return <Navigate to={ROUTES.LOGIN} replace />
+interface Props {
+  children: React.ReactNode
+  allowedRoles?: Role[]
+}
+
+const ProtectedRoute = ({ children, allowedRoles }: Props) => {
+  const { isAuthenticated, isLoading, user } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to={APP_ROUTES.LOGIN} replace />
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to={APP_ROUTES.DASHBOARD} replace />
+  }
+
   return <>{children}</>
 }
 
