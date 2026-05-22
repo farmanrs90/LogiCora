@@ -41,6 +41,21 @@ const gamificationSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    hearts: {
+      type: Number,
+      default: 5,
+      min: 0,
+      max: 5,
+    },
+    heartsLastRefilled: {
+      type: Date,
+      default: null,
+    },
+    gems: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true, versionKey: false }
 );

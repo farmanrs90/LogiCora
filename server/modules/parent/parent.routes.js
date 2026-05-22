@@ -3,7 +3,7 @@ const router = express.Router();
 
 const parentController = require('./parent.controller');
 const { createParentValidation, updateParentValidation } = require('./parent.validation');
-const auth = require('../../middleware/auth');
+const { authenticate: auth } = require('../../middleware/auth');
 const roleCheck = require('../../middleware/roleCheck');
 const validate = require('../../middleware/validation');
 

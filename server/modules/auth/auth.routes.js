@@ -4,7 +4,7 @@ const router = express.Router();
 const authController = require('./auth.controller');
 const { registerValidation, loginValidation, refreshTokenValidation } = require('./auth.validation');
 const validate = require('../../middleware/validation');
-const auth = require('../../middleware/auth');
+const { authenticate: auth } = require('../../middleware/auth');
 const { authLimiter, strictLimiter } = require('../../middleware/rateLimiter');
 
 router.post('/register', authLimiter, validate(registerValidation), authController.register);

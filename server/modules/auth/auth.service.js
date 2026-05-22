@@ -1,6 +1,7 @@
 const User = require('../user/user.model');
 const { hashPassword, comparePassword } = require('../../utils/hashPassword');
 const { generateAccessToken, generateRefreshToken } = require('../../utils/generateToken');
+const { createDefaultForNewUser } = require('../accessibility/accessibility.service');
 
 const registerUser = async (payload) => {
   const { name, surname, email, phone, password, role, ageGroup } = payload;
@@ -35,6 +36,7 @@ const registerUser = async (payload) => {
   const refreshToken = generateRefreshToken(tokenPayload);
 
   await User.findByIdAndUpdate(created._id, { refreshToken });
+  await createDefaultForNewUser(created._id);
 
   return {
     accessToken,

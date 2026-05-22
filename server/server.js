@@ -17,6 +17,16 @@ const paymentRoutes = require('./modules/payment/payment.routes');
 const notificationRoutes = require('./modules/notification/notification.routes');
 const competitionRoutes = require('./modules/competition/competition.routes');
 const analyticsRoutes = require('./modules/analytics/analytics.routes');
+const dailyQuestionRoutes = require('./modules/dailyQuestion/dailyQuestion.routes');
+const courseRoutes = require('./modules/course/course.routes');
+const showcaseRoutes = require('./modules/course/showcase.routes');
+const inviteRoutes = require('./modules/invite/invite.routes');
+const clanRoutes = require('./modules/clan/clan.routes');
+const portfolioRoutes = require('./modules/portfolio/portfolio.routes');
+const chatRoutes = require('./modules/chat/chat.routes');
+const accessibilityRoutes = require('./modules/accessibility/accessibility.routes');
+const eloRoutes = require('./modules/elo/elo.routes');
+const streakFreezeRoutes = require('./modules/streakFreeze/streakFreeze.routes');
 const helmet = require('helmet');
 const http = require('http');
 const { initSocket } = require('./socket');
@@ -47,6 +57,18 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/competitions', competitionRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/daily', dailyQuestionRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/teachers', showcaseRoutes);
+app.use('/api/invites', inviteRoutes);
+app.use('/api/clans', clanRoutes);
+app.use('/api/portfolios', portfolioRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/accessibility', accessibilityRoutes);
+app.use('/api/elo', eloRoutes);
+app.use('/api/streak-freeze', streakFreezeRoutes);
+
+
 app.use(errorHandler);
 
 const start = async () => {

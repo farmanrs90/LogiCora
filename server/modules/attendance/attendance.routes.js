@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authenticate = require('../../middleware/auth');
+const { authenticate } = require('../../middleware/auth');
 const roleCheck = require('../../middleware/roleCheck');
 const validate = require('../../middleware/validation');
 const { createSessionSchema, markAttendanceSchema } = require('./attendance.validation');

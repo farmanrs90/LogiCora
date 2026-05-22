@@ -3,7 +3,7 @@ const router = express.Router();
 
 const userController = require('./user.controller');
 const { updateProfileValidation, changePasswordValidation } = require('./user.validation');
-const auth = require('../../middleware/auth');
+const { authenticate: auth } = require('../../middleware/auth');
 const validate = require('../../middleware/validation');
 
 router.get('/profile', auth, userController.getProfile);

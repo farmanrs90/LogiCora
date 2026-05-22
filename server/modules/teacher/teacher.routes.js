@@ -4,7 +4,7 @@ module.exports = router;
 
 const teacherController = require('./teacher.controller');
 const { createTeacherValidation, updateTeacherValidation } = require('./teacher.validation');
-const auth = require('../../middleware/auth');
+const { authenticate: auth } = require('../../middleware/auth');
 const roleCheck = require('../../middleware/roleCheck');
 const validate = require('../../middleware/validation');
 
