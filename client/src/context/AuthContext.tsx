@@ -7,8 +7,8 @@ interface AuthContextType {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (data: LoginInput) => Promise<void>
-  register: (data: RegisterInput) => Promise<void>
+  login: (data: LoginInput) => Promise<AuthResponse>
+  register: (data: RegisterInput) => Promise<AuthResponse>
   logout: () => void
 }
 
@@ -39,24 +39,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const login = async (input: LoginInput) => {
-    const { data } = await api.post<{ data: AuthResponse }>(
-      API_ROUTES.AUTH.LOGIN,
-      input
-    )
+  const login = async (input: LoginInput): Promise<AuthResponse> => {
+    const { data } = await api.post<{ data: AuthResponse }>(API_ROUTES.AUTH.LOGIN, input)
     localStorage.setItem('accessToken', data.data.accessToken)
     localStorage.setItem('refreshToken', data.data.refreshToken)
     setUser(data.data.user)
+    return data.data
   }
 
-  const register = async (input: RegisterInput) => {
-    const { data } = await api.post<{ data: AuthResponse }>(
-      API_ROUTES.AUTH.REGISTER,
-      input
-    )
+  const register = async (input: RegisterInput): Promise<AuthResponse> => {
+    const { data } = await api.post<{ data: AuthResponse }>(API_ROUTES.AUTH.REGISTER, input)
     localStorage.setItem('accessToken', data.data.accessToken)
     localStorage.setItem('refreshToken', data.data.refreshToken)
     setUser(data.data.user)
+    return data.data
   }
 
   const logout = () => {

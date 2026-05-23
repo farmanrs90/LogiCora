@@ -1,73 +1,126 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
   --font-sans: 'Sora', sans-serif;
 
-  --color-primary: #7c3aed;
-  --color-primary-light: #ede9fe;
-  --color-primary-dark: #5b21b6;
+  /* Dark background system */
+  --color-bg-primary: #0D0D0D;
+  --color-bg-secondary: #111827;
+  --color-bg-card: rgba(255, 255, 255, 0.05);
 
-  --color-surface: #f8f7ff;
-  --color-card: #ffffff;
+  /* Accent colors */
+  --color-accent-green: #58CC02;
+  --color-accent-purple: #9333EA;
+  --color-accent-cyan: #06B6D4;
+  --color-accent-orange: #F97316;
+  --color-accent-pink: #EC4899;
 
+  /* Text */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #9CA3AF;
+
+  /* Border */
+  --color-border: rgba(255, 255, 255, 0.1);
+
+  /* Mascot colors */
+  --color-logi: #3B82F6;
+  --color-cora: #9333EA;
+
+  /* Semantic */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
 
+  /* League colors */
   --color-bronze: #cd7f32;
   --color-silver: #c0c0c0;
   --color-gold: #ffd700;
   --color-platinum: #e5e4e2;
   --color-diamond: #b9f2ff;
 
+  /* Border radius */
   --radius-card: 1rem;
   --radius-btn: 0.625rem;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-surface);
-  color: #1e1b4b;
+  background-color: #0D0D0D;
+  color: #FFFFFF;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-violet-600 hover:bg-violet-700 active:bg-violet-800
+    @apply bg-[#58CC02] hover:bg-[#46a800] active:bg-[#3a8c00]
            text-white font-semibold px-5 py-2.5 rounded-[var(--radius-btn)]
            transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
            flex items-center justify-center gap-2;
   }
 
   .btn-outline {
-    @apply border border-violet-600 text-violet-600 hover:bg-violet-50
+    @apply border border-[rgba(255,255,255,0.2)] text-white hover:bg-[rgba(255,255,255,0.08)]
            font-semibold px-5 py-2.5 rounded-[var(--radius-btn)]
            transition-all duration-150 flex items-center justify-center gap-2;
   }
 
+  .btn-purple {
+    @apply bg-[#9333EA] hover:bg-[#7c28c7] active:bg-[#6620a8]
+           text-white font-semibold px-5 py-2.5 rounded-[var(--radius-btn)]
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
+           flex items-center justify-center gap-2;
+  }
+
   .card {
-    @apply bg-white rounded-[var(--radius-card)] shadow-sm border border-gray-100 p-5;
+    @apply bg-[rgba(255,255,255,0.05)] rounded-[var(--radius-card)]
+           border border-[rgba(255,255,255,0.1)] p-5
+           backdrop-blur-sm;
+  }
+
+  .card-glow {
+    @apply card shadow-[0_0_24px_rgba(147,51,234,0.15)];
   }
 
   .input {
     @apply w-full px-4 py-2.5 rounded-[var(--radius-btn)]
-           border border-gray-200 bg-white text-gray-900
-           placeholder:text-gray-400 text-sm
-           focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent
+           border border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.07)]
+           text-white placeholder:text-[#9CA3AF] text-sm
+           focus:outline-none focus:ring-2 focus:ring-[#9333EA] focus:border-transparent
            transition-all duration-150;
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1.5;
+    @apply block text-sm font-medium text-[#9CA3AF] mb-1.5;
   }
 
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-green {
+    @apply badge bg-[rgba(88,204,2,0.15)] text-[#58CC02] border border-[rgba(88,204,2,0.3)];
+  }
+
+  .badge-purple {
+    @apply badge bg-[rgba(147,51,234,0.15)] text-[#9333EA] border border-[rgba(147,51,234,0.3)];
+  }
+
+  .badge-gold {
+    @apply badge bg-[rgba(255,215,0,0.15)] text-[#ffd700] border border-[rgba(255,215,0,0.3)];
   }
 }

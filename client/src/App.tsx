@@ -1,7 +1,10 @@
+import { AuthProvider } from './context/AuthContext'
 import AppRouter from './router/Index'
 
-function App() {
-  return <AppRouter />
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
+  )
 }
-
-export default App

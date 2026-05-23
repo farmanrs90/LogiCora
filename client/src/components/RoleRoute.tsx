@@ -1,15 +1,23 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import Spinner from './Spinner'
 import { APP_ROUTES } from '../constants'
 import type { Role } from '../types'
+import Spinner from './Spinner'
 
 interface Props {
   children: React.ReactNode
-  allowedRoles?: Role[]
+  roles: Role[]
 }
 
-const ProtectedRoute = ({ children, allowedRoles }: Props) => {
+const roleDashboard: Record<Role, string> = {
+  student: APP_ROUTES.DASHBOARD.STUDENT,
+  teacher: APP_ROUTES.DASHBOARD.TEACHER,
+  parent: APP_ROUTES.DASHBOARD.PARENT,
+  admin: APP_ROUTES.ADMIN,
+  manager: APP_ROUTES.DASHBOARD.ROOT,
+}
+
+const RoleRoute = ({ children, roles }: Props) => {
   const { isAuthenticated, isLoading, user } = useAuth()
 
   if (isLoading) {
@@ -20,15 +28,15 @@ const ProtectedRoute = ({ children, allowedRoles }: Props) => {
     )
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to={APP_ROUTES.LOGIN} replace />
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to={APP_ROUTES.DASHBOARD.ROOT} replace />
+  if (!roles.includes(user.role)) {
+    return <Navigate to={roleDashboard[user.role]} replace />
   }
 
   return <>{children}</>
 }
 
-export default ProtectedRoute
+export default RoleRoute
