@@ -123,6 +123,140 @@ export interface Notification {
   createdAt: string
 }
 
+// Quiz
+export type QuestionFormat = 'A' | 'B' | 'C' | 'D' | 'E'
+
+export interface QuestionOption {
+  id:    string
+  text:  string
+  emoji?: string
+}
+
+export interface QuestionHotspot {
+  id:        string
+  x:         number  // % of container width
+  y:         number  // % of container height
+  label:     string
+  isCorrect: boolean
+}
+
+export interface Question {
+  _id:           string
+  text:          string
+  emoji?:        string
+  imageUrl?:     string
+  format:        QuestionFormat
+  options:       QuestionOption[]
+  correctAnswer: string
+  subject:       string
+  ageGroups:     AgeGroup[]
+  xpReward:      number
+  timeLimit:     number
+  // Format D
+  blankSentence?: string
+  wordChoices?:   string[]
+  // Format E
+  hotspots?: QuestionHotspot[]
+}
+
+export interface AnswerResponse {
+  correct:       boolean
+  xpEarned:      number
+  newStreak:     number
+  heartsLeft:    number
+  correctAnswer: string
+  badge?: { name: string; emoji: string }
+}
+
+// Competition
+export interface Participant {
+  userId:          string
+  name:            string
+  avatarColor:     string
+  score:           number
+  rank:            number
+  correctCount:    number
+  wrongCount:      number
+  avgResponseTime: number
+  hasAnswered?:    boolean
+}
+
+export interface CompetitionInfo {
+  _id:             string
+  title:           string
+  subject:         string
+  pin:             string
+  status:          'waiting' | 'active' | 'finished'
+  organizerId:     string
+  participants:    Participant[]
+  questionCount:   number
+  isWeeklyMystery: boolean
+  startedAt?:      string
+  finishedAt?:     string
+}
+
+export interface CompetitionResults {
+  competitionId: string
+  title:         string
+  subject:       string
+  participants:  Participant[]
+  myResult: {
+    rank:            number
+    score:           number
+    xpEarned:        number
+    correctCount:    number
+    wrongCount:      number
+    avgResponseTime: number
+    badge?:          { name: string; emoji: string }
+  }
+  isClanBattle: boolean
+  clanResults?: { clanName: string; score: number; isWinner: boolean }[]
+}
+
+export interface DailyStatusResponse {
+  completed:     boolean
+  answeredCount: number
+  totalCount:    number
+  streak:        number
+  xpEarned:      number
+}
+
+// Weekly Mystery
+export interface WeeklyMysteryQuestion {
+  _id:          string
+  text:         string
+  difficulty:   'hard' | 'legendary'
+  weekNumber:   number
+  revealedAt:   string
+  attemptCount: number
+  isSolved:     boolean
+  winner?:      WeeklyWinner
+  answer?:      string
+}
+
+export interface WeeklyWinner {
+  userId:          string
+  name:            string
+  city:            string
+  avatarColor:     string
+  solvedInMinutes: number
+  solvedAt:        string
+  weekNumber:      number
+}
+
+export interface WeeklyStats {
+  attemptCount:   number
+  solvedCount:    number
+  fastestMinutes: number
+  fastestSeconds: number
+}
+
+export interface MysteryCurrentResponse {
+  status:      'waiting' | 'active' | 'solved'
+  nextRevealAt?: string
+  question?:   WeeklyMysteryQuestion
+}
+
 // API
 export interface ApiResponse<T> {
   success: boolean

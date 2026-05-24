@@ -17,6 +17,7 @@ export const API_ROUTES = {
   // Courses
   COURSES: {
     LIST: '/courses',
+    FEATURED: '/courses/featured',
     BY_ID: (id: string) => `/courses/${id}`,
     CREATE: '/courses',
     UPDATE: (id: string) => `/courses/${id}`,
@@ -26,12 +27,23 @@ export const API_ROUTES = {
     ENROLL: '/courses/enroll',
     COMPLETE_LESSON: (id: string) => `/courses/${id}/complete-lesson`,
     MY_ENROLLMENTS: '/courses/my/enrollments',
+    REVIEWS:    (id: string) => `/courses/${id}/reviews`,
+    CERTIFICATE: (id: string) => `/courses/${id}/certificate`,
+  },
+
+  // Competitions
+  COMPETITIONS: {
+    BY_ID:    (id: string) => `/competitions/${id}`,
+    RESULTS:  (id: string) => `/competitions/${id}/results`,
+    COMPLETE: (id: string) => `/competitions/${id}/complete`,
+    ACTIVE:   '/competitions/active',
   },
 
   // Daily Questions
   DAILY: {
     GET: '/daily',
     ANSWER: '/daily/answer',
+    STATUS: '/daily/status',
   },
 
   // Teachers
@@ -40,16 +52,42 @@ export const API_ROUTES = {
     BY_SLUG: (slug: string) => `/teachers/${slug}`,
     COURSES: (slug: string) => `/teachers/${slug}/courses`,
     UPDATE_SHOWCASE: '/teachers/me/showcase',
+    COMPETITIONS: (slug: string) => `/teachers/${slug}/competitions`,
+    REVIEWS:      (slug: string) => `/teachers/${slug}/reviews`,
   },
 
   // Clans
   CLANS: {
     LEADERBOARD: '/clans/leaderboard',
-    BY_SLUG: (slug: string) => `/clans/${slug}`,
-    CREATE: '/clans',
-    JOIN: (id: string) => `/clans/${id}/join`,
-    LEAVE: '/clans/leave',
+    BY_SLUG:   (slug: string) => `/clans/${slug}`,
+    MEMBERS:   (slug: string) => `/clans/${slug}/members`,
+    BATTLES:   (slug: string) => `/clans/${slug}/battles`,
+    STATS:     (slug: string) => `/clans/${slug}/stats`,
+    SEARCH:    '/clans',
+    CREATE:    '/clans',
+    JOIN:      (id: string) => `/clans/${id}/join`,
+    LEAVE:     '/clans/leave',
     CHALLENGE: (id: string) => `/clans/${id}/challenge`,
+    BATTLE:    (battleId: string) => `/clans/battles/${battleId}`,
+  },
+
+  // Classroom
+  CLASSROOM: {
+    CREATE:       '/classroom',
+    BY_ID:        (id: string) => `/classroom/${id}`,
+    JOIN:         (id: string) => `/classroom/${id}/join`,
+    HEARTBEAT:    (id: string) => `/classroom/${id}/heartbeat`,
+    QUIZ:         (id: string) => `/classroom/${id}/quiz`,
+    POLL:         (id: string) => `/classroom/${id}/poll`,
+    ASYNC_CREATE: (id: string) => `/classroom/${id}/async`,
+    ASYNC_SUBMIT: (id: string) => `/classroom/${id}/async/submit`,
+    RECORDING:    (id: string) => `/classroom/${id}/recording`,
+    ATTENDANCE:   (id: string) => `/classroom/${id}/attendance`,
+  },
+
+  ATTENDANCE: {
+    SCAN: '/attendance/scan',
+    SAVE: '/attendance',
   },
 
   // Portfolio
@@ -75,6 +113,15 @@ export const API_ROUTES = {
     UNREAD_COUNT: '/notifications/unread-count',
     MARK_READ: (id: string) => `/notifications/${id}/read`,
     MARK_ALL: '/notifications/read-all',
+  },
+
+  // Weekly Mystery
+  MYSTERY: {
+    CURRENT: '/weekly-mystery/current',
+    WINNERS: '/weekly-mystery/winners',
+    STATS:   '/weekly-mystery/stats',
+    ANSWER:  '/weekly-mystery/answer',
+    FINAL:   '/weekly-mystery/final',
   },
 
   // Gamification
@@ -110,6 +157,25 @@ export const API_ROUTES = {
     ME: '/accessibility/me',
     UPDATE: '/accessibility/me',
   },
+
+  // Groups
+  GROUPS: {
+    LIST:    '/groups',
+    BY_ID:   (id: string) => `/groups/${id}`,
+    CREATE:  '/groups',
+    UPDATE:  (id: string) => `/groups/${id}`,
+    DELETE:  (id: string) => `/groups/${id}`,
+    INVITE:  (id: string) => `/groups/${id}/invite`,
+    REMOVE:  (id: string, userId: string) => `/groups/${id}/members/${userId}`,
+    ATTENDANCE: (id: string) => `/groups/${id}/attendance`,
+  },
+
+  // Teacher CRM
+  TEACHER_ME: {
+    STATS:     '/teachers/me/stats',
+    STUDENTS:  '/teachers/me/students',
+    ANALYTICS: '/teachers/me/analytics',
+  },
 } as const
 
 export const APP_ROUTES = {
@@ -126,17 +192,24 @@ export const APP_ROUTES = {
   },
   DAILY: '/quiz/daily',
   COMPETITION: {
-    ROOM: (id: string) => `/competition/${id}`,
-    LOBBY: (id: string) => `/competition/${id}/lobby`,
+    ROOM:   (id: string) => `/competition/${id}`,
+    LOBBY:  (id: string) => `/competition/${id}/lobby`,
+    RESULT: (id: string) => `/competition/${id}/result`,
   },
   WEEKLY_MYSTERY: '/weekly-mystery',
   COURSES: '/courses',
   COURSE: (id: string) => `/courses/${id}`,
   CLAN: (slug: string) => `/clan/${slug}`,
+  CLAN_BATTLE: (slug: string, battleId: string) => `/clan/${slug}/battle/${battleId}`,
+  CLAN_LEADERBOARD: '/leaderboard/clans',
   TEACHER: (slug: string) => `/teachers/${slug}`,
   PORTFOLIO: (link: string) => `/portfolio/${link}`,
+  PORTFOLIO_ME: '/portfolio/me',
+  GROUPS: '/groups',
+  ANALYTICS: '/analytics',
   CHAT: '/chat',
-  CLASSROOM: (id: string) => `/classroom/${id}`,
+  CLASSROOM:    (id: string) => `/classroom/${id}`,
+  CLASSROOM_QR: (id: string) => `/classroom/${id}/qr`,
   ADMIN: '/admin',
   NOT_FOUND: '*',
 } as const

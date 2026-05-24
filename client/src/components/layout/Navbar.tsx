@@ -18,8 +18,8 @@ import type { GamificationProfile } from '../../types'
 
 function streakColor(streak: number): string {
   if (streak >= 100) return '#EF4444'
-  if (streak >= 31)  return '#F97316'
-  if (streak >= 8)   return '#58CC02'
+  if (streak >= 31) return '#F97316'
+  if (streak >= 8) return '#58CC02'
   return '#3B82F6'
 }
 
@@ -73,14 +73,14 @@ function NotifItem({ n }: { n: AppNotification }) {
 // ── Navbar ────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
-  const dispatch  = useDispatch<AppDispatch>()
-  const navigate  = useNavigate()
+  const dispatch = useDispatch<AppDispatch>()
+  const navigate = useNavigate()
   const { logout } = useAuth()
 
-  const avatarColor   = useSelector((s: RootState) => s.theme.avatarColor)
+  const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
   const notifications = useSelector((s: RootState) => s.notifications.notifications)
-  const unreadCount   = useSelector((s: RootState) => s.notifications.unreadCount)
-  const authUser      = useSelector((s: RootState) => s.auth.user)
+  const unreadCount = useSelector((s: RootState) => s.notifications.unreadCount)
+  const authUser = useSelector((s: RootState) => s.auth.user)
   const { user: ctxUser } = useAuth()
   const user = authUser ?? ctxUser
 
@@ -88,20 +88,20 @@ export default function Navbar() {
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [xpTooltip, setXpTooltip] = useState(false)
 
-  const notifRef  = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
   const { data: gp } = useQuery<GamificationProfile>({
     queryKey: ['gamification', 'me'],
-    queryFn:  () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
-    enabled:  !!user,
+    queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
+    enabled: !!user,
     staleTime: 1000 * 60 * 2,
   })
 
   // Close dropdowns on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node))  setNotifOpen(false)
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
     }
     document.addEventListener('mousedown', handler)
@@ -115,16 +115,16 @@ export default function Navbar() {
     toast.success('Sistemdən çıxdınız.')
   }
 
-  const sColor    = gp ? streakColor(gp.streak) : '#3B82F6'
-  const xpPct     = gp ? xpProgress(gp.totalXP, gp.level) : 0
-  const xpRemain  = gp ? xpToNext(gp.totalXP, gp.level)   : 0
-  const recent5   = notifications.slice(0, 5)
+  const sColor = gp ? streakColor(gp.streak) : '#3B82F6'
+  const xpPct = gp ? xpProgress(gp.totalXP, gp.level) : 0
+  const xpRemain = gp ? xpToNext(gp.totalXP, gp.level) : 0
+  const recent5 = notifications.slice(0, 5)
 
   return (
     <header
       className="fixed top-0 right-0 left-0 lg:left-60 h-16 z-40 flex items-center px-4 lg:px-6 gap-4"
       style={{
-        background:   'rgba(13,13,13,0.85)',
+        background: 'rgba(13,13,13,0.85)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}
