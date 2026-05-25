@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import api from '../../lib/axios'
 import { API_ROUTES } from '../../constants'
@@ -253,7 +253,7 @@ function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
         <motion.div
           className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 border-4 border-yellow-400 flex items-center justify-center text-5xl mb-4 shadow-xl"
           animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' as const }}
         >
           {portfolio.user.avatar ? <img src={portfolio.user.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : '🦸'}
         </motion.div>

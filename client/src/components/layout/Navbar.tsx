@@ -169,7 +169,7 @@ export default function Navbar() {
               className="h-full rounded-full"
               style={{ backgroundColor: avatarColor }}
               animate={{ width: `${xpPct}%` }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
+              transition={{ duration: 0.6, ease: 'easeOut' as const }}
             />
           </div>
           <span className="text-[#9CA3AF] text-xs shrink-0">{gp?.totalXP ?? 0} XP</span>
@@ -196,7 +196,7 @@ export default function Navbar() {
           <motion.span
             className="text-lg"
             animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' as const }}
           >
             💎
           </motion.span>

@@ -208,7 +208,7 @@ export default function CompetitionLobby() {
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' as const }}
           className="w-12 h-12 rounded-full border-4 border-t-transparent"
           style={{ borderColor: `${avatarColor} ${avatarColor}30 ${avatarColor}30 ${avatarColor}30` }}
         />

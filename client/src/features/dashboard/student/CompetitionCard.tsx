@@ -1,10 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
-import { useSelector } from 'react-redux'
 import { useEffect, useState } from 'react'
 import api from '../../../lib/api'
-import type { RootState } from '../../../app/store'
 
 interface ActiveCompetition {
   id:         string
@@ -45,7 +43,6 @@ function TimeBox({ value, label }: { value: number; label: string }) {
 
 export default function CompetitionCard() {
   const navigate    = useNavigate()
-  const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
 
   const { data, isLoading } = useQuery<ActiveCompetition | null>({
     queryKey:  ['competitions', 'active'],

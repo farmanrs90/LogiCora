@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMutation } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
-import toast from 'react-hot-toast'
-
 import api from '../../lib/api'
 import { APP_ROUTES } from '../../constants'
 import type { RootState } from '../../app/store'
@@ -79,7 +77,7 @@ function ConfettiPiece({ i }: { i: number }) {
         opacity: 0,
         rotate:  Math.random() * 480,
       }}
-      transition={{ duration: 1.4, ease: 'easeOut' }}
+      transition={{ duration: 1.4, ease: 'easeOut' as const }}
     />
   )
 }
@@ -90,7 +88,7 @@ const SCANNER_CONTAINER_ID = 'qr-scanner-container'
 
 function CameraScanner({ onScan }: { onScan: (token: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const scannerRef   = useRef<ReturnType<NonNullable<Window['Html5QrcodeScanner']>> | null>(null)
+  const scannerRef   = useRef<InstanceType<NonNullable<Window['Html5QrcodeScanner']>> | null>(null)
   const [libLoaded,  setLibLoaded]  = useState(false)
   const [cameraErr,  setCameraErr]  = useState(false)
 
@@ -152,7 +150,7 @@ function CameraScanner({ onScan }: { onScan: (token: string) => void }) {
         <div className="flex items-center justify-center h-64">
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' as const }}
             className="w-10 h-10 rounded-full border-4 border-t-transparent border-[#9333EA]"
           />
         </div>
@@ -278,7 +276,7 @@ export default function AttendanceQR() {
             >
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' as const }}
                 className="w-12 h-12 rounded-full border-4 border-t-transparent border-[#9333EA]"
               />
             </motion.div>
@@ -315,7 +313,7 @@ export default function AttendanceQR() {
                     className="absolute left-0 right-0 h-0.5 pointer-events-none"
                     style={{ background: 'linear-gradient(90deg, transparent, #9333EA, transparent)' }}
                     animate={{ top: ['15%', '85%', '15%'] }}
-                    transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' as const }}
                   />
                 </div>
               </div>
@@ -328,7 +326,7 @@ export default function AttendanceQR() {
                 >
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' as const }}
                     className="w-4 h-4 rounded-full border-2 border-t-transparent border-[#9333EA]"
                   />
                   Yoxlanılır...

@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
 @theme {
   --font-sans: 'Sora', sans-serif;
@@ -93,7 +93,9 @@ body {
   }
 
   .card-glow {
-    @apply card shadow-[0_0_24px_rgba(147,51,234,0.15)];
+    @apply bg-[rgba(255,255,255,0.05)] rounded-[var(--radius-card)]
+           border border-[rgba(255,255,255,0.1)] p-5
+           backdrop-blur-sm shadow-[0_0_24px_rgba(147,51,234,0.15)];
   }
 
   .input {
@@ -113,14 +115,17 @@ body {
   }
 
   .badge-green {
-    @apply badge bg-[rgba(88,204,2,0.15)] text-[#58CC02] border border-[rgba(88,204,2,0.3)];
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-[rgba(88,204,2,0.15)] text-[#58CC02] border border-[rgba(88,204,2,0.3)];
   }
 
   .badge-purple {
-    @apply badge bg-[rgba(147,51,234,0.15)] text-[#9333EA] border border-[rgba(147,51,234,0.3)];
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-[rgba(147,51,234,0.15)] text-[#9333EA] border border-[rgba(147,51,234,0.3)];
   }
 
   .badge-gold {
-    @apply badge bg-[rgba(255,215,0,0.15)] text-[#ffd700] border border-[rgba(255,215,0,0.3)];
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-[rgba(255,215,0,0.15)] text-[#ffd700] border border-[rgba(255,215,0,0.3)];
   }
 }

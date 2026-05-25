@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar,
   RadialBarChart, RadialBar, Funnel, FunnelChart, LabelList,
   ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
 } from 'recharts'

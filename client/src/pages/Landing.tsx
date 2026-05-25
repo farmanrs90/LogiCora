@@ -124,12 +124,12 @@ const stagger = {
 
 const fadeUp = {
   hidden:  { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: 'easeOut' } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: 'easeOut' as const } },
 }
 
 const fadeIn = {
   hidden:  { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' as const } },
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ function FloatingParticle({ p }: { p: ParticleConfig }) {
         opacity:         0.13,
       }}
       animate={{ y: p.yRange, x: p.xRange }}
-      transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }}
+      transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' as const }}
     />
   )
 }
@@ -220,7 +220,7 @@ function FeatureCard({ icon, title, description }: FeatureData) {
   return (
     <motion.div
       variants={fadeUp}
-      className="card flex flex-col gap-4 group
+      className="card flex flex-col gap-4 group pl-6 sm:pl-8
                  hover:border-[rgba(147,51,234,0.35)] transition-colors duration-300"
     >
       <span className="text-4xl">{icon}</span>
@@ -281,7 +281,7 @@ export default function Landing() {
     <main className="min-h-screen bg-[#0D0D0D] overflow-x-hidden">
 
       {/* ════════════════════════ HERO ════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pb-12 overflow-hidden">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-12 overflow-hidden">
 
         {/* Ambient background particles */}
         {PARTICLES.map((p) => <FloatingParticle key={p.id} p={p} />)}
@@ -298,7 +298,7 @@ export default function Landing() {
             <motion.div
               className="flex flex-col items-center gap-1"
               animate={{ y: [0, -14, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const }}
             >
               <span className="text-6xl sm:text-7xl" role="img" aria-label="Logi">🤖</span>
               <span className="text-xs text-[#3B82F6] font-bold tracking-widest uppercase">Logi</span>
@@ -307,7 +307,7 @@ export default function Landing() {
             <motion.div
               className="flex flex-col items-center gap-1"
               animate={{ y: [0, -14, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const, delay: 0.6 }}
             >
               <span className="text-6xl sm:text-7xl" role="img" aria-label="Cora">🧙‍♀️</span>
               <span className="text-xs text-[#9333EA] font-bold tracking-widest uppercase">Cora</span>
@@ -374,7 +374,7 @@ export default function Landing() {
       </section>
 
       {/* ════════════ BÖLMƏ 1 — Niyə LogiCora? ════════════ */}
-      <section className="py-28 px-6">
+      <section className="py-28 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -396,7 +396,7 @@ export default function Landing() {
       </section>
 
       {/* ════════════ BÖLMƏ 2 — Necə işləyir? ════════════ */}
-      <section className="py-28 px-6 bg-[#111827]">
+      <section className="py-28 px-4 sm:px-6 lg:px-8 bg-[#111827]">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -423,7 +423,7 @@ export default function Landing() {
       </section>
 
       {/* ════════════ BÖLMƏ 3 — Statistika ════════════ */}
-      <section className="py-28 px-6">
+      <section className="py-28 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -437,7 +437,7 @@ export default function Landing() {
             gradientClass="from-[#58CC02] to-[#06B6D4]"
           />
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 px-4">
             {STATS.map((stat) => (
               <motion.div
                 key={stat.label}
@@ -455,7 +455,7 @@ export default function Landing() {
       </section>
 
       {/* ════════════ BÖLMƏ 4 — CTA ════════════ */}
-      <section className="py-36 px-6 relative overflow-hidden">
+      <section className="py-36 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Ambient glow */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#9333EA]/8 via-transparent to-[#3B82F6]/8 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#9333EA] opacity-[0.07] blur-3xl pointer-events-none" />
@@ -467,7 +467,7 @@ export default function Landing() {
           variants={stagger}
           className="max-w-3xl mx-auto text-center relative z-10"
         >
-          <motion.h2 variants={fadeIn} className="text-4xl sm:text-6xl font-black text-white leading-tight">
+          <motion.h2 variants={fadeIn} className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight">
             Gələcəyini{' '}
             <span className="bg-gradient-to-r from-[#3B82F6] via-[#9333EA] to-[#06B6D4] bg-clip-text text-transparent">
               bu gün

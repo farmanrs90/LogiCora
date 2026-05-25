@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/axios'
 import { API_ROUTES, APP_ROUTES } from '../../constants'
-import { useAuth } from '../../context/AuthContext'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -419,8 +418,6 @@ type Tab = typeof TABS[number]
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const { user } = useAuth()
   const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('Kurs haqqında')
   const [showAllLearn, setShowAllLearn] = useState(false)

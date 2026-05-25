@@ -295,7 +295,7 @@ export default function ClanLeaderboard() {
         />
         <motion.div
           animate={{ rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const }}
           className="text-6xl mb-3"
         >
           🏆

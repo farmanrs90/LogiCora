@@ -103,7 +103,7 @@ function BottomTabBar({ role }: { role: Role | undefined }) {
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
-  enter:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
+  enter:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2 } },
 }
 

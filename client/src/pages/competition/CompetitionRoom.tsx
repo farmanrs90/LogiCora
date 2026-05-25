@@ -127,7 +127,7 @@ function MiniLeaderboard({ board, myId }: { board: Participant[]; myId?: string 
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${p.userId === myId ? 'ring-1' : ''}`}
           style={{
             background:    p.userId === myId ? 'rgba(147,51,234,0.12)' : 'rgba(255,255,255,0.04)',
-            ringColor:     '#9333EA',
+            outline:       p.userId === myId ? '1px solid #9333EA' : undefined,
           }}
         >
           <span className="text-base w-6 text-center font-black text-[#9CA3AF]">
@@ -215,7 +215,7 @@ export default function CompetitionRoom() {
   const isYoung  = ag === '9-11' || ag === '12-14'
 
   // Fetch competition metadata
-  const { data: comp } = useQuery<CompetitionInfo>({
+  useQuery<CompetitionInfo>({
     queryKey: ['competition', id],
     queryFn:  () => api.get<{ data: CompetitionInfo }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
                        .then(r => r.data.data)

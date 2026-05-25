@@ -377,7 +377,7 @@ export default function TeacherStorefront() {
     enabled: !!slug,
   })
 
-  const isOwner = user?.id === teacher?.id || (user?.role === 'teacher' && slug === 'rashad-aliyev')
+  const isOwner = user?._id === teacher?.id || (user?.role === 'teacher' && slug === 'rashad-aliyev')
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
   if (isLoading) {

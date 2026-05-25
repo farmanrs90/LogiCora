@@ -74,7 +74,7 @@ function StageNode({
           {isActive && (
             <motion.div
               animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' as const }}
               className="absolute -top-9 left-1/2 -translate-x-1/2 z-10"
             >
               <div

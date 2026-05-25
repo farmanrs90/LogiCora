@@ -94,7 +94,7 @@ export default function DailyCard() {
           style={{ backgroundColor: status.completed ? '#58CC02' : avatarColor }}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+          transition={{ duration: 0.8, ease: 'easeOut' as const }}
         />
       </div>
 

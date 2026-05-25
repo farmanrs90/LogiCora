@@ -421,7 +421,7 @@ function ActiveQuestionView({
 
 // ── Winner announcement overlay ───────────────────────────────────────────
 
-function WinnerReveal({ winner, correctAnswer, avatarColor }: { winner: WeeklyWinner; correctAnswer?: string; avatarColor: string }) {
+function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correctAnswer?: string; avatarColor: string }) {
   const [showConfetti, setShowConfetti] = useState(true)
   useEffect(() => { const t = setTimeout(() => setShowConfetti(false), 2500); return () => clearTimeout(t) }, [])
 
@@ -716,13 +716,12 @@ export default function WeeklyMystery() {
 
   const status   = current?.status ?? 'waiting'
   const question = current?.question ?? (status === 'active' ? MOCK_QUESTION : undefined)
-  const winner   = question?.winner ?? question?.winner
   const liveStats = stats ?? MOCK_STATS
 
   if (loadingCurrent) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' as const }}
           className="w-12 h-12 rounded-full border-4 border-t-transparent"
           style={{ borderColor: `${avatarColor} ${avatarColor}30 ${avatarColor}30 ${avatarColor}30` }}
         />
@@ -744,7 +743,7 @@ export default function WeeklyMystery() {
             initial={{ y: 0, opacity: 1 }}
             animate={{ y: -250, opacity: 0 }}
             exit={{}}
-            transition={{ duration: 2, ease: 'easeOut' }}
+            transition={{ duration: 2, ease: 'easeOut' as const }}
           >
             {r.emoji}
           </motion.div>

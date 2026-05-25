@@ -70,7 +70,7 @@ function validateStep2(form: FormState, role: RegisterRole): FieldError {
 
 const slide = {
   enter: (dir: Direction) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
-  center: { x: 0, opacity: 1, transition: { duration: 0.4, ease: 'easeOut' } },
+  center: { x: 0, opacity: 1, transition: { duration: 0.4, ease: 'easeOut' as const } },
   exit:   (dir: Direction) => ({ x: dir < 0 ? '100%' : '-100%', opacity: 0, transition: { duration: 0.3 } }),
 }
 
@@ -81,7 +81,7 @@ const stagger = {
 
 const popIn = {
   hidden:  { opacity: 0, scale: 0.88, y: 18 },
-  visible: { opacity: 1, scale: 1,    y: 0,  transition: { duration: 0.42, ease: 'easeOut' } },
+  visible: { opacity: 1, scale: 1,    y: 0,  transition: { duration: 0.42, ease: 'easeOut' as const } },
 }
 
 // ── Role card data ────────────────────────────────────────────────────────
@@ -474,7 +474,7 @@ function Step3({
           <span className="flex items-center justify-center gap-2">
             <motion.span
               animate={{ rotate: 360 }}
-              transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
+              transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' as const }}
               className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
             />
             Qeydiyyat...

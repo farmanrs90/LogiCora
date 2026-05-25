@@ -163,8 +163,8 @@ function answersReducer(state: Answers, action: AnswerAction): Answers {
 
 const slide = {
   enter: (dir: Direction) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
-  center: { x: 0, opacity: 1, transition: { duration: 0.42, ease: 'easeOut' } },
-  exit:   (dir: Direction) => ({ x: dir < 0 ? '100%' : '-100%', opacity: 0, transition: { duration: 0.32, ease: 'easeIn' } }),
+  center: { x: 0, opacity: 1, transition: { duration: 0.42, ease: 'easeOut' as const } },
+  exit:   (dir: Direction) => ({ x: dir < 0 ? '100%' : '-100%', opacity: 0, transition: { duration: 0.32, ease: 'easeIn' as const } }),
 }
 
 const stagger = {
@@ -174,7 +174,7 @@ const stagger = {
 
 const popIn = {
   hidden:  { opacity: 0, scale: 0.85, y: 20 },
-  visible: { opacity: 1, scale: 1,    y: 0,  transition: { duration: 0.45, ease: 'easeOut' } },
+  visible: { opacity: 1, scale: 1,    y: 0,  transition: { duration: 0.45, ease: 'easeOut' as const } },
 }
 
 // ── Progress bar ──────────────────────────────────────────────────────────
@@ -220,13 +220,13 @@ function Step1({ answers, dispatch, onNext }: {
       <motion.div
         initial={{ x: 120, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' }}
+        transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' as const }}
         className="flex flex-col items-center gap-2"
       >
         <motion.span
           className="text-7xl"
           animate={{ y: [0, -10, 0], rotate: [0, 8, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' as const }}
           role="img" aria-label="Logi"
         >
           🤖
@@ -752,7 +752,7 @@ function Step5({ answers, onDone }: {
                   scale: 0.3,
                   rotate: piece.angle * 2,
                 }}
-                transition={{ duration: 1.2, ease: 'easeOut' }}
+                transition={{ duration: 1.2, ease: 'easeOut' as const }}
                 className="absolute rounded-sm"
                 style={{ width: piece.size, height: piece.size, backgroundColor: piece.color }}
               />
@@ -778,7 +778,7 @@ function Step5({ answers, onDone }: {
                     ? { scale: [1, 1.3, 0.9, 1.15], rotate: [0, -10, 10, 0] }
                     : {}
                 }
-                transition={{ duration: phase === 'shaking' ? 1.2 : 0.5, ease: 'easeInOut' }}
+                transition={{ duration: phase === 'shaking' ? 1.2 : 0.5, ease: 'easeInOut' as const }}
               >
                 🎁
               </motion.span>

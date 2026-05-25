@@ -241,7 +241,7 @@ function YoungView({ portfolio }: { portfolio: PortfolioData }) {
         <motion.div
           className="relative w-28 h-28 mx-auto mb-4"
           animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' as const }}
         >
           <div className="w-28 h-28 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 border-4 border-yellow-400 shadow-xl flex items-center justify-center text-5xl">
             {portfolio.user.avatar ? (

@@ -85,7 +85,7 @@ function AnimatedScore({ value, color }: { value: number; color: string }) {
   useEffect(() => {
     const c = animate(mv, value, {
       duration: 0.6,
-      ease: 'easeOut',
+      ease: 'easeOut' as const,
       onUpdate: v => { if (ref.current) ref.current.textContent = String(Math.round(v)) },
     })
     return c.stop
@@ -119,7 +119,7 @@ function ConfettiPiece({ i }: { i: number }) {
       }}
       initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
       animate={{ x: Math.cos(angle) * dist, y: Math.sin(angle) * dist - 80, opacity: 0, rotate: Math.random() * 540 }}
-      transition={{ duration: 1.6, ease: 'easeOut' }}
+      transition={{ duration: 1.6, ease: 'easeOut' as const }}
     />
   )
 }
@@ -299,15 +299,17 @@ export default function ClanBattle() {
                       .catch(() => MOCK_BATTLE),
     enabled:  !!battleId,
     staleTime: 0,
-    onSuccess: (data: ClanBattleData) => {
-      setOurScore(data.ourScore)
-      setTheirScore(data.theirScore)
-      setOurMembers(data.ourMembers)
-      setTheirMembers(data.theirMembers)
-      setStatus(data.status)
-      setWinner(data.winner)
-    },
-  } as Parameters<typeof useQuery>[0])
+  })
+
+  useEffect(() => {
+    if (!battle) return
+    setOurScore(battle.ourScore)
+    setTheirScore(battle.theirScore)
+    setOurMembers(battle.ourMembers)
+    setTheirMembers(battle.theirMembers)
+    setStatus(battle.status)
+    setWinner(battle.winner)
+  }, [battle])
 
   // Socket listeners for live updates
   useEffect(() => {
@@ -356,7 +358,7 @@ export default function ClanBattle() {
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' as const }}
           className="w-12 h-12 rounded-full border-4 border-t-transparent"
           style={{ borderColor: `${avatarColor} ${avatarColor}30 ${avatarColor}30 ${avatarColor}30` }}
         />

@@ -181,7 +181,7 @@ function ClanEmblemDisplay({ color, emoji, size = 96 }: { color: string; emoji: 
   return (
     <motion.div
       animate={{ rotate: [0, 3, -3, 0] }}
-      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' as const }}
       className="relative flex items-center justify-center rounded-3xl flex-shrink-0"
       style={{
         width:      size,
@@ -321,7 +321,7 @@ function XPNumber({ value }: { value: number }) {
   useState(() => {
     const c = animate(mv, value, {
       duration: 1.4,
-      ease: 'easeOut',
+      ease: 'easeOut' as const,
       onUpdate: v => { if (ref.current) ref.current.textContent = Math.round(v).toLocaleString() },
     })
     return c.stop
@@ -460,7 +460,7 @@ function EmptyState({ onCreate, onSearch }: {
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center p-6 text-center">
       <motion.div
         animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' as const }}
         className="text-8xl mb-6"
       >
         🤖
@@ -513,13 +513,12 @@ const TABS: { key: TabKey; label: string; emoji: string }[] = [
 export default function ClanPage() {
   const { slug }    = useParams<{ slug: string }>()
   const navigate    = useNavigate()
-  const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
   const user        = useSelector((s: RootState) => s.auth.user)
   const queryClient = useQueryClient()
 
   const [tab,          setTab]          = useState<TabKey>('members')
   const [showCreate,   setShowCreate]   = useState(false)
-  const [showJoin,     setShowJoin]     = useState(false)
+  const [_showJoin,    setShowJoin]     = useState(false)
   const [searchQuery,  setSearchQuery]  = useState('')
   const [activeBattle, setActiveBattle] = useState<string | null>(null)
 
@@ -992,7 +991,7 @@ export default function ClanPage() {
                           />
                           <Tooltip
                             contentStyle={{ background: '#111827', borderRadius: 12, fontSize: 12 }}
-                            formatter={(v: number) => [`${v.toLocaleString()} XP`, '']}
+                            formatter={(v) => [`${Number(v).toLocaleString()} XP`, '']}
                           />
                         </PieChart>
                       </ResponsiveContainer>

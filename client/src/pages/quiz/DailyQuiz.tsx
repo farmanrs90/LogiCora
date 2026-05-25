@@ -56,7 +56,7 @@ function ConfettiPiece({ i }: { i: number }) {
         opacity: 0,
         rotate: Math.random() * 360,
       }}
-      transition={{ duration: 1.2, ease: 'easeOut' }}
+      transition={{ duration: 1.2, ease: 'easeOut' as const }}
     />
   )
 }
@@ -70,7 +70,7 @@ function XPCountUp({ target }: { target: number }) {
   useEffect(() => {
     const controls = animate(count, target, {
       duration: 1.5,
-      ease: 'easeOut',
+      ease: 'easeOut' as const,
       onUpdate: v => { if (ref.current) ref.current.textContent = String(Math.round(v)) },
     })
     return controls.stop
@@ -94,7 +94,7 @@ function XPCoins({ visible, amount }: { visible: boolean; amount: number }) {
               initial={{ y: 0, opacity: 1 }}
               animate={{ y: -200, opacity: 0 }}
               exit={{}}
-              transition={{ duration: 0.9, delay: i * 0.07, ease: 'easeOut' }}
+              transition={{ duration: 0.9, delay: i * 0.07, ease: 'easeOut' as const }}
             >
               ⭐
             </motion.div>
@@ -156,7 +156,7 @@ function NoHeartsScreen({ gems, onExit }: { gems: number; onExit: () => void }) 
     >
       <motion.div
         animate={{ y: [0, -12, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' as const }}
         className="text-7xl"
       >
         🧙‍♀️
@@ -442,7 +442,7 @@ export default function DailyQuiz() {
       <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-6">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' as const }}
           className="w-14 h-14 rounded-full border-4 border-t-transparent"
           style={{ borderColor: `${avatarColor} ${avatarColor}40 ${avatarColor}40 ${avatarColor}40` }}
         />
@@ -507,7 +507,7 @@ export default function DailyQuiz() {
               className="h-full rounded-full"
               style={{ backgroundColor: avatarColor }}
               animate={{ width: `${((currentIndex) / totalQuestions) * 100}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+              transition={{ duration: 0.5, ease: 'easeOut' as const }}
             />
           </div>
         </div>

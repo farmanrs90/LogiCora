@@ -47,7 +47,7 @@ export default function Login() {
       <motion.div
         initial={{ opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.5, ease: 'easeOut' as const }}
         className="w-full max-w-md z-10"
       >
         {/* Logo header */}
@@ -78,7 +78,7 @@ export default function Login() {
               className="text-3xl shrink-0"
               role="img" aria-label="Logi"
               animate={{ rotate: [0, 12, 0, -8, 0] }}
-              transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' as const }}
             >
               🤖
             </motion.span>
@@ -159,7 +159,7 @@ export default function Login() {
                 <span className="flex items-center justify-center gap-2">
                   <motion.span
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
+                    transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' as const }}
                     className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
                   />
                   Giriş edilir...

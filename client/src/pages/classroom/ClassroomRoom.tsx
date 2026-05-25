@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
@@ -61,14 +61,6 @@ interface PollData {
   isActive: boolean
 }
 
-interface AsyncTask {
-  _id:      string
-  title:    string
-  deadline: string
-  questions: { text: string; options: string[]; correctIndex: number }[]
-  submissions: { studentId: string; name: string; score: number; submittedAt: string }[]
-}
-
 interface OnlineStudent {
   studentId:  string
   name:       string
@@ -113,7 +105,7 @@ const QUIZ_COLORS = ['#9333EA', '#3B82F6', '#22C55E', '#F97316']
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 
-function elapsed(startedAt: string): string {
+function formatElapsed(startedAt: string): string {
   const diff = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000)
   const m    = Math.floor(diff / 60)
   const s    = diff % 60
@@ -483,7 +475,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
 
   // Elapsed timer
   useEffect(() => {
-    const id = setInterval(() => setElapsed(elapsed(classroom.startedAt)), 1000)
+    const id = setInterval(() => setElapsed(formatElapsed(classroom.startedAt)), 1000)
     return () => clearInterval(id)
   }, [classroom.startedAt])
 
@@ -584,7 +576,6 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
   }
 
   const presentCount  = attendance.filter(a => a.status === 'present' || a.status === 'distant').length
-  const waitingCount  = attendance.filter(a => a.status === 'waiting').length
   const handCount     = onlineList.filter(o => o.handRaised).length
 
   return (
@@ -621,7 +612,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
             </div>
             <div className="flex items-center gap-3 mt-0.5">
               <span className="text-[#9CA3AF] text-xs">{classroom.classGroup}</span>
-              <span className="text-[#9CA3AF] text-xs">⏱ {elapsed(classroom.startedAt)}</span>
+              <span className="text-[#9CA3AF] text-xs">⏱ {elapsed}</span>
               <span className="text-[#9CA3AF] text-xs">👥 {presentCount}/{attendance.length}</span>
               {handCount > 0 && (
                 <span className="text-orange-400 text-xs font-bold">🙋 {handCount}</span>
@@ -832,7 +823,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                         <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
                         <Tooltip
                           contentStyle={{ background: '#111827', borderRadius: 12, fontSize: 12 }}
-                          formatter={(v: number) => [`${v} nəfər`, '']}
+                          formatter={(v) => [`${v} nəfər`, '']}
                         />
                         <Bar dataKey="count" radius={[6,6,0,0]}>
                           {liveQuiz.options.map((_, i) => (
@@ -1025,7 +1016,7 @@ function StudentView({ classroom, classroomId }: { classroom: ClassroomData; cla
 
   // Elapsed timer
   useEffect(() => {
-    const id = setInterval(() => setElapsed(elapsed(classroom.startedAt)), 1000)
+    const id = setInterval(() => setElapsed(formatElapsed(classroom.startedAt)), 1000)
     return () => clearInterval(id)
   }, [classroom.startedAt])
 
@@ -1164,7 +1155,7 @@ function StudentView({ classroom, classroomId }: { classroom: ClassroomData; cla
               >
                 🔴 Dərs davam edir
               </motion.span>
-              <span className="text-[#9CA3AF] text-xs">⏱ {elapsed(classroom.startedAt)}</span>
+              <span className="text-[#9CA3AF] text-xs">⏱ {elapsed}</span>
             </div>
           </div>
           <div

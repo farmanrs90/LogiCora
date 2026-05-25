@@ -264,7 +264,7 @@ function SkillTreeView({ portfolio }: { portfolio: MyPortfolioData }) {
         <motion.div
           className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 border-4 border-yellow-400 flex items-center justify-center text-4xl mb-3 shadow-xl"
           animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' as const }}
         >
           {portfolio.user.avatar ? <img src={portfolio.user.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : '🦸'}
         </motion.div>

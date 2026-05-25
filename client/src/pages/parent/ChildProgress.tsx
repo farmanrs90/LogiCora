@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   RadialBarChart, RadialBar, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, BarChart, Bar, LineChart, Line,
@@ -338,7 +338,7 @@ export default function ChildProgress() {
                 <YAxis domain={[1, 5]} hide />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }}
-                  formatter={(val: number) => [`${['😡', '😔', '😐', '😊', '🤩'][val - 1]} Əhval: ${val}/5`, '']}
+                  formatter={(val: unknown) => { const n = Number(val); return [`${['😡', '😔', '😐', '😊', '🤩'][n - 1] ?? ''} Əhval: ${n}/5`, ''] as [string, string] }}
                 />
                 <Line type="monotone" dataKey="mood" stroke="#8B5CF6" strokeWidth={2.5} dot={{ fill: '#8B5CF6', r: 4 }} />
               </LineChart>

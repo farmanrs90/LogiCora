@@ -243,7 +243,7 @@ export default function Sidebar() {
               className="h-full rounded-full"
               style={{ backgroundColor: avatarColor }}
               animate={{ width: `${xpPct}%` }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
+              transition={{ duration: 0.7, ease: 'easeOut' as const }}
             />
           </div>
         </div>

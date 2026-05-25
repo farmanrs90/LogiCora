@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
@@ -676,7 +676,7 @@ export default function CourseList() {
                   {isFetchingNextPage && (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' as const }}
                       className="w-8 h-8 rounded-full border-2 border-t-transparent"
                       style={{ borderColor: `${avatarColor} ${avatarColor}30 ${avatarColor}30 ${avatarColor}30` }}
                     />

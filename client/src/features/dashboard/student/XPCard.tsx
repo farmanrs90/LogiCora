@@ -83,7 +83,7 @@ export default function XPCard() {
           className="font-black leading-none"
           style={{ fontSize: 40, color: avatarColor }}
           animate={{ scale: [1, 1.04, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' as const }}
         >
           {profile.level}
         </motion.span>
@@ -106,7 +106,7 @@ export default function XPCard() {
             style={{ backgroundColor: avatarColor }}
             initial={{ width: 0 }}
             animate={{ width: `${xpPct}%` }}
-            transition={{ duration: 0.9, ease: 'easeOut' }}
+            transition={{ duration: 0.9, ease: 'easeOut' as const }}
           />
         </div>
         <p className="text-[#9CA3AF] text-[10px] text-right">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api'
@@ -441,7 +441,6 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
 
 export default function ParentDashboard() {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
   const [showLink, setShowLink] = useState(false)
   const [showMap, setShowMap] = useState(false)
