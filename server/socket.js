@@ -35,6 +35,8 @@ const initSocket = (httpServer) => {
     },
   });
 
+  console.log('Socket.io initialized');
+
   // Bütün bağlantılarda auth yoxla
   io.use(socketAuthMiddleware);
 

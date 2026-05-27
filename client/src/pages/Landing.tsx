@@ -1,509 +1,498 @@
-import { useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, useMotionValue, useTransform } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  motion,
+  useTransform,
+  useInView,
+  useScroll,
+  AnimatePresence,
+  type Variants,
+} from 'framer-motion'
 import { APP_ROUTES } from '../constants'
+import { LogiCoraHero } from '../components/hero/LogiCoraHero'
 
-// ── Types ─────────────────────────────────────────────────────────────────
+// ── Interfaces ────────────────────────────────────────────────────────────────
 
-interface ParticleConfig {
-  id: number
-  size: number
-  top: string
-  left: string
-  color: string
-  duration: number
-  delay: number
-  yRange: number[]
-  xRange: number[]
-}
-
-interface RoleCardData {
-  title: string
-  subtitle: string
-  icon: string
-  gradient: string
-  glowColor: string
-  role: 'student' | 'teacher' | 'parent'
-}
-
-interface FeatureData {
-  icon: string
-  title: string
-  description: string
-}
-
-interface StepData {
-  number: string
-  title: string
-  description: string
-  color: string
-}
-
-interface StatData {
-  value: string
+interface NavLink {
   label: string
-  gradientClass: string
+  href: string
 }
 
-// ── Static data ───────────────────────────────────────────────────────────
-
-const PARTICLES: ParticleConfig[] = [
-  { id: 0, size: 380, top: '2%',  left: '-8%', color: '#3B82F6', duration: 9,  delay: 0,   yRange: [0, -30, 0], xRange: [0,  15, 0] },
-  { id: 1, size: 280, top: '65%', left: '82%', color: '#9333EA', duration: 11, delay: 2,   yRange: [0,  25, 0], xRange: [0, -12, 0] },
-  { id: 2, size: 200, top: '38%', left: '72%', color: '#06B6D4', duration: 7,  delay: 0.5, yRange: [0, -20, 0], xRange: [0,  20, 0] },
-  { id: 3, size: 140, top: '18%', left: '58%', color: '#EC4899', duration: 13, delay: 1,   yRange: [0,  15, 0], xRange: [0, -15, 0] },
-  { id: 4, size: 220, top: '78%', left: '8%',  color: '#58CC02', duration: 10, delay: 3,   yRange: [0, -25, 0], xRange: [0,  10, 0] },
-  { id: 5, size: 160, top: '48%', left: '28%', color: '#F97316', duration: 8,  delay: 1.5, yRange: [0,  20, 0], xRange: [0, -20, 0] },
-]
-
-const ROLE_CARDS: RoleCardData[] = [
-  {
-    title: 'Tələbə',
-    subtitle: 'Öyrən, yarış, böyü',
-    icon: '🎮',
-    gradient: 'from-[#3B82F6] to-[#9333EA]',
-    glowColor: 'rgba(59,130,246,0.25)',
-    role: 'student',
-  },
-  {
-    title: 'Müəllim',
-    subtitle: 'İdarə et, inkişaf et',
-    icon: '🎓',
-    gradient: 'from-[#059669] to-[#0D9488]',
-    glowColor: 'rgba(5,150,105,0.25)',
-    role: 'teacher',
-  },
-  {
-    title: 'Valideyn',
-    subtitle: 'İzlə, dəstəklə',
-    icon: '❤️',
-    gradient: 'from-[#F97316] to-[#EF4444]',
-    glowColor: 'rgba(249,115,22,0.25)',
-    role: 'parent',
-  },
-]
-
-const FEATURES: FeatureData[] = [
-  {
-    icon: '⚡',
-    title: 'Oyunlaşdırılmış öyrənmə',
-    description: 'XP, zolaqlar, liqalar, nişanlar — hər addım səni irəli aparır.',
-  },
-  {
-    icon: '🏆',
-    title: 'Real-time yarışlar',
-    description: 'PIN ilə qoşul, digər tələbələrlə canlı yarış, gözlərini istirahət etdir.',
-  },
-  {
-    icon: '📊',
-    title: 'Ağıllı analitika',
-    description: 'Valideyn və müəllim üçün dərin tərəqqi hesabatları, avtomatik uyğunlaşma.',
-  },
-]
-
-const STEPS: StepData[] = [
-  { number: '01', title: 'Qeydiyyat', description: 'Rolunu seç, profilini qur', color: '#3B82F6' },
-  { number: '02', title: 'Öyrən',     description: 'Günlük quiz, kurslar, dərslər', color: '#9333EA' },
-  { number: '03', title: 'Yarış',     description: 'Klan döyüşləri, Həftənin Sirri', color: '#58CC02' },
-  { number: '04', title: 'Böyü',      description: 'Portfolio, sertifikat, gələcək', color: '#F97316' },
-]
-
-const STATS: StatData[] = [
-  { value: '1 000+',  label: 'Aktiv tələbə',  gradientClass: 'from-[#3B82F6] to-[#06B6D4]' },
-  { value: '50+',     label: 'Müəllim',        gradientClass: 'from-[#9333EA] to-[#EC4899]' },
-  { value: '10 000+', label: 'Sual bazası',    gradientClass: 'from-[#58CC02] to-[#06B6D4]' },
-  { value: '25+',     label: 'Fənn',           gradientClass: 'from-[#F97316] to-[#EF4444]' },
-]
-
-// ── Animation variants ────────────────────────────────────────────────────
-
-const stagger = {
-  hidden:  { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.14 } },
+interface StatItem {
+  value: string
+  numericTarget: number
+  suffix: string
+  label: string
+  color: string
 }
 
-const fadeUp = {
-  hidden:  { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: 'easeOut' as const } },
-}
-
-const fadeIn = {
-  hidden:  { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' as const } },
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────
-
-function FloatingParticle({ p }: { p: ParticleConfig }) {
-  return (
-    <motion.div
-      className="absolute rounded-full blur-3xl pointer-events-none"
-      style={{
-        width:           p.size,
-        height:          p.size,
-        top:             p.top,
-        left:            p.left,
-        backgroundColor: p.color,
-        opacity:         0.13,
-      }}
-      animate={{ y: p.yRange, x: p.xRange }}
-      transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' as const }}
-    />
-  )
-}
-
-function RoleCard({ title, subtitle, icon, gradient, glowColor, role }: RoleCardData) {
-  const ref       = useRef<HTMLDivElement>(null)
-  const navigate  = useNavigate()
-  const mouseX    = useMotionValue(0)
-  const mouseY    = useMotionValue(0)
-  const rotateX   = useTransform(mouseY, [-0.5, 0.5], [9, -9])
-  const rotateY   = useTransform(mouseX, [-0.5, 0.5], [-9, 9])
-
-  function onMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = ref.current?.getBoundingClientRect()
-    if (!rect) return
-    mouseX.set((e.clientX - rect.left) / rect.width  - 0.5)
-    mouseY.set((e.clientY - rect.top)  / rect.height - 0.5)
-  }
-
-  function onLeave() {
-    mouseX.set(0)
-    mouseY.set(0)
-  }
-
-  function go() {
-    navigate(`${APP_ROUTES.REGISTER}?role=${role}`)
-  }
-
-  return (
-    <motion.div
-      ref={ref}
-      variants={fadeUp}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      onClick={go}
-      onKeyDown={(e) => e.key === 'Enter' && go()}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', boxShadow: `0 0 0 0 ${glowColor}` }}
-      whileHover={{ scale: 1.06, boxShadow: `0 20px 60px ${glowColor}` }}
-      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-      className="relative cursor-pointer rounded-2xl p-8 border border-[rgba(255,255,255,0.1)]
-                 bg-[rgba(255,255,255,0.05)] backdrop-blur-md
-                 flex flex-col items-center gap-5 text-center select-none
-                 transition-border duration-300 outline-none"
-      aria-label={`${title} kimi qeydiyyat`}
-      role="button"
-      tabIndex={0}
-    >
-      {/* Icon badge */}
-      <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient}
-                       flex items-center justify-center text-4xl shadow-lg`}>
-        {icon}
-      </div>
-
-      <div>
-        <h3 className="text-2xl font-bold text-white">{title}</h3>
-        <p className="text-[#9CA3AF] text-sm mt-1">{subtitle}</p>
-      </div>
-
-      {/* Bottom accent line */}
-      <div className={`w-full h-px bg-gradient-to-r ${gradient} opacity-40 rounded-full`} />
-
-      <span className={`text-sm font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-        Başla →
-      </span>
-    </motion.div>
-  )
-}
-
-function FeatureCard({ icon, title, description }: FeatureData) {
-  return (
-    <motion.div
-      variants={fadeUp}
-      className="card flex flex-col gap-4 group pl-6 sm:pl-8
-                 hover:border-[rgba(147,51,234,0.35)] transition-colors duration-300"
-    >
-      <span className="text-4xl">{icon}</span>
-      <h3 className="text-lg font-bold text-white">{title}</h3>
-      <p className="text-[#9CA3AF] text-sm leading-relaxed">{description}</p>
-    </motion.div>
-  )
-}
-
-function StepCard({ number, title, description, color }: StepData) {
-  return (
-    <motion.div variants={fadeUp} className="flex flex-col items-center text-center gap-3">
-      <div
-        className="w-16 h-16 rounded-full flex items-center justify-center
-                   text-xl font-black border-2 shrink-0"
-        style={{ borderColor: color, color, backgroundColor: `${color}18` }}
-      >
-        {number}
-      </div>
-      <h3 className="text-white font-bold text-lg">{title}</h3>
-      <p className="text-[#9CA3AF] text-sm">{description}</p>
-    </motion.div>
-  )
-}
-
-function SectionHeading({
-  text,
-  highlight,
-  gradientClass,
-  subtitle,
-}: {
+interface QuizAnswer {
+  key: string
   text: string
-  highlight: string
-  gradientClass: string
-  subtitle?: string
-}) {
+}
+
+// ── Static data ───────────────────────────────────────────────────────────────
+
+const NAV_LINKS: NavLink[] = [
+  { label: 'Ana səhifə', href: '#' },
+  { label: 'Haqqında',   href: '#features' },
+  { label: 'Kurslar',    href: '#courses'  },
+  { label: 'Qiymət',     href: '#pricing'  },
+]
+
+const QUIZ_ANSWERS: QuizAnswer[] = [
+  { key: 'A', text: '2, 4, 8, 16...' },
+  { key: 'B', text: '1, 3, 6, 10...' },
+  { key: 'C', text: '5, 10, 20, 35...' },
+]
+
+const STATS: StatItem[] = [
+  { value: '1 000+',  numericTarget: 1000,  suffix: '+', label: 'Aktiv tələbə',     color: 'text-[#0D9488]'  },
+  { value: '50+',     numericTarget: 50,    suffix: '+', label: 'Fənn & kurs',      color: 'text-purple-400' },
+  { value: '10 000+', numericTarget: 10000, suffix: '+', label: 'Cavablanmış sual', color: 'text-cyan-400'   },
+  { value: '25+',     numericTarget: 25,    suffix: '+', label: 'Oyun-əsaslı alət', color: 'text-orange-400' },
+]
+
+// ── Guide accent helpers ──────────────────────────────────────────────────────
+
+type Guide = 'logi' | 'cora' | null
+
+function guideAccent(guide: Guide): { text: string; border: string; bg: string; hex: string } {
+  if (guide === 'logi') return {
+    text:   'text-[#3B82F6]',
+    border: 'border-[#3B82F6]/20',
+    bg:     'bg-[#3B82F6]/10',
+    hex:    '#3B82F6',
+  }
+  if (guide === 'cora') return {
+    text:   'text-[#9333EA]',
+    border: 'border-[#9333EA]/20',
+    bg:     'bg-[#9333EA]/10',
+    hex:    '#9333EA',
+  }
+  return {
+    text:   'text-[#0D9488]',
+    border: 'border-[#0D9488]/20',
+    bg:     'bg-[#0D9488]/10',
+    hex:    '#0D9488',
+  }
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function CountUp({ target, suffix, color }: { target: number; suffix: string; color: string }) {
+  const ref     = useRef<HTMLSpanElement>(null)
+  const inView  = useInView(ref, { once: true })
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!inView) return
+    let v = 0
+    const inc = target / 60
+    const iv = setInterval(() => {
+      v += inc
+      if (v >= target) { setCount(target); clearInterval(iv) }
+      else setCount(Math.floor(v))
+    }, 2000 / 60)
+    return () => clearInterval(iv)
+  }, [inView, target])
+
   return (
-    <motion.div variants={fadeIn} className="text-center mb-16">
-      <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight">
-        {text}{' '}
-        <span className={`bg-gradient-to-r ${gradientClass} bg-clip-text text-transparent`}>
-          {highlight}
-        </span>
-      </h2>
-      {subtitle && (
-        <p className="text-[#9CA3AF] mt-4 text-lg max-w-lg mx-auto">{subtitle}</p>
-      )}
-    </motion.div>
+    <span ref={ref} className={`text-5xl font-bold ${color}`}>
+      {target >= 1000 ? count.toLocaleString('az-AZ') : count}{suffix}
+    </span>
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function Landing() {
   const navigate = useNavigate()
+  const [searchParams]  = useSearchParams()
+  const { scrollY }     = useScroll()
+  const [mobileOpen, setMobileOpen]       = useState(false)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+
+  const guide  = searchParams.get('guide') as Guide
+  const accent = guideAccent(guide)
+
+  const navBg = useTransform(scrollY, [0, 100], ['rgba(13,13,13,0)', 'rgba(13,13,13,0.95)'])
+
+  const sectionVariants: Variants = {
+    hidden:  { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' as const } },
+  }
 
   return (
-    <main className="min-h-screen bg-[#0D0D0D] overflow-x-hidden">
+    <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden">
 
-      {/* ════════════════════════ HERO ════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-12 overflow-hidden">
+      {/* ── HERO ────────────────────────────────────────────────────────────── */}
+      <LogiCoraHero />
 
-        {/* Ambient background particles */}
-        {PARTICLES.map((p) => <FloatingParticle key={p.id} p={p} />)}
+      {/* ── FIXED NAVBAR (görünür scroll-dan sonra) ─────────────────────────── */}
+      <motion.nav
+        style={{ backgroundColor: navBg }}
+        className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/[0.06] backdrop-blur-xl pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-4 sm:px-6 lg:px-8 pointer-events-auto">
+          <span className="font-bold text-white text-xl select-none">🤖✨ LogiCora</span>
 
-        {/* Hero content */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={stagger}
-          className="relative z-10 flex flex-col items-center gap-6 max-w-4xl w-full text-center"
-        >
-          {/* Mascot row */}
-          <motion.div variants={fadeUp} className="flex items-end gap-10 mb-2">
-            <motion.div
-              className="flex flex-col items-center gap-1"
-              animate={{ y: [0, -14, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const }}
-            >
-              <span className="text-6xl sm:text-7xl" role="img" aria-label="Logi">🤖</span>
-              <span className="text-xs text-[#3B82F6] font-bold tracking-widest uppercase">Logi</span>
-            </motion.div>
-
-            <motion.div
-              className="flex flex-col items-center gap-1"
-              animate={{ y: [0, -14, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const, delay: 0.6 }}
-            >
-              <span className="text-6xl sm:text-7xl" role="img" aria-label="Cora">🧙‍♀️</span>
-              <span className="text-xs text-[#9333EA] font-bold tracking-widest uppercase">Cora</span>
-            </motion.div>
-          </motion.div>
-
-          {/* Main logo */}
-          <motion.h1
-            variants={fadeUp}
-            className="text-7xl sm:text-9xl font-black tracking-tight leading-none
-                       bg-gradient-to-r from-[#3B82F6] via-[#9333EA] to-[#06B6D4]
-                       bg-clip-text text-transparent"
-          >
-            LogiCora
-          </motion.h1>
-
-          {/* Tagline */}
-          <motion.p variants={fadeUp} className="text-xl sm:text-2xl text-[#9CA3AF] font-medium">
-            Bilikdə güc, gələcəkdə iz.
-          </motion.p>
-
-          {/* CTA buttons */}
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 mt-2">
-            <button
-              onClick={() => navigate(APP_ROUTES.REGISTER)}
-              className="btn-primary px-8 py-3 text-base rounded-xl"
-            >
-              🚀 Pulsuz başla
-            </button>
-            <button
-              onClick={() => navigate(APP_ROUTES.LOGIN)}
-              className="btn-outline px-8 py-3 text-base rounded-xl"
-            >
-              Daxil ol
-            </button>
-          </motion.div>
-
-          {/* Scroll indicator */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-6 flex flex-col items-center gap-2 text-[#9CA3AF] text-xs"
-          >
-            <span>Rol seç</span>
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 1.4, repeat: Infinity }}
-              className="w-5 h-8 rounded-full border border-[rgba(255,255,255,0.2)] flex items-start justify-center pt-1.5"
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
-            </motion.div>
-          </motion.div>
-        </motion.div>
-
-        {/* Role cards */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={stagger}
-          className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl w-full mt-14"
-          style={{ perspective: 1200 }}
-        >
-          {ROLE_CARDS.map((card) => <RoleCard key={card.role} {...card} />)}
-        </motion.div>
-      </section>
-
-      {/* ════════════ BÖLMƏ 1 — Niyə LogiCora? ════════════ */}
-      <section className="py-28 px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={stagger}
-          className="max-w-5xl mx-auto"
-        >
-          <SectionHeading
-            text="Niyə"
-            highlight="LogiCora?"
-            gradientClass="from-[#9333EA] to-[#06B6D4]"
-            subtitle="Adi öyrənmə yox — hər tələbənin öz səyahəti."
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ════════════ BÖLMƏ 2 — Necə işləyir? ════════════ */}
-      <section className="py-28 px-4 sm:px-6 lg:px-8 bg-[#111827]">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={stagger}
-          className="max-w-5xl mx-auto"
-        >
-          <SectionHeading
-            text="Necə"
-            highlight="işləyir?"
-            gradientClass="from-[#3B82F6] to-[#06B6D4]"
-          />
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 relative">
-            {/* Connecting gradient line — desktop only */}
-            <div
-              className="absolute top-8 left-[12.5%] right-[12.5%] h-px
-                         bg-gradient-to-r from-[#3B82F6] via-[#9333EA] via-[#58CC02] to-[#F97316]
-                         opacity-25 hidden sm:block pointer-events-none"
-            />
-            {STEPS.map((s) => <StepCard key={s.number} {...s} />)}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ════════════ BÖLMƏ 3 — Statistika ════════════ */}
-      <section className="py-28 px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.25 }}
-          variants={stagger}
-          className="max-w-4xl mx-auto"
-        >
-          <SectionHeading
-            text="Rəqəmlərlə"
-            highlight="LogiCora"
-            gradientClass="from-[#58CC02] to-[#06B6D4]"
-          />
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 px-4">
-            {STATS.map((stat) => (
-              <motion.div
-                key={stat.label}
-                variants={fadeUp}
-                className="card text-center hover:border-[rgba(88,204,2,0.3)] transition-colors duration-300"
-              >
-                <p className={`text-3xl sm:text-4xl font-black bg-gradient-to-r ${stat.gradientClass} bg-clip-text text-transparent`}>
-                  {stat.value}
-                </p>
-                <p className="text-[#9CA3AF] text-sm mt-2">{stat.label}</p>
-              </motion.div>
+          <div className="hidden md:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <a key={link.label} href={link.href}
+                className={`text-white/50 hover:${accent.text} transition-colors duration-200 text-sm`}>
+                {link.label}
+              </a>
             ))}
           </div>
-        </motion.div>
-      </section>
 
-      {/* ════════════ BÖLMƏ 4 — CTA ════════════ */}
-      <section className="py-36 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Ambient glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#9333EA]/8 via-transparent to-[#3B82F6]/8 pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#9333EA] opacity-[0.07] blur-3xl pointer-events-none" />
-
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.35 }}
-          variants={stagger}
-          className="max-w-3xl mx-auto text-center relative z-10"
-        >
-          <motion.h2 variants={fadeIn} className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight">
-            Gələcəyini{' '}
-            <span className="bg-gradient-to-r from-[#3B82F6] via-[#9333EA] to-[#06B6D4] bg-clip-text text-transparent">
-              bu gün
-            </span>{' '}
-            qur.
-          </motion.h2>
-
-          <motion.p variants={fadeIn} className="text-[#9CA3AF] text-lg mt-6 mb-10 leading-relaxed">
-            Minlərlə Azərbaycan tələbəsi artıq LogiCora ilə öyrənir.
-            <br />
-            Sıra sənindədir.
-          </motion.p>
-
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => navigate(APP_ROUTES.REGISTER)}
-              className="btn-primary px-10 py-4 text-lg font-bold rounded-xl"
-            >
-              🚀 Pulsuz qeydiyyat
-            </button>
-            <button
-              onClick={() => navigate(APP_ROUTES.LOGIN)}
-              className="btn-outline px-10 py-4 text-lg rounded-xl"
-            >
+          <div className="hidden md:flex items-center gap-3">
+            <button onClick={() => navigate(APP_ROUTES.LOGIN)}
+              className="border border-white/20 text-white/70 hover:text-white hover:border-white/40 rounded-full px-5 py-2 text-sm transition-all duration-200">
               Daxil ol
             </button>
+            <motion.button
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
+              onClick={() => navigate(APP_ROUTES.REGISTER)}
+              className="text-white rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200"
+              style={{ backgroundColor: accent.hex }}
+            >
+              Başla →
+            </motion.button>
+          </div>
+
+          <button className="md:hidden flex flex-col gap-1.5 p-2"
+            onClick={() => setMobileOpen(true)} aria-label="Menyu aç">
+            <span className="w-6 h-px bg-white/60" />
+            <span className="w-6 h-px bg-white/60" />
+            <span className="w-4 h-px bg-white/60" />
+          </button>
+        </div>
+      </motion.nav>
+
+      {/* Mobile overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-[#0D0D0D] flex flex-col items-center justify-center gap-8">
+            <button className="absolute top-5 right-6 text-white/50 hover:text-white text-2xl"
+              onClick={() => setMobileOpen(false)}>✕</button>
+            {NAV_LINKS.map((link) => (
+              <a key={link.label} href={link.href} onClick={() => setMobileOpen(false)}
+                className={`text-white/60 hover:${accent.text} text-2xl font-semibold transition-colors`}>
+                {link.label}
+              </a>
+            ))}
+            <div className="flex flex-col gap-3 mt-4 w-48">
+              <button onClick={() => { navigate(APP_ROUTES.LOGIN); setMobileOpen(false) }}
+                className="border border-white/20 text-white/70 rounded-full px-5 py-3 text-base">
+                Daxil ol
+              </button>
+              <button onClick={() => { navigate(APP_ROUTES.REGISTER); setMobileOpen(false) }}
+                className="text-white rounded-full px-5 py-3 text-base font-semibold"
+                style={{ backgroundColor: accent.hex }}>
+                Başla →
+              </button>
+            </div>
           </motion.div>
-        </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── SECTION 1 — Günlük öyrənmə ─────────────────────────────────────── */}
+      <motion.section
+        id="features"
+        variants={sectionVariants} initial="hidden" whileInView="visible"
+        viewport={{ once: true, margin: '-100px' }}
+        className="min-h-screen flex items-center py-20 px-4 sm:px-8 lg:px-16"
+      >
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+          <div className="relative">
+            <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-6`}>
+              Günlük öyrənmə
+            </p>
+            <div className="space-y-1">
+              {[
+                { text: 'Hər gün',          cls: 'text-white/30' },
+                { text: '5 sual.',          cls: 'text-white/60' },
+                { text: 'Streak qır,',      cls: 'text-white/80' },
+                { text: 'dünya sarsılsın.', cls: accent.text     },
+              ].map((line, i) => (
+                <motion.p key={line.text}
+                  initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className={`text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight ${line.cls}`}>
+                  {line.text}
+                </motion.p>
+              ))}
+            </div>
+            <p className="text-white/35 text-base leading-relaxed mt-6 max-w-sm">
+              Yaşına, fənninə, hobbinə uyğun suallar.<br />
+              Logi sual verir, Cora hərf verir — sən cavablayırsan.
+            </p>
+            <div className="absolute -left-6 top-0 bottom-0 hidden lg:flex flex-col items-center gap-5 pt-4">
+              <div className="w-px flex-1" style={{ background: `linear-gradient(to bottom, ${accent.hex}50, transparent)` }} />
+              {[0, 1, 2].map((i) => (
+                <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: accent.hex }}
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }} />
+              ))}
+            </div>
+          </div>
+
+          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
+            className={`bg-[#0a1628] border ${accent.border} rounded-2xl p-6 max-w-sm mx-auto w-full`}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white/80 font-semibold">Günün sualı 🧠</p>
+              <span className="bg-orange-400/10 border border-orange-400/20 text-orange-400 text-xs rounded-full px-2 py-0.5">
+                🔥 23 gün
+              </span>
+            </div>
+            <p className="text-white/60 text-sm mb-4 leading-relaxed">
+              Hansı riyazi ardıcıllıq düzgündür?
+            </p>
+            <div className="flex flex-col gap-2 mb-5">
+              {QUIZ_ANSWERS.map((a) => (
+                <motion.button key={a.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                  onClick={() => setSelectedAnswer(a.key)}
+                  className={`text-left px-4 py-2.5 rounded-xl border text-sm transition-all ${
+                    selectedAnswer === a.key
+                      ? `${accent.bg} ${accent.border} ${accent.text}`
+                      : 'bg-white/[0.03] border-white/[0.08] text-white/60 hover:border-white/20'
+                  }`}>
+                  {a.key}. {a.text}
+                </motion.button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative w-10 h-10 flex-shrink-0">
+                <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
+                  <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                  <motion.circle cx="20" cy="20" r="16" fill="none"
+                    stroke={accent.hex} strokeWidth="3" strokeLinecap="round"
+                    strokeDasharray="100.5"
+                    initial={{ strokeDashoffset: 0 }} animate={{ strokeDashoffset: 100.5 }}
+                    transition={{ duration: 30, ease: 'linear', repeat: Infinity }} />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-white/60 text-xs font-mono">30</span>
+              </div>
+              <p className="text-white/30 text-xs leading-relaxed">
+                Logi: Bu sualı 847 tələbə cavabladı 🤔
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ── SECTION 2 — Canlı yarışlar ─────────────────────────────────────── */}
+      <motion.section
+        variants={sectionVariants} initial="hidden" whileInView="visible"
+        viewport={{ once: true, margin: '-100px' }}
+        className="min-h-screen flex items-center py-20 px-4 sm:px-8 lg:px-16"
+      >
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
+            className="bg-[#0a1628] border border-cyan-400/20 rounded-2xl p-6 max-w-sm mx-auto w-full order-2 lg:order-1">
+            <p className="text-5xl font-mono text-cyan-400 font-bold tracking-widest mb-2"
+              style={{ textShadow: '0 0 30px rgba(34,211,238,0.4)' }}>4829</p>
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-white/40 text-sm">12 iştirakçı</span>
+              {[0, 1, 2].map((i) => (
+                <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-cyan-400"
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }} />
+              ))}
+            </div>
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              {['🦁', '🐯', '🦊', '🐺', '🦅', '🐉', '🦋', '🐬'].map((e, i) => (
+                <motion.div key={i}
+                  initial={{ scale: 0, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }}
+                  viewport={{ once: true }} transition={{ duration: 0.3, delay: i * 0.08 }}
+                  className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-lg">
+                  {e}
+                </motion.div>
+              ))}
+            </div>
+            <p className="text-white/30 text-sm">Logi: Hazır olun! 3... 2... 1... 🚀</p>
+          </motion.div>
+
+          <div className="order-1 lg:order-2">
+            <p className="text-cyan-400 text-xs tracking-widest font-semibold uppercase mb-6">
+              Real-time yarışlar
+            </p>
+            <div className="space-y-1">
+              {[
+                { text: 'PIN yaz.',      cls: 'text-white/30'  },
+                { text: '30 saniyədə',   cls: 'text-cyan-400'  },
+                { text: 'yarışa başla.', cls: 'text-white/80'  },
+              ].map((line, i) => (
+                <motion.p key={line.text}
+                  initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className={`text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight ${line.cls}`}>
+                  {line.text}
+                </motion.p>
+              ))}
+            </div>
+            <p className="text-white/35 text-base leading-relaxed mt-6 max-w-sm">
+              Kahoot kimi — amma avatarın,<br />Elo reytinqin, klan şərəfin var.
+            </p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ── SECTION 3 — Portfolio ───────────────────────────────────────────── */}
+      <motion.section
+        variants={sectionVariants} initial="hidden" whileInView="visible"
+        viewport={{ once: true, margin: '-100px' }}
+        className="min-h-screen flex items-center py-20 px-4 sm:px-8 lg:px-16"
+      >
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+          <div>
+            <p className="text-purple-400 text-xs tracking-widest font-semibold uppercase mb-6">
+              Rəqəmsal portfolio
+            </p>
+            <div className="space-y-1">
+              {[
+                { text: 'Hər addımın', cls: 'text-white/30'   },
+                { text: 'izi —',       cls: 'text-purple-400' },
+                { text: '3 yaşdan',    cls: 'text-white/60'   },
+                { text: 'karyeraya.',  cls: 'text-white/90'   },
+              ].map((line, i) => (
+                <motion.p key={line.text}
+                  initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className={`text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight ${line.cls}`}>
+                  {line.text}
+                </motion.p>
+              ))}
+            </div>
+            <p className="text-white/35 text-base leading-relaxed mt-6 max-w-sm">
+              Hər kurs, hər yarış, hər badge — portfolionda.<br />
+              İşəgötürən görür, universitet seçir,<br />
+              heç kim sənin biliyini inkar edə bilməz.
+            </p>
+          </div>
+
+          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
+            className="bg-[#0a1628] border border-purple-400/20 rounded-2xl p-6 max-w-sm mx-auto w-full">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-full bg-purple-400/10 border border-purple-400/20 flex items-center justify-center text-2xl">👤</div>
+              <div>
+                <p className="text-white/80 font-semibold">Əli Həsənov</p>
+                <p className="text-white/40 text-sm">Level 8 · Diamond 💎</p>
+              </div>
+            </div>
+            <div className="space-y-3 mb-5">
+              {[
+                { label: 'Riyaziyyat', pct: 87, color: 'bg-purple-400' },
+                { label: 'Məntiq',     pct: 92, color: 'bg-[#0D9488]'  },
+              ].map((skill) => (
+                <div key={skill.label}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-white/50">{skill.label}</span>
+                    <span className="text-white/40">{skill.pct}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/[0.05]">
+                    <motion.div initial={{ width: '0%' }}
+                      whileInView={{ width: `${skill.pct}%` }} viewport={{ once: true }}
+                      transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+                      className={`h-full rounded-full ${skill.color}`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 mb-5">
+              {['🏆','⭐','🎯','🔥','💎','🎖️','🧠','🚀','✨','👑','🌟','🎪'].map((badge, i) => (
+                <motion.span key={i} initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }} viewport={{ once: true }}
+                  transition={{ duration: 0.25, delay: i * 0.05 }} className="text-lg">
+                  {badge}
+                </motion.span>
+              ))}
+            </div>
+            <div className="flex items-center justify-between bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2">
+              <span className="text-white/30 text-xs font-mono">logicora.az/p/ali</span>
+              <span className="text-[#0D9488] text-xs font-semibold">✓ Verified</span>
+            </div>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ── STATS ───────────────────────────────────────────────────────────── */}
+      <section className="py-24 px-4 sm:px-8 text-center">
+        <p className="text-white/20 text-sm tracking-widest uppercase mb-4">Rəqəmlərlə LogiCora</p>
+        <div className="w-16 h-px bg-white/10 mx-auto mb-12" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          {STATS.map((stat) => (
+            <motion.div key={stat.label}
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="flex flex-col items-center">
+              <CountUp target={stat.numericTarget} suffix={stat.suffix} color={stat.color} />
+              <p className="text-white/40 text-sm mt-2">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
-      {/* ════════════ FOOTER ════════════ */}
-      <footer className="border-t border-[rgba(255,255,255,0.08)] py-8 px-6 text-center">
-        <p className="text-[#9CA3AF] text-sm">
-          © 2026 LogiCora — Azərbaycan Milli Təhsil Platforması
-        </p>
+      {/* ── CTA ─────────────────────────────────────────────────────────────── */}
+      <section className="min-h-[60vh] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: `radial-gradient(ellipse 60% 40% at 50% 50%, ${accent.hex}10 0%, transparent 70%)` }} />
+        <motion.span animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          className="text-6xl mb-6">
+          {guide === 'logi' ? '🤖' : guide === 'cora' ? '🪄' : '🤖'}
+        </motion.span>
+        <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} transition={{ duration: 0.8 }}
+          className="text-4xl sm:text-5xl md:text-7xl font-bold text-center leading-tight tracking-tight">
+          Gələcəyini{' '}
+          <span style={{ color: accent.hex }}>bu gün</span>
+          {' '}qur.
+        </motion.h2>
+        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
+          viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }}
+          className="text-white/30 mt-4 text-lg text-center">
+          Minlərlə Azərbaycan tələbəsi artıq öyrənir.
+        </motion.p>
+        <motion.button
+          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }}
+          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
+          onClick={() => navigate(APP_ROUTES.REGISTER)}
+          className="mt-10 text-white rounded-full px-10 py-4 font-semibold text-lg transition-colors duration-200"
+          style={{ backgroundColor: accent.hex }}>
+          Pulsuz qeydiyyat →
+        </motion.button>
+        <motion.span animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+          className="text-6xl mt-6">✨</motion.span>
+      </section>
+
+      {/* ── FOOTER ──────────────────────────────────────────────────────────── */}
+      <footer className="border-t border-white/[0.06] py-8 px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+          <p className="text-white/25 text-sm">
+            © 2026 LogiCora — Azərbaycan Milli Təhsil Platforması
+          </p>
+          <div className="flex gap-6">
+            {['Məxfilik', 'Şərtlər'].map((item) => (
+              <a key={item} href="#"
+                className="text-white/25 text-sm hover:text-white/50 transition-colors duration-200">
+                {item}
+              </a>
+            ))}
+          </div>
+        </div>
       </footer>
-    </main>
+    </div>
   )
 }
