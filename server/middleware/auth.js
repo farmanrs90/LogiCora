@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 
+// Verifies the JWT and attaches the current user to the request.
+// Strict: blocks the request with 401 if the token is missing or invalid.
 const authenticate = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -8,13 +10,16 @@ const authenticate = (req, res, next) => {
     }
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { _id: decoded.id, role: decoded.role };
+    // Expose BOTH `_id` and `id` so every controller works no matter which one it reads.
+    req.user = { _id: decoded.id, id: decoded.id, role: decoded.role };
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Token etibarsızdır.' });
   }
 };
 
+// Soft auth: never blocks. If there is no/invalid token, sets req.user = null and continues.
+// Used on public routes that show extra data when the visitor happens to be logged in.
 const optionalAuth = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -24,7 +29,7 @@ const optionalAuth = (req, res, next) => {
     }
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { _id: decoded.id, role: decoded.role };
+    req.user = { _id: decoded.id, id: decoded.id, role: decoded.role };
     next();
   } catch (err) {
     req.user = null;
