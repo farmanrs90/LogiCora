@@ -1,7 +1,26 @@
 const User = require('../user/user.model');
+const Student = require('../student/student.model');
+const Teacher = require('../teacher/teacher.model');
+const Parent = require('../parent/parent.model');
+const Gamification = require('../gamification/gamification.model');
 const { hashPassword, comparePassword } = require('../../utils/hashPassword');
 const { generateAccessToken, generateRefreshToken } = require('../../utils/generateToken');
 const { createDefaultForNewUser } = require('../accessibility/accessibility.service');
+
+// Creates the role-specific profile right after the User is created.
+// Without it, a student has no Student/Gamification doc, so quiz & XP endpoints 404.
+const createRoleProfile = async (user) => {
+  if (user.role === 'student') {
+    const student = await Student.create({ userId: user._id, grade: 1 });
+    await Gamification.create({ studentId: student._id });
+  } else if (user.role === 'teacher') {
+    // `specialization` is a required enum on the Teacher model — default to 'other'.
+    await Teacher.create({ userId: user._id, specialization: 'other' });
+  } else if (user.role === 'parent') {
+    await Parent.create({ userId: user._id });
+  }
+  // admin / manager need no extra profile
+};
 
 const registerUser = async (payload) => {
   const { name, surname, email, phone, password, role, ageGroup } = payload;
@@ -30,6 +49,9 @@ const registerUser = async (payload) => {
     role: role || 'student',
     ageGroup,
   });
+
+  // Create the matching role profile (Student+Gamification / Teacher / Parent)
+  await createRoleProfile(created);
 
   const tokenPayload = { id: created._id, role: created.role };
   const accessToken = generateAccessToken(tokenPayload);
