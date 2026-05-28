@@ -19,4 +19,13 @@ const submitAnswer = async (req, res, next) => {
   }
 };
 
-module.exports = { getDaily, submitAnswer };
+const getDailyStatus = async (req, res, next) => {
+  try {
+    const data = await dailyQuestionService.getDailyStatus(req.user);
+    res.json({ success: true, data, message: 'Günlük status alındı.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getDaily, submitAnswer, getDailyStatus };

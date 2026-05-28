@@ -243,8 +243,34 @@ const getWeekStart = () => {
   monday.setHours(0, 0, 0, 0);
   return monday;
 };
+// Returns today's progress for the daily quiz (used by the student dashboard card).
+const getDailyStatus = async (user) => {
+  const today = getTodayString();
+
+  const records = await DailyQuestion.find({ userId: user._id, date: today });
+  const answeredCount = records.length;
+  const xpEarned = records.reduce((sum, r) => sum + (r.xpEarned || 0), 0);
+
+  // Streak lives on the Gamification profile: User → Student → Gamification
+  let streak = 0;
+  const student = await Student.findOne({ userId: user._id });
+  if (student) {
+    const profile = await Gamification.findOne({ studentId: student._id });
+    if (profile) streak = profile.streak;
+  }
+
+  return {
+    completed: answeredCount >= DAILY_LIMIT,
+    answeredCount,
+    totalCount: DAILY_LIMIT,
+    streak,
+    xpEarned,
+  };
+};
+
 
 module.exports = {
   getDailyQuestions,
   submitAnswer,
+  getDailyStatus,
 };
