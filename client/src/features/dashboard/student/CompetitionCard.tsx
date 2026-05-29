@@ -1,57 +1,36 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
 import api from '../../../lib/api'
 
 interface ActiveCompetition {
-  id:         string
-  title:      string
-  subject:    string
-  startsAt:   string
+  id:          string
+  title:       string
+  status:      string
   playerCount: number
-  maxPlayers:  number
-}
-
-function useCountdown(target: string | undefined) {
-  const [diff, setDiff] = useState(0)
-
-  useEffect(() => {
-    if (!target) return
-    const tick = () => setDiff(Math.max(0, new Date(target).getTime() - Date.now()))
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [target])
-
-  const h = Math.floor(diff / 3_600_000)
-  const m = Math.floor((diff % 3_600_000) / 60_000)
-  const s = Math.floor((diff % 60_000) / 1000)
-  return { h, m, s, started: diff === 0 }
-}
-
-function TimeBox({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className="font-black text-xl text-white leading-none tabular-nums">
-        {String(value).padStart(2, '0')}
-      </span>
-      <span className="text-[9px] text-[#9CA3AF] mt-0.5">{label}</span>
-    </div>
-  )
 }
 
 export default function CompetitionCard() {
-  const navigate    = useNavigate()
+  const navigate = useNavigate()
 
   const { data, isLoading } = useQuery<ActiveCompetition | null>({
     queryKey:  ['competitions', 'active'],
     queryFn:   () =>
-      api.get<{ data: ActiveCompetition | null }>('/competitions/active').then(r => r.data.data).catch(() => null),
+      api.get<{ data: Array<Record<string, unknown>> }>('/competitions/active').then(r => {
+        const list = r.data.data ?? []
+        if (list.length === 0) return null
+        const c = list[0] as {
+          _id: string; title: string; status: string; participants?: unknown[]
+        }
+        return {
+          id:          c._id,
+          title:       c.title,
+          status:      c.status,
+          playerCount: c.participants?.length ?? 0,
+        } as ActiveCompetition
+      }),
     staleTime: 1000 * 30,
   })
-
-  const { h, m, s, started } = useCountdown(data?.startsAt)
 
   if (isLoading) {
     return (
@@ -64,7 +43,7 @@ export default function CompetitionCard() {
     )
   }
 
-  // No active competition
+  // Aktiv yarış yoxdur
   if (!data) {
     return (
       <motion.div
@@ -92,7 +71,7 @@ export default function CompetitionCard() {
     )
   }
 
-  const fillPct = Math.round((data.playerCount / data.maxPlayers) * 100)
+  const statusLabel = data.status === 'active' ? 'Davam edir' : 'İştirakçı yığılır'
 
   return (
     <motion.div
@@ -108,7 +87,7 @@ export default function CompetitionCard() {
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-white font-bold text-sm">Gələn Yarış ⚔️</span>
+        <span className="text-white font-bold text-sm">Aktiv Yarış ⚔️</span>
         <motion.span
           className="w-2 h-2 rounded-full bg-[#EF4444]"
           animate={{ opacity: [1, 0.3, 1] }}
@@ -119,34 +98,13 @@ export default function CompetitionCard() {
       {/* Competition info */}
       <div>
         <p className="text-white font-semibold text-sm leading-tight">{data.title}</p>
-        <p className="text-[#9CA3AF] text-xs mt-0.5">{data.subject}</p>
+        <p className="text-[#9CA3AF] text-xs mt-0.5">{statusLabel}</p>
       </div>
 
-      {/* Countdown */}
-      {!started ? (
-        <div className="flex items-center gap-3 justify-center">
-          <TimeBox value={h} label="saat" />
-          <span className="text-[#EF4444] font-black text-lg">:</span>
-          <TimeBox value={m} label="dəq" />
-          <span className="text-[#EF4444] font-black text-lg">:</span>
-          <TimeBox value={s} label="san" />
-        </div>
-      ) : (
-        <p className="text-[#EF4444] font-bold text-sm text-center">Yarış başladı!</p>
-      )}
-
-      {/* Player fill bar */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-[10px] text-[#9CA3AF]">
-          <span>{data.playerCount} oyunçu</span>
-          <span>{data.maxPlayers} max</span>
-        </div>
-        <div className="h-1.5 bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full bg-[#EF4444] transition-all duration-500"
-            style={{ width: `${fillPct}%` }}
-          />
-        </div>
+      {/* Participants */}
+      <div className="flex items-center gap-2 text-xs text-[#9CA3AF]">
+        <span className="text-base">👥</span>
+        <span>{data.playerCount} iştirakçı</span>
       </div>
 
       {/* CTA */}

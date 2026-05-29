@@ -1,4 +1,5 @@
 const competitionService = require('./competition.service');
+const Competition = require('./competition.model');
 const Student = require('../student/student.model');
 
 const createCompetition = async (req, res, next) => {
@@ -60,6 +61,17 @@ const finishCompetition = async (req, res, next) => {
   }
 };
 
+const getActive = async (req, res, next) => {
+  try {
+    const active = await Competition.find({
+      status: { $in: ['waiting', 'active'] },
+    }).populate('createdBy', 'name surname');
+    res.json({ success: true, data: active });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getCompetition = async (req, res, next) => {
   try {
     const competition = await competitionService.getCompetition(req.params.id);
@@ -75,5 +87,6 @@ module.exports = {
   startCompetition,
   submitAnswer,
   finishCompetition,
+  getActive,
   getCompetition,
 };

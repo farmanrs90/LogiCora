@@ -9,7 +9,7 @@ import { useInterval } from '../../hooks/useInterval'
 import { questionService } from '../../services/questionService'
 import { useAuth } from '../../context/AuthContext'
 import type { RootState } from '../../app/store'
-import type { Question, QuestionFormat, AgeGroup } from '../../types'
+import type { Question, AgeGroup } from '../../types'
 import { APP_ROUTES } from '../../constants'
 
 import FormatA from '../../features/quiz/formats/FormatA'
@@ -24,16 +24,6 @@ type Phase = 'question' | 'feedback' | 'result' | 'no_hearts' | 'completed'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-function assignFormats(count: number): QuestionFormat[] {
-  const all: QuestionFormat[] = ['A', 'B', 'C', 'D', 'E']
-  const result: QuestionFormat[] = []
-  for (let i = 0; i < count; i++) {
-    const pool = i === 0 ? all : all.filter(f => f !== result[i - 1])
-    result.push(pool[Math.floor(Math.random() * pool.length)])
-  }
-  return result
-}
-
 function isChildAge(ag?: AgeGroup) {
   return ag === '3-5' || ag === '6-8'
 }
@@ -41,10 +31,10 @@ function isChildAge(ag?: AgeGroup) {
 // ── Confetti piece ────────────────────────────────────────────────────────
 
 function ConfettiPiece({ i }: { i: number }) {
-  const angle  = (i / 20) * 2 * Math.PI
-  const dist   = 120 + Math.random() * 80
+  const angle = (i / 20) * 2 * Math.PI
+  const dist = 120 + Math.random() * 80
   const colors = ['#9333EA', '#3B82F6', '#58CC02', '#F97316', '#EC4899', '#EAB308']
-  const color  = colors[i % colors.length]
+  const color = colors[i % colors.length]
   return (
     <motion.div
       className="absolute w-3 h-3 rounded-sm"
@@ -64,8 +54,8 @@ function ConfettiPiece({ i }: { i: number }) {
 // ── XP Count-up ───────────────────────────────────────────────────────────
 
 function XPCountUp({ target }: { target: number }) {
-  const count  = useMotionValue(0)
-  const ref    = useRef<HTMLSpanElement>(null)
+  const count = useMotionValue(0)
+  const ref = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     const controls = animate(count, target, {
@@ -125,8 +115,8 @@ function MascotPopup({ correct, xp }: { correct: boolean; xp: number }) {
       className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3
                  px-5 py-3 rounded-2xl shadow-2xl"
       style={{
-        background:  correct ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-        border:      `1px solid ${correct ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)'}`,
+        background: correct ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+        border: `1px solid ${correct ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)'}`,
         backdropFilter: 'blur(12px)',
       }}
     >
@@ -198,11 +188,11 @@ function NoHeartsScreen({ gems, onExit }: { gems: number; onExit: () => void }) 
 function ResultScreen({
   answered, total, xp, streak, badge, onDashboard,
 }: {
-  answered:   number
-  total:      number
-  xp:         number
-  streak:     number
-  badge?:     { name: string; emoji: string }
+  answered: number
+  total: number
+  xp: number
+  streak: number
+  badge?: { name: string; emoji: string }
   onDashboard: () => void
 }) {
   const [showConfetti, setShowConfetti] = useState(true)
@@ -308,20 +298,20 @@ function ResultScreen({
 // ── Main DailyQuiz ────────────────────────────────────────────────────────
 
 export default function DailyQuiz() {
-  const navigate    = useNavigate()
+  const navigate = useNavigate()
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
-  const authUser    = useSelector((s: RootState) => s.auth.user)
+  const authUser = useSelector((s: RootState) => s.auth.user)
   const { user: ctxUser } = useAuth()
   const user = authUser ?? ctxUser
 
-  const ageGroup      = user?.ageGroup as AgeGroup | undefined
+  const ageGroup = user?.ageGroup as AgeGroup | undefined
   const isSpecialNeeds = user?.isSpecialNeeds ?? false
-  const isChild        = isChildAge(ageGroup)
+  const isChild = isChildAge(ageGroup)
 
   // Fetch questions
   const { data: questions, isLoading } = useQuery<Question[]>({
     queryKey: ['daily', 'questions'],
-    queryFn:  () => questionService.fetchDaily(ageGroup),
+    queryFn: () => questionService.fetchDaily(ageGroup),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -331,43 +321,43 @@ export default function DailyQuiz() {
       questionService.submitAnswer(questionId, answer, responseTime),
   })
 
-  // Assign formats once on question load
-  const [formats]          = useState<QuestionFormat[]>(() => assignFormats(5))
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [selectedAnswer,  setSelectedAnswer]  = useState<string | null>(null)
-  const [isAnswered,      setIsAnswered]       = useState(false)
-  const [phase,           setPhase]            = useState<Phase>('question')
-  const [timeLeft,        setTimeLeft]         = useState(30)
-  const [heartsLeft,      setHeartsLeft]       = useState(5)
-  const [totalXP,         setTotalXP]          = useState(0)
-  const [streak,          setStreak]           = useState(0)
-  const [showCoins,       setShowCoins]        = useState(false)
-  const [lastXP,          setLastXP]           = useState(0)
-  const [showMascot,      setShowMascot]       = useState(false)
-  const [mascotCorrect,   setMascotCorrect]    = useState(false)
-  const [earnedBadge,     setEarnedBadge]      = useState<{ name: string; emoji: string } | undefined>()
-  const [answeredCount,   setAnsweredCount]    = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [isAnswered, setIsAnswered] = useState(false)
+  const [phase, setPhase] = useState<Phase>('question')
+  const [timeLeft, setTimeLeft] = useState(30)
+  const [heartsLeft, setHeartsLeft] = useState(5)
+  const [totalXP, setTotalXP] = useState(0)
+  const [streak, setStreak] = useState(0)
+  const [showCoins, setShowCoins] = useState(false)
+  const [lastXP, setLastXP] = useState(0)
+  const [showMascot, setShowMascot] = useState(false)
+  const [mascotCorrect, setMascotCorrect] = useState(false)
+  const [earnedBadge, setEarnedBadge] = useState<{ name: string; emoji: string } | undefined>()
+  const [answeredCount, setAnsweredCount] = useState(0)
+  const [revealedAnswer, setRevealedAnswer] = useState('')   // ← YENİ: serverdən gələn düzgün cavab
+
 
   const startTimeRef = useRef<number>(Date.now())
 
   const totalQuestions = questions?.length ?? 5
-  const current        = questions?.[currentIndex]
-  const format         = current ? formats[currentIndex] : 'A'
-  const totalTime      = current?.timeLimit ?? 30
-
+  const current = questions?.[currentIndex]
+  const format = current?.format ?? 'A'
+  const totalTime = current?.timeLimit ?? 30
   // Reset timer when question changes
   useEffect(() => {
     if (!current) return
     setTimeLeft(current.timeLimit ?? 30)
     setSelectedAnswer(null)
     setIsAnswered(false)
+    setRevealedAnswer('')
     startTimeRef.current = Date.now()
   }, [currentIndex, current])
 
   // Countdown timer
   const handleTimeUp = useCallback(() => {
     if (isAnswered || phase !== 'question') return
-    handleAnswer('') // auto-wrong
+    handleAnswer('__timeout__') // boş cavab backend-də 400 verir, sentinel göndəririk
   }, [isAnswered, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useInterval(
@@ -396,6 +386,7 @@ export default function DailyQuiz() {
       })
 
       const correct = res.correct
+      setRevealedAnswer(res.correctAnswer)
       setMascotCorrect(correct)
       setShowMascot(true)
       setHeartsLeft(res.heartsLeft)
@@ -479,7 +470,7 @@ export default function DailyQuiz() {
 
   // ── Render: question ───────────────────────────────────────────────────
 
-  const timerPct   = totalTime > 0 ? timeLeft / totalTime : 0
+  const timerPct = totalTime > 0 ? timeLeft / totalTime : 0
   const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
 
   return (
@@ -530,8 +521,8 @@ export default function DailyQuiz() {
           <div
             className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-black text-sm tabular-nums"
             style={{
-              border:          `2px solid ${timerColor}`,
-              color:           timerColor,
+              border: `2px solid ${timerColor}`,
+              color: timerColor,
               backgroundColor: `${timerColor}15`,
             }}
           >
@@ -556,7 +547,7 @@ export default function DailyQuiz() {
                 question={current}
                 onAnswer={handleAnswer}
                 isAnswered={isAnswered}
-                correctAnswer={current.correctAnswer}
+                correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
                 ageGroup={ageGroup}
@@ -568,7 +559,7 @@ export default function DailyQuiz() {
                 question={current}
                 onAnswer={handleAnswer}
                 isAnswered={isAnswered}
-                correctAnswer={current.correctAnswer}
+                correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
                 timeLeft={timeLeft}
@@ -581,7 +572,7 @@ export default function DailyQuiz() {
                 question={current}
                 onAnswer={handleAnswer}
                 isAnswered={isAnswered}
-                correctAnswer={current.correctAnswer}
+                correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
               />
@@ -591,7 +582,7 @@ export default function DailyQuiz() {
                 question={current}
                 onAnswer={handleAnswer}
                 isAnswered={isAnswered}
-                correctAnswer={current.correctAnswer}
+                correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
               />
@@ -601,7 +592,7 @@ export default function DailyQuiz() {
                 question={current}
                 onAnswer={handleAnswer}
                 isAnswered={isAnswered}
-                correctAnswer={current.correctAnswer}
+                correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
               />

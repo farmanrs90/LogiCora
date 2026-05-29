@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -7,6 +7,7 @@ import {
   ResponsiveContainer, Tooltip,
 } from 'recharts'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import api from '../../lib/axios'
 import { useAuth } from '../../context/AuthContext'
 
@@ -19,6 +20,7 @@ interface TeacherStats {
   revenueThisMonth: number
   revenueTrend: { month: string; amount: number }[]
   impactScore: number
+  rating: number
   activeGroups: number
   activeStudentsInGroups: number
   lessonsThisWeek: number
@@ -51,53 +53,6 @@ interface CoursePerf {
   completionPct: number
   weeklyData: { week: string; count: number }[]
 }
-
-// ── Mocks ─────────────────────────────────────────────────────────────────────
-
-const MOCK_STATS: TeacherStats = {
-  totalStudents: 248, newStudentsThisMonth: 34,
-  studentTrend: [
-    { month: 'Okt', count: 140 }, { month: 'Noy', count: 165 },
-    { month: 'Dek', count: 180 }, { month: 'Yan', count: 198 },
-    { month: 'Fev', count: 214 }, { month: 'Mar', count: 248 },
-  ],
-  revenueThisMonth: 840,
-  revenueTrend: [
-    { month: 'Okt', amount: 520 }, { month: 'Noy', amount: 610 },
-    { month: 'Dek', amount: 740 }, { month: 'Yan', amount: 680 },
-    { month: 'Fev', amount: 790 }, { month: 'Mar', amount: 840 },
-  ],
-  impactScore: 94, activeGroups: 5, activeStudentsInGroups: 87, lessonsThisWeek: 8,
-}
-
-const MOCK_SCHEDULE: ScheduleLesson[] = [
-  { id: 'l1', title: 'Python Əsasları', groupName: '9A Qrupu', groupColor: '#6366F1', startTime: '10:00', endTime: '11:30', classroomId: 'cls1' },
-  { id: 'l2', title: 'Django REST API', groupName: '11B Qrupu', groupColor: '#8B5CF6', startTime: '14:00', endTime: '15:30', classroomId: 'cls2' },
-  { id: 'l3', title: 'Data Science', groupName: 'Onlayn Qrup', groupColor: '#06B6D4', startTime: '18:00', endTime: '19:30' },
-]
-
-const MOCK_STUDENTS: RecentStudent[] = [
-  { id: 's1', name: 'Anar Hüseynov', lastSeen: '10 dəq əvvəl', xpChange: 120, isWeak: false },
-  { id: 's2', name: 'Leyla Quliyeva', lastSeen: '45 dəq əvvəl', xpChange: 80, isWeak: false },
-  { id: 's3', name: 'Tural Rəsulzadə', lastSeen: '3 saat əvvəl', xpChange: 40, isWeak: false },
-  { id: 's4', name: 'Nigar Əliyeva', lastSeen: '2 gün əvvəl', xpChange: 0, isWeak: true },
-  { id: 's5', name: 'Orxan Məmmədov', lastSeen: '5 gün əvvəl', xpChange: 0, isWeak: true },
-]
-
-const MOCK_COURSES: CoursePerf[] = [
-  {
-    id: 'c1', title: 'Python ilə Proqramlaşdırma',
-    thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=200',
-    enrollCount: 2840, completionPct: 62,
-    weeklyData: [{ week: 'H1', count: 40 }, { week: 'H2', count: 55 }, { week: 'H3', count: 38 }, { week: 'H4', count: 62 }],
-  },
-  {
-    id: 'c2', title: 'Django REST API',
-    thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200',
-    enrollCount: 1640, completionPct: 48,
-    weeklyData: [{ week: 'H1', count: 28 }, { week: 'H2', count: 32 }, { week: 'H3', count: 25 }, { week: 'H4', count: 41 }],
-  },
-]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -147,7 +102,7 @@ function StatCard({
           <span className="text-xs text-white/40">{sub}</span>
         </div>
       </div>
-      {sparkData && sparkKey && sparkColor && (
+      {sparkData && sparkData.length > 0 && sparkKey && sparkColor && (
         <Sparkline data={sparkData} dataKey={sparkKey} color={sparkColor} />
       )}
     </motion.div>
@@ -164,7 +119,6 @@ function ImpactGauge({ score }: { score: number }) {
     >
       <div className="flex items-start justify-between">
         <p className="text-xs text-white/50 font-medium">Impact Score</p>
-        <span className="text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">Top 10%</span>
       </div>
       <div className="flex items-center gap-4">
         <div className="w-24 h-24 shrink-0">
@@ -272,7 +226,7 @@ function RecentStudents({ students }: { students: RecentStudent[] }) {
         ))}
         {displayed.length === 0 && (
           <p className="text-center py-6 text-white/40 text-sm">
-            {tab === 'weak' ? '🎉 Bütün tələbələr aktivdir!' : 'Aktiv tələbə yoxdur'}
+            {tab === 'weak' ? '🎉 Bütün tələbələr aktivdir!' : 'Hələ tələbə yoxdur'}
           </p>
         )}
       </div>
@@ -287,33 +241,43 @@ function CoursePerformanceCard({ course }: { course: CoursePerf }) {
     <div className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors">
       <div className="flex gap-4 p-4">
         <div className="w-20 h-14 rounded-xl overflow-hidden bg-black shrink-0">
-          <img src={course.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+          {course.thumbnail
+            ? <img src={course.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+            : <div className="w-full h-full flex items-center justify-center text-2xl">📚</div>}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">{course.title}</p>
           <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
             <span>👥 {course.enrollCount.toLocaleString()}</span>
-            <span>·</span>
-            <span>✅ {course.completionPct}%</span>
+            {course.completionPct > 0 && (
+              <>
+                <span>·</span>
+                <span>✅ {course.completionPct}%</span>
+              </>
+            )}
           </div>
-          <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-emerald-500 rounded-full"
-              initial={{ width: 0 }} animate={{ width: `${course.completionPct}%` }} transition={{ duration: 0.8 }} />
-          </div>
+          {course.completionPct > 0 && (
+            <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-emerald-500 rounded-full"
+                initial={{ width: 0 }} animate={{ width: `${course.completionPct}%` }} transition={{ duration: 0.8 }} />
+            </div>
+          )}
         </div>
       </div>
-      <div className="px-4 pb-2">
-        <p className="text-xs text-white/30 mb-1">Həftəlik qeydiyyat</p>
-        <div className="h-10">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={course.weeklyData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
-              <Line type="monotone" dataKey="count" stroke="#6366F1" strokeWidth={2} dot={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '11px' }} />
-            </LineChart>
-          </ResponsiveContainer>
+      {course.weeklyData.length > 0 && (
+        <div className="px-4 pb-2">
+          <p className="text-xs text-white/30 mb-1">Həftəlik qeydiyyat</p>
+          <div className="h-10">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={course.weeklyData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+                <Line type="monotone" dataKey="count" stroke="#6366F1" strokeWidth={2} dot={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '11px' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
-      <div className="px-4 pb-4">
+      )}
+      <div className="px-4 pb-4 pt-2">
         <Link to={`/courses/${course.id}`}
           className="block w-full py-1.5 text-center text-xs border border-white/10 hover:border-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
         >
@@ -330,25 +294,31 @@ export default function TeacherDashboard() {
   const { user } = useAuth()
   const isVerified = (user as { isVerified?: boolean } | null)?.isVerified ?? true
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery({
     queryKey: ['teacher-stats'],
-    queryFn: () => api.get<TeacherStats>('/teachers/me/stats').then(r => r.data).catch(() => MOCK_STATS),
+    queryFn: () => api.get('/teachers/me/stats').then(r => r.data.data as TeacherStats),
   })
 
   const { data: schedule } = useQuery({
     queryKey: ['teacher-schedule-today'],
-    queryFn: () => api.get<ScheduleLesson[]>('/teachers/me/schedule/today').then(r => r.data).catch(() => MOCK_SCHEDULE),
+    queryFn: () => api.get('/teachers/me/schedule/today').then(r => r.data.data as ScheduleLesson[]),
   })
 
   const { data: recentStudents } = useQuery({
     queryKey: ['teacher-recent-students'],
-    queryFn: () => api.get<RecentStudent[]>('/teachers/me/students?recent=true').then(r => r.data).catch(() => MOCK_STUDENTS),
+    queryFn: () => api.get('/teachers/me/students').then(r => r.data.data as RecentStudent[]),
   })
 
   const { data: courses } = useQuery({
     queryKey: ['teacher-courses-perf'],
-    queryFn: () => api.get<CoursePerf[]>('/teachers/me/courses/performance').then(r => r.data).catch(() => MOCK_COURSES),
+    queryFn: () => api.get('/teachers/me/courses/performance').then(r => r.data.data as CoursePerf[]),
   })
+
+  useEffect(() => {
+    if (statsError) toast.error('Statistika yüklənmədi')
+  }, [statsError])
+
+  const courseList = courses ?? []
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
@@ -379,36 +349,27 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        {/* Unverified warning */}
-        {!isVerified && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-3 p-4 bg-amber-400/10 border border-amber-400/30 rounded-xl"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" className="mt-0.5 shrink-0">
-              <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            </svg>
-            <div>
-              <p className="text-sm font-semibold text-amber-300">Hesabınız hələ təsdiqlənməyib</p>
-              <p className="text-xs text-amber-300/70 mt-0.5">Kurs dərc etmək üçün admin təsdiqini gözləyin. Adətən 1-2 iş günü çəkir.</p>
-            </div>
-          </motion.div>
-        )}
-
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {statsLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-5 h-44 animate-pulse" />
             ))
+          ) : statsError ? (
+            <div className="col-span-full text-center py-8 text-white/40 text-sm">
+              Statistika yüklənmədi. Yenidən cəhd edin.
+            </div>
           ) : stats ? (
             <>
               <StatCard title="Ümumi Tələbələr" main={stats.totalStudents.toLocaleString()} sub="ümumi"
-                trend={`+${stats.newStudentsThisMonth} bu ay`} sparkData={stats.studentTrend} sparkKey="count" sparkColor="#6366F1" />
+                trend={stats.newStudentsThisMonth > 0 ? `+${stats.newStudentsThisMonth} bu ay` : undefined}
+                sparkData={stats.studentTrend} sparkKey="count" sparkColor="#6366F1" />
               <StatCard title="Bu Ay Gəlir" main={`${stats.revenueThisMonth} ₼`} sub="gəlir" badge="Tezliklə"
                 sparkData={stats.revenueTrend} sparkKey="amount" sparkColor="#F59E0B" />
               <ImpactGauge score={stats.impactScore} />
               <StatCard title="Aktiv Qruplar" main={stats.activeGroups.toString()}
-                sub={`${stats.activeStudentsInGroups} tələbə`} trend={`${stats.lessonsThisWeek} dərs bu həftə`} />
+                sub={`${stats.activeStudentsInGroups} tələbə`}
+                trend={stats.lessonsThisWeek > 0 ? `${stats.lessonsThisWeek} dərs bu həftə` : undefined} />
             </>
           ) : null}
         </div>
@@ -436,9 +397,15 @@ export default function TeacherDashboard() {
                   + Yeni Kurs
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(courses ?? MOCK_COURSES).map(c => <CoursePerformanceCard key={c.id} course={c} />)}
-              </div>
+              {courseList.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {courseList.map(c => <CoursePerformanceCard key={c.id} course={c} />)}
+                </div>
+              ) : (
+                <div className="bg-[#141414] border border-white/10 rounded-2xl py-10 text-center text-white/40 text-sm">
+                  Hələ kursunuz yoxdur. <Link to="/courses/create" className="text-indigo-400 hover:text-indigo-300">İlk kursunuzu yaradın →</Link>
+                </div>
+              )}
             </div>
           </div>
 
@@ -449,7 +416,7 @@ export default function TeacherDashboard() {
                 <h2 className="font-bold">👥 Son Aktivlik</h2>
                 <Link to="/groups" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Hamısı →</Link>
               </div>
-              <RecentStudents students={recentStudents ?? MOCK_STUDENTS} />
+              <RecentStudents students={recentStudents ?? []} />
             </div>
 
             {/* Quick links */}

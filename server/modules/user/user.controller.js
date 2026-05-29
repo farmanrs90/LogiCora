@@ -4,7 +4,7 @@ const getProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const data = await userService.getUserProfile(userId);
-    return res.status(200).json(data);
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     return next(error);
   }

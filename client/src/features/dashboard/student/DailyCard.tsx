@@ -30,7 +30,7 @@ export default function DailyCard() {
   const navigate    = useNavigate()
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
 
-  const { data, isLoading, isError } = useQuery<DailyStatus>({
+  const { data, isLoading } = useQuery<DailyStatus>({
     queryKey:  ['daily', 'status'],
     queryFn:   () => api.get<{ data: DailyStatus }>(API_ROUTES.DAILY.STATUS).then(r => r.data.data),
     staleTime: 1000 * 60,
@@ -38,12 +38,14 @@ export default function DailyCard() {
 
   if (isLoading) return <SkeletonCard />
 
-  // Fallback mock when API not ready
-  const status: DailyStatus = isError || !data
-    ? { completed: false, answeredCount: 3, totalCount: 5, streak: 7, xpEarned: 0 }
-    : data
+  // Data yoxdursa real boş hal (saxta data YOX)
+  const status: DailyStatus = data ?? {
+    completed: false, answeredCount: 0, totalCount: 5, streak: 0, xpEarned: 0,
+  }
 
-  const pct = Math.round((status.answeredCount / status.totalCount) * 100)
+  const pct = status.totalCount > 0
+    ? Math.round((status.answeredCount / status.totalCount) * 100)
+    : 0
 
   return (
     <motion.div
@@ -115,7 +117,7 @@ export default function DailyCard() {
             boxShadow:   `0 4px 16px ${avatarColor}40`,
           }}
         >
-          Davam et →
+          {status.answeredCount > 0 ? 'Davam et →' : 'Başla →'}
         </motion.button>
       )}
     </motion.div>

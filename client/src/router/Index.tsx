@@ -8,47 +8,47 @@ import type { Role } from '../types'
 import Spinner from '../components/Spinner'
 
 // Auth + public
-import Login          from '../pages/auth/Login'
-import Register       from '../pages/auth/Register'
-import Landing        from '../pages/Landing'
-import NotFound       from '../pages/NotFound'
-import Onboarding     from '../pages/Onboarding'
+import Login from '../pages/auth/Login'
+import Register from '../pages/auth/Register'
+import Landing from '../pages/Landing'
+import NotFound from '../pages/NotFound'
+import Onboarding from '../pages/Onboarding'
 
 // Dashboard pages
 import StudentDashboard from '../pages/dashboard/Student'
 import TeacherDashboard from '../pages/dashboard/Teacher'
-import ParentDashboard  from '../pages/dashboard/Parent'
+import ParentDashboard from '../pages/dashboard/Parent'
 
 // Feature pages (all get PageWrapper)
-import DailyQuiz       from '../pages/quiz/DailyQuiz'
-import CompetitionRoom   from '../pages/competition/CompetitionRoom'
-import CompetitionLobby  from '../pages/competition/CompetitionLobby'
+import DailyQuiz from '../pages/quiz/DailyQuiz'
+import CompetitionRoom from '../pages/competition/CompetitionRoom'
+import CompetitionLobby from '../pages/competition/CompetitionLobby'
 import CompetitionResult from '../pages/competition/CompetitionResult'
-import WeeklyMystery    from '../pages/WeeklyMystery'
-import ClanPage         from '../pages/clan/ClanPage'
-import ClanBattle       from '../pages/clan/ClanBattle'
-import ClanLeaderboard  from '../pages/clan/ClanLeaderboard'
-import ClassroomRoom    from '../pages/classroom/ClassroomRoom'
-import AttendanceQR     from '../pages/classroom/AttendanceQR'
-import Courses          from '../pages/courses/CourseList'
-import CourseDetail     from '../pages/courses/CourseDetail'
+import WeeklyMystery from '../pages/WeeklyMystery'
+import ClanPage from '../pages/clan/ClanPage'
+import ClanBattle from '../pages/clan/ClanBattle'
+import ClanLeaderboard from '../pages/clan/ClanLeaderboard'
+import ClassroomRoom from '../pages/classroom/ClassroomRoom'
+import AttendanceQR from '../pages/classroom/AttendanceQR'
+import Courses from '../pages/courses/CourseList'
+import CourseDetail from '../pages/courses/CourseDetail'
 import TeacherStorefront from '../pages/courses/TeacherStorefront'
-import MyPortfolio      from '../pages/portfolio/MyPortfolio'
-import PublicPortfolio  from '../pages/portfolio/PublicPortfolio'
-import GroupManagement    from '../pages/teacher/GroupManagement'
-import TeacherAnalytics  from '../pages/teacher/TeacherAnalytics'
-import ChildProgress     from '../pages/parent/ChildProgress'
-import Chat            from '../pages/chat/Index'
-import Settings        from '../pages/settings/Index'
-import Admin           from '../pages/admin/Index'
+import MyPortfolio from '../pages/portfolio/MyPortfolio'
+import PublicPortfolio from '../pages/portfolio/PublicPortfolio'
+import GroupManagement from '../pages/teacher/GroupManagement'
+import TeacherAnalytics from '../pages/teacher/TeacherAnalytics'
+import ChildProgress from '../pages/parent/ChildProgress'
+import Chat from '../pages/chat/Index'
+import Settings from '../pages/settings/Index'
+import Admin from '../pages/admin/Index'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 const roleDashboard: Record<Role, string> = {
   student: APP_ROUTES.DASHBOARD.STUDENT,
   teacher: APP_ROUTES.DASHBOARD.TEACHER,
-  parent:  APP_ROUTES.DASHBOARD.PARENT,
-  admin:   APP_ROUTES.ADMIN,
+  parent: APP_ROUTES.DASHBOARD.PARENT,
+  admin: APP_ROUTES.ADMIN,
   manager: APP_ROUTES.DASHBOARD.ROOT,
 }
 
@@ -88,13 +88,13 @@ export default function AppRouter() {
       <Routes>
 
         {/* ── İctimai — guest ──────────────────────────────────── */}
-        <Route path={APP_ROUTES.HOME}     element={<GuestRoute><Landing /></GuestRoute>} />
-        <Route path={APP_ROUTES.LOGIN}    element={<GuestRoute><Login /></GuestRoute>} />
+        <Route path={APP_ROUTES.HOME} element={<GuestRoute><Landing /></GuestRoute>} />
+        <Route path={APP_ROUTES.LOGIN} element={<GuestRoute><Login /></GuestRoute>} />
         <Route path={APP_ROUTES.REGISTER} element={<GuestRoute><Register /></GuestRoute>} />
 
         {/* Public — auth tələb olunmur */}
         <Route path={APP_ROUTES.PORTFOLIO(':link')} element={<PublicPortfolio />} />
-        <Route path={APP_ROUTES.TEACHER(':slug')}   element={<TeacherStorefront />} />
+        <Route path={APP_ROUTES.TEACHER(':slug')} element={<TeacherStorefront />} />
 
         {/* Portfolio — öz portfolio */}
         <Route path="/portfolio/me" element={<PW><MyPortfolio /></PW>} />
@@ -138,23 +138,23 @@ export default function AppRouter() {
         />
 
         {/* ── Feature routes — hamısı PageWrapper ilə ──────────── */}
-        <Route path={APP_ROUTES.DAILY}          element={<PW><DailyQuiz /></PW>} />
-        <Route path="/competition/:id"           element={<PW><CompetitionRoom /></PW>} />
-        <Route path="/competition/:id/lobby"     element={<PW><CompetitionLobby /></PW>} />
-        <Route path="/competition/:id/result"    element={<PW><CompetitionResult /></PW>} />
-        <Route path={APP_ROUTES.WEEKLY_MYSTERY}           element={<PW><WeeklyMystery /></PW>} />
-        <Route path="/clan/:slug"                          element={<PW><ClanPage /></PW>} />
-        <Route path="/clan/:slug/battle/:battleId"         element={<PW><ClanBattle /></PW>} />
-        <Route path="/leaderboard/clans"                   element={<PW><ClanLeaderboard /></PW>} />
-        <Route path={APP_ROUTES.COURSES}         element={<PW><Courses /></PW>} />
-        <Route path="/courses/:id"               element={<PW><CourseDetail /></PW>} />
-        <Route path="/classroom/:id"              element={<PW><ClassroomRoom /></PW>} />
-        <Route path="/classroom/:id/qr"          element={<ProtectedRoute><AttendanceQR /></ProtectedRoute>} />
-        <Route path="/child/:childId/progress"  element={<PW><ChildProgress /></PW>} />
-        <Route path="/groups"                    element={<PW><GroupManagement /></PW>} />
-        <Route path="/analytics"                 element={<PW><TeacherAnalytics /></PW>} />
-        <Route path={APP_ROUTES.CHAT}            element={<PW><Chat /></PW>} />
-        <Route path={APP_ROUTES.SETTINGS}        element={<PW><Settings /></PW>} />
+        <Route path={APP_ROUTES.DAILY} element={<ProtectedRoute><DailyQuiz /></ProtectedRoute>} />
+        <Route path="/competition/:id" element={<PW><CompetitionRoom /></PW>} />
+        <Route path="/competition/:id/lobby" element={<PW><CompetitionLobby /></PW>} />
+        <Route path="/competition/:id/result" element={<PW><CompetitionResult /></PW>} />
+        <Route path={APP_ROUTES.WEEKLY_MYSTERY} element={<PW><WeeklyMystery /></PW>} />
+        <Route path="/clan/:slug" element={<PW><ClanPage /></PW>} />
+        <Route path="/clan/:slug/battle/:battleId" element={<PW><ClanBattle /></PW>} />
+        <Route path="/leaderboard/clans" element={<PW><ClanLeaderboard /></PW>} />
+        <Route path={APP_ROUTES.COURSES} element={<PW><Courses /></PW>} />
+        <Route path="/courses/:id" element={<PW><CourseDetail /></PW>} />
+        <Route path="/classroom/:id" element={<PW><ClassroomRoom /></PW>} />
+        <Route path="/classroom/:id/qr" element={<ProtectedRoute><AttendanceQR /></ProtectedRoute>} />
+        <Route path="/child/:childId/progress" element={<PW><ChildProgress /></PW>} />
+        <Route path="/groups" element={<PW><GroupManagement /></PW>} />
+        <Route path="/analytics" element={<PW><TeacherAnalytics /></PW>} />
+        <Route path={APP_ROUTES.CHAT} element={<PW><Chat /></PW>} />
+        <Route path={APP_ROUTES.SETTINGS} element={<PW><Settings /></PW>} />
 
         {/* ── Admin ─────────────────────────────────────────────── */}
         <Route

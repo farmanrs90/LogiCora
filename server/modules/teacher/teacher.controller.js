@@ -33,7 +33,7 @@ const updateTeacher = async (req, res, next) => {
 const deleteTeacher = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const data = await teacherService.deleteTeacherProfile(userId);
+    await teacherService.deleteTeacherProfile(userId);
     return res.status(200).json({ message: 'Teacher profile deleted successfully' });
   } catch (error) {
     return next(error);
@@ -75,6 +75,43 @@ const removeGroup = async (req, res, next) => {
   }
 };
 
+// ── Dashboard endpointləri (standart { success, data } formatı) ──
+const getMyStats = async (req, res, next) => {
+  try {
+    const data = await teacherService.getMyStats(req.user.id);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getTodaySchedule = async (req, res, next) => {
+  try {
+    const data = await teacherService.getTodaySchedule(req.user.id);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getMyStudents = async (req, res, next) => {
+  try {
+    const data = await teacherService.getMyStudents(req.user.id);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getMyCoursesPerformance = async (req, res, next) => {
+  try {
+    const data = await teacherService.getMyCoursesPerformance(req.user.id);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createTeacher,
   getTeacher,
@@ -83,4 +120,8 @@ module.exports = {
   getAllTeachers,
   addGroup,
   removeGroup,
+  getMyStats,
+  getTodaySchedule,
+  getMyStudents,
+  getMyCoursesPerformance,
 };
