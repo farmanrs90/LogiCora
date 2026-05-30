@@ -13,6 +13,7 @@ const sendMessageSchema = Joi.object({
 router.use(authenticate);
 
 router.get('/', chatController.getMyConversations);
+router.get('/search', chatController.searchUsers);
 
 router.post(
   '/user/:targetUserId',

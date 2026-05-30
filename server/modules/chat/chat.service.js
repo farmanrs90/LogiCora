@@ -126,6 +126,41 @@ const getMyConversations = async (userId) => {
 
   return conversations;
 };
+// Cari rola görə mesajlaşmağa icazəli rolları çıxar (ALLOWED_PAIRS-dən)
+const allowedTargetRoles = (role) => {
+  const set = new Set();
+  ALLOWED_PAIRS.forEach(([a, b]) => {
+    if (a === role) set.add(b);
+    if (b === role) set.add(a);
+  });
+  return [...set];
+};
+
+// Mesajlaşa biləcəyim istifadəçiləri axtar (ad / soyad / email)
+const searchUsers = async (userId, query) => {
+  const me = await User.findById(userId).select('role');
+  if (!me) {
+    const error = new Error('İstifadəçi tapılmadı.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const allowedRoles = allowedTargetRoles(me.role);
+  if (allowedRoles.length === 0) return [];
+
+  const filter = {
+    _id:  { $ne: userId },          // özümü siyahıdan çıxar
+    role: { $in: allowedRoles },    // yalnız icazəli rollar
+  };
+
+  const q = (query || '').trim();
+  if (q) {
+    const rx = new RegExp(q, 'i');  // 'i' = böyük/kiçik hərf fərqi yox
+    filter.$or = [{ name: rx }, { surname: rx }, { email: rx }];
+  }
+
+  return User.find(filter).select('name surname role').limit(20);
+};
 
 module.exports = {
   getOrCreateConversation,
@@ -133,4 +168,5 @@ module.exports = {
   getMessages,
   markAsRead,
   getMyConversations,
+  searchUsers,
 };

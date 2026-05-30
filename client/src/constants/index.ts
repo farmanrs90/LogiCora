@@ -101,6 +101,7 @@ export const API_ROUTES = {
   // Chat
   CHAT: {
     LIST: '/chat',
+    SEARCH: '/chat/search',
     START: (userId: string) => `/chat/user/${userId}`,
     MESSAGES: (id: string) => `/chat/${id}`,
     SEND: (id: string) => `/chat/${id}/messages`,

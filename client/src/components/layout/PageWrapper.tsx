@@ -128,7 +128,7 @@ export default function PageWrapper({ children }: PageWrapperProps) {
 
       {/* Main content area */}
       <main
-        className="lg:pl-60 pt-16 pb-16 lg:pb-0 min-h-screen"
+        className="lg:pl-[15rem] pt-16 pb-16 lg:pb-0 min-h-screen"
         id="main-content"
       >
         <motion.div

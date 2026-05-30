@@ -268,3 +268,32 @@ export interface ApiError {
   message: string
   status: number
 }
+
+// Chat
+export interface ChatParticipant {
+  _id:     string
+  name:    string
+  surname: string
+  role:    Role
+}
+
+export interface ChatMessage {
+  _id:     string
+  senderId: string        // ObjectId — current user._id ilə müqayisə olunur
+  content: string
+  sentAt:  string
+  readAt:  string | null
+}
+
+export interface Conversation {
+  _id:           string
+  participants:  ChatParticipant[]
+  lastMessage:   string | null
+  lastMessageAt: string | null
+}
+
+// GET /chat/:id — mesajlar daxil tam söhbət
+export interface ConversationDetail extends Conversation {
+  messages: ChatMessage[]
+}
+

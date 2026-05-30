@@ -14,7 +14,7 @@ export function useSocket(roomId: string | null) {
   useEffect(() => {
     if (!roomId) return
 
-    const token  = localStorage.getItem('accesstoken')
+    const token  = localStorage.getItem('accessToken')
     const socket = io(SOCKET_URL, {
       auth:                 { token },
       transports:           ['websocket', 'polling'],

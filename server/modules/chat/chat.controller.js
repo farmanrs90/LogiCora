@@ -37,6 +37,11 @@ const getMyConversations = async (req, res) => {
   const conversations = await chatService.getMyConversations(req.user._id);
   res.status(200).json({ success: true, data: conversations, message: 'Söhbətlər alındı.' });
 };
+const searchUsers = async (req, res) => {
+  const users = await chatService.searchUsers(req.user._id, req.query.q);
+  res.status(200).json({ success: true, data: users, message: 'İstifadəçilər tapıldı.' });
+};
+
 
 module.exports = {
   getOrCreateConversation,
@@ -44,4 +49,5 @@ module.exports = {
   getMessages,
   markAsRead,
   getMyConversations,
+  searchUsers,
 };
