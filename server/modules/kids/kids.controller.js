@@ -3,15 +3,15 @@ const KidsProgress = require('./progress.model');
 
 const CATEGORIES = [
   { key: 'vegetables', emoji: '🥕', az: 'Tərəvəzlər' },
-  { key: 'fruits',     emoji: '🍎', az: 'Meyvələr' },
-  { key: 'family',     emoji: '👨‍👩‍👧', az: 'Ailə üzvləri' },
-  { key: 'animals',    emoji: '🐱', az: 'Heyvanlar' },
-  { key: 'colors',     emoji: '🎨', az: 'Rənglər' },
-  { key: 'numbers',    emoji: '🔢', az: 'Rəqəmlər' },
-  { key: 'letters',    emoji: '📝', az: 'Hərflər' },
-  { key: 'emotions',   emoji: '😊', az: 'Emosiyalar' },
-  { key: 'habits',     emoji: '🧼', az: 'Gündəlik vərdişlər' },
-  { key: 'safety',     emoji: '⚠️', az: 'Təhlükəsizlik' },
+  { key: 'fruits', emoji: '🍎', az: 'Meyvələr' },
+  { key: 'family', emoji: '👨‍👩‍👧', az: 'Ailə üzvləri' },
+  { key: 'animals', emoji: '🐱', az: 'Heyvanlar' },
+  { key: 'colors', emoji: '🎨', az: 'Rənglər' },
+  { key: 'numbers', emoji: '🔢', az: 'Rəqəmlər' },
+  { key: 'letters', emoji: '📝', az: 'Hərflər' },
+  { key: 'emotions', emoji: '😊', az: 'Emosiyalar' },
+  { key: 'habits', emoji: '🧼', az: 'Gündəlik vərdişlər' },
+  { key: 'safety', emoji: '⚠️', az: 'Təhlükəsizlik' },
 ];
 
 const getCategories = (req, res) => {
@@ -44,24 +44,26 @@ const incrementView = async (req, res, next) => {
     res.json({ success: true, data: { views: video.views } });
   } catch (err) { next(err); }
 };
-
 const completeVideo = async (req, res, next) => {
   try {
     const video = await KidsVideo.findById(req.params.id);
     if (!video) return res.status(404).json({ success: false, message: 'Video tapılmadı.' });
-    const xpForCompletion = 10;
+
+    // Artıq bitirilibsə XP təkrar VERİLMİR
+    const existing = await KidsProgress.findOne({ userId: req.user._id, videoId: video._id });
+    const xpForCompletion = existing?.watched ? 0 : 10;
+
     const progress = await KidsProgress.findOneAndUpdate(
       { userId: req.user._id, videoId: video._id },
       {
-        $set:  { watched: true, completedAt: new Date() },
-        $inc:  { xpEarned: xpForCompletion },
+        $set: { watched: true, completedAt: new Date() },
+        $inc: { xpEarned: xpForCompletion },
       },
       { upsert: true, new: true }
     );
     res.json({ success: true, data: { xpEarned: xpForCompletion, progress } });
   } catch (err) { next(err); }
 };
-
 const answerQuestion = async (req, res, next) => {
   try {
     const { questionIndex, answer } = req.body;
@@ -74,13 +76,23 @@ const answerQuestion = async (req, res, next) => {
     if (!q) return res.status(400).json({ success: false, message: 'Sual tapılmadı.' });
 
     const correct = q.correct === answer;
-    const xp = correct ? 5 : 0;
+    let xp = 0;
+
     if (correct) {
-      await KidsProgress.findOneAndUpdate(
-        { userId: req.user._id, videoId: video._id },
-        { $inc: { questionsCorrect: 1, xpEarned: xp } },
-        { upsert: true }
-      );
+      const progress = await KidsProgress.findOne({ userId: req.user._id, videoId: video._id });
+      const alreadyCorrect = progress?.correctQuestions?.includes(questionIndex);
+      // Yalnız bu sual ƏVVƏL doğru cavablanmayıbsa XP ver
+      if (!alreadyCorrect) {
+        xp = 5;
+        await KidsProgress.findOneAndUpdate(
+          { userId: req.user._id, videoId: video._id },
+          {
+            $inc: { questionsCorrect: 1, xpEarned: xp },
+            $addToSet: { correctQuestions: questionIndex }, // dublikat yazmır
+          },
+          { upsert: true }
+        );
+      }
     }
     res.json({ success: true, data: { correct, xpEarned: xp, correctAnswer: q.correct } });
   } catch (err) { next(err); }

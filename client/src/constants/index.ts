@@ -177,6 +177,17 @@ export const API_ROUTES = {
     STUDENTS:  '/teachers/me/students',
     ANALYTICS: '/teachers/me/analytics',
   },
+    // Kids Hub
+  KIDS: {
+    CATEGORIES:  '/kids/videos/categories',
+    VIDEOS:      '/kids/videos',
+    BY_ID:       (id: string) => `/kids/videos/${id}`,
+    VIEW:        (id: string) => `/kids/videos/${id}/view`,
+    COMPLETE:    (id: string) => `/kids/videos/${id}/complete`,
+    ANSWER:      (id: string) => `/kids/videos/${id}/answer`,
+    MY_PROGRESS: '/kids/progress/me',
+  },
+
 } as const
 
 export const APP_ROUTES = {
@@ -212,6 +223,9 @@ export const APP_ROUTES = {
   CLASSROOM:    (id: string) => `/classroom/${id}`,
   CLASSROOM_QR: (id: string) => `/classroom/${id}/qr`,
   ADMIN: '/admin',
+    KIDS_HUB:   '/kids',
+  KIDS_VIDEO: (id: string) => `/kids/${id}`,
+
   NOT_FOUND: '*',
 } as const
 

@@ -3,6 +3,7 @@ import { APP_ROUTES } from '../constants'
 import { useAuth } from '../context/AuthContext'
 import ProtectedRoute from '../components/ProtectedRoute'
 import RoleRoute from '../components/RoleRoute'
+import KidsRoute from '../components/KidsRoute'
 import PageWrapper from '../components/layout/PageWrapper'
 import type { Role } from '../types'
 import Spinner from '../components/Spinner'
@@ -40,6 +41,8 @@ import TeacherAnalytics from '../pages/teacher/TeacherAnalytics'
 import ChildProgress from '../pages/parent/ChildProgress'
 import Chat from '../pages/chat/Index'
 import Settings from '../pages/settings/Index'
+import KidsHub from '../pages/kids/KidsHub'
+import VideoPlayer from '../pages/kids/VideoPlayer'
 import Admin from '../pages/admin/Index'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -155,6 +158,11 @@ export default function AppRouter() {
         <Route path="/analytics" element={<PW><TeacherAnalytics /></PW>} />
         <Route path={APP_ROUTES.CHAT} element={<PW><Chat /></PW>} />
         <Route path={APP_ROUTES.SETTINGS} element={<PW><Settings /></PW>} />
+        <Route path={APP_ROUTES.KIDS_HUB} element={<KidsRoute><PageWrapper><KidsHub /></PageWrapper></KidsRoute>} />
+        <Route path="/kids/:id" element={<KidsRoute><PageWrapper><VideoPlayer /></PageWrapper></KidsRoute>} />
+
+
+
 
         {/* ── Admin ─────────────────────────────────────────────── */}
         <Route

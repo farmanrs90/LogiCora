@@ -127,134 +127,134 @@ export interface Notification {
 export type QuestionFormat = 'A' | 'B' | 'C' | 'D' | 'E'
 
 export interface QuestionOption {
-  id:    string
-  text:  string
+  id: string
+  text: string
   emoji?: string
 }
 
 export interface QuestionHotspot {
-  id:        string
-  x:         number  // % of container width
-  y:         number  // % of container height
-  label:     string
+  id: string
+  x: number  // % of container width
+  y: number  // % of container height
+  label: string
   isCorrect: boolean
 }
 
 export interface Question {
-  _id:           string
-  text:          string
-  emoji?:        string
-  imageUrl?:     string
-  format:        QuestionFormat
-  options:       QuestionOption[]
+  _id: string
+  text: string
+  emoji?: string
+  imageUrl?: string
+  format: QuestionFormat
+  options: QuestionOption[]
   correctAnswer: string
-  subject:       string
-  ageGroups:     AgeGroup[]
-  xpReward:      number
-  timeLimit:     number
+  subject: string
+  ageGroups: AgeGroup[]
+  xpReward: number
+  timeLimit: number
   // Format D
   blankSentence?: string
-  wordChoices?:   string[]
+  wordChoices?: string[]
   // Format E
   hotspots?: QuestionHotspot[]
 }
 
 export interface AnswerResponse {
-  correct:       boolean
-  xpEarned:      number
-  newStreak:     number
-  heartsLeft:    number
+  correct: boolean
+  xpEarned: number
+  newStreak: number
+  heartsLeft: number
   correctAnswer: string
   badge?: { name: string; emoji: string }
 }
 
 // Competition
 export interface Participant {
-  userId:          string
-  name:            string
-  avatarColor:     string
-  score:           number
-  rank:            number
-  correctCount:    number
-  wrongCount:      number
+  userId: string
+  name: string
+  avatarColor: string
+  score: number
+  rank: number
+  correctCount: number
+  wrongCount: number
   avgResponseTime: number
-  hasAnswered?:    boolean
+  hasAnswered?: boolean
 }
 
 export interface CompetitionInfo {
-  _id:             string
-  title:           string
-  subject:         string
-  pin:             string
-  status:          'waiting' | 'active' | 'finished'
-  organizerId:     string
-  participants:    Participant[]
-  questionCount:   number
+  _id: string
+  title: string
+  subject: string
+  pin: string
+  status: 'waiting' | 'active' | 'finished'
+  organizerId: string
+  participants: Participant[]
+  questionCount: number
   isWeeklyMystery: boolean
-  startedAt?:      string
-  finishedAt?:     string
+  startedAt?: string
+  finishedAt?: string
 }
 
 export interface CompetitionResults {
   competitionId: string
-  title:         string
-  subject:       string
-  participants:  Participant[]
+  title: string
+  subject: string
+  participants: Participant[]
   myResult: {
-    rank:            number
-    score:           number
-    xpEarned:        number
-    correctCount:    number
-    wrongCount:      number
+    rank: number
+    score: number
+    xpEarned: number
+    correctCount: number
+    wrongCount: number
     avgResponseTime: number
-    badge?:          { name: string; emoji: string }
+    badge?: { name: string; emoji: string }
   }
   isClanBattle: boolean
   clanResults?: { clanName: string; score: number; isWinner: boolean }[]
 }
 
 export interface DailyStatusResponse {
-  completed:     boolean
+  completed: boolean
   answeredCount: number
-  totalCount:    number
-  streak:        number
-  xpEarned:      number
+  totalCount: number
+  streak: number
+  xpEarned: number
 }
 
 // Weekly Mystery
 export interface WeeklyMysteryQuestion {
-  _id:          string
-  text:         string
-  difficulty:   'hard' | 'legendary'
-  weekNumber:   number
-  revealedAt:   string
+  _id: string
+  text: string
+  difficulty: 'hard' | 'legendary'
+  weekNumber: number
+  revealedAt: string
   attemptCount: number
-  isSolved:     boolean
-  winner?:      WeeklyWinner
-  answer?:      string
+  isSolved: boolean
+  winner?: WeeklyWinner
+  answer?: string
 }
 
 export interface WeeklyWinner {
-  userId:          string
-  name:            string
-  city:            string
-  avatarColor:     string
+  userId: string
+  name: string
+  city: string
+  avatarColor: string
   solvedInMinutes: number
-  solvedAt:        string
-  weekNumber:      number
+  solvedAt: string
+  weekNumber: number
 }
 
 export interface WeeklyStats {
-  attemptCount:   number
-  solvedCount:    number
+  attemptCount: number
+  solvedCount: number
   fastestMinutes: number
   fastestSeconds: number
 }
 
 export interface MysteryCurrentResponse {
-  status:      'waiting' | 'active' | 'solved'
+  status: 'waiting' | 'active' | 'solved'
   nextRevealAt?: string
-  question?:   WeeklyMysteryQuestion
+  question?: WeeklyMysteryQuestion
 }
 
 // API
@@ -271,24 +271,24 @@ export interface ApiError {
 
 // Chat
 export interface ChatParticipant {
-  _id:     string
-  name:    string
+  _id: string
+  name: string
   surname: string
-  role:    Role
+  role: Role
 }
 
 export interface ChatMessage {
-  _id:     string
+  _id: string
   senderId: string        // ObjectId — current user._id ilə müqayisə olunur
   content: string
-  sentAt:  string
-  readAt:  string | null
+  sentAt: string
+  readAt: string | null
 }
 
 export interface Conversation {
-  _id:           string
-  participants:  ChatParticipant[]
-  lastMessage:   string | null
+  _id: string
+  participants: ChatParticipant[]
+  lastMessage: string | null
   lastMessageAt: string | null
 }
 
@@ -297,3 +297,59 @@ export interface ConversationDetail extends Conversation {
   messages: ChatMessage[]
 }
 
+
+// ── Kids Hub ────────────────────────────────────────────────────────────────
+
+// Backend bunu hardcoded qaytarır: GET /kids/videos/categories
+export interface KidsCategory {
+  key: string   // 'vegetables', 'fruits' ... — filtrdə istifadə olunur
+  emoji: string
+  az: string   // ekranda göstərilən ad
+}
+
+export interface KidsQuestion {
+  q: string
+  options: string[]
+  correct: number   // doğru variantın İNDEKSİ (label deyil!)
+}
+
+export interface KidsVideo {
+  _id: string
+  title: string
+  titleAz: string
+  videoUrl: string
+  thumbnail: string
+  duration: number          // saniyə
+  category: string
+  ageGroup: AgeGroup[]
+  presenter: 'logi' | 'cora' | 'both'
+  vocabulary: string[]
+  questions: KidsQuestion[]
+  views: number
+  likes: number
+}
+
+// GET /kids/progress/me — populate olunmuş videoId ilə gəlir
+export interface KidsProgressItem {
+  _id: string
+  videoId: {
+    _id: string
+    title: string
+    titleAz: string
+    thumbnail: string
+    category: string
+    duration: number
+  } | null                    // video silinibsə null ola bilər
+  watched: boolean
+  xpEarned: number
+  questionsCorrect: number
+  correctQuestions: number[]   // artıq doğru cavablanmış sual indeksləri
+  completedAt: string | null
+}
+
+// POST /kids/videos/:id/answer cavabı
+export interface KidsAnswerResult {
+  correct: boolean
+  xpEarned: number
+  correctAnswer: number   // doğru variantın indeksi
+}

@@ -11,6 +11,8 @@ const Gamification = require('./modules/gamification/gamification.model');
 const Question = require('./modules/question/question.model');
 const Course = require('./modules/course/course.model');
 const DailyQuestion = require('./modules/dailyQuestion/dailyQuestion.model');
+const KidsVideo = require('./modules/kids/kids.model');
+
 
 // --- Sual qurma köməkçisi ---
 const labels = ['A', 'B', 'C', 'D'];
@@ -102,6 +104,7 @@ const seed = async () => {
     Question.deleteMany({}),
     Course.deleteMany({}),
     DailyQuestion.deleteMany({}),
+    KidsVideo.deleteMany({}),
   ]);
 
   const adminPass = await hashPassword('Admin123!');
@@ -174,6 +177,71 @@ const seed = async () => {
 
   // --- Suallar (50) ---
   await Question.insertMany(buildQuestions(admin._id));
+    // --- Uşaq videoları (Kids Hub) ---
+  await KidsVideo.insertMany([
+    {
+      title: 'Vegetables for Kids', titleAz: 'Uşaqlar üçün tərəvəzlər',
+      videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      thumbnail: 'https://picsum.photos/seed/vegetables/400/225',
+      duration: 180, category: 'vegetables', ageGroup: ['3-5', '6-8'],
+      presenter: 'cora', vocabulary: ['Pomidor', 'Kartof', 'Kələm', 'Yerkökü'],
+      questions: [
+        { q: 'Hansı tərəvəz narıncı rəngdədir?', options: ['Kələm', 'Yerkökü', 'Pomidor'], correct: 1 },
+      ],
+    },
+    {
+      title: 'Learn Fruits', titleAz: 'Meyvələri öyrənək',
+      videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      thumbnail: 'https://picsum.photos/seed/fruits/400/225',
+      duration: 200, category: 'fruits', ageGroup: ['3-5', '6-8'],
+      presenter: 'logi', vocabulary: ['Alma', 'Banan', 'Üzüm', 'Portağal'],
+      questions: [
+        { q: 'Hansı meyvə sarıdır?', options: ['Alma', 'Banan', 'Üzüm'], correct: 1 },
+        { q: '"Alma" hansı rəngdə ola bilər?', options: ['Qırmızı', 'Mavi', 'Qara'], correct: 0 },
+      ],
+    },
+    {
+      title: 'Animal Sounds', titleAz: 'Heyvan səsləri',
+      videoUrl: 'https://media.w3.org/2010/05/bunny/movie.mp4',
+      thumbnail: 'https://picsum.photos/seed/animals/400/225',
+      duration: 150, category: 'animals', ageGroup: ['3-5'],
+      presenter: 'both', vocabulary: ['Pişik', 'İt', 'İnək', 'Quş'],
+      questions: [
+        { q: 'İt necə səs çıxarır?', options: ['Miyav', 'Hav-hav', 'Mö'], correct: 1 },
+      ],
+    },
+    {
+      title: 'Colors Song', titleAz: 'Rənglər mahnısı',
+      videoUrl: 'https://media.w3.org/2010/05/video/movie_300.mp4',
+      thumbnail: 'https://picsum.photos/seed/colors/400/225',
+      duration: 165, category: 'colors', ageGroup: ['3-5', '6-8'],
+      presenter: 'cora', vocabulary: ['Qırmızı', 'Mavi', 'Yaşıl', 'Sarı'],
+      questions: [
+        { q: 'Göy üzü hansı rəngdədir?', options: ['Yaşıl', 'Mavi', 'Qırmızı'], correct: 1 },
+      ],
+    },
+    {
+      title: 'Count to 10', titleAz: '10-a qədər sayaq',
+      videoUrl: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4',
+      thumbnail: 'https://picsum.photos/seed/numbers/400/225',
+      duration: 190, category: 'numbers', ageGroup: ['6-8'],
+      presenter: 'logi', vocabulary: ['Bir', 'İki', 'Üç', 'Dörd', 'Beş'],
+      questions: [
+        { q: '2-dən sonra hansı rəqəm gəlir?', options: ['1', '3', '5'], correct: 1 },
+      ],
+    },
+    {
+      title: 'Wash Your Hands', titleAz: 'Əllərini yu',
+      videoUrl: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
+      thumbnail: 'https://picsum.photos/seed/habits/400/225',
+      duration: 120, category: 'habits', ageGroup: ['3-5', '6-8'],
+      presenter: 'both', vocabulary: ['Sabun', 'Su', 'Təmizlik'],
+      questions: [
+        { q: 'Yeməkdən əvvəl nə etməliyik?', options: ['Yatmaq', 'Əlləri yumaq', 'Qaçmaq'], correct: 1 },
+      ],
+    },
+  ]);
+
 
   console.log('\n✅ Seed tamamlandı!');
   console.log('   Admin:    admin@logicora.az / Admin123!');

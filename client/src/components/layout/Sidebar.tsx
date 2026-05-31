@@ -14,46 +14,47 @@ import type { GamificationProfile, Role } from '../../types'
 // ── Nav item data ─────────────────────────────────────────────────────────
 
 interface NavItem {
-  icon:  string
+  icon: string
   label: string
-  path:  string
+  path: string
 }
 
 const studentNav: NavItem[] = [
-  { icon: '🏠', label: 'Ana səhifə',     path: APP_ROUTES.DASHBOARD.STUDENT },
-  { icon: '📅', label: 'Günlük Quiz',    path: APP_ROUTES.DAILY },
-  { icon: '⚔️', label: 'Yarışlar',       path: '/competition' },
-  { icon: '🛡️', label: 'Klanım',         path: '/clan/me' },
-  { icon: '🎓', label: 'Kurslar',        path: APP_ROUTES.COURSES },
-  { icon: '📊', label: 'Portfoliom',     path: '/portfolio/me' },
-  { icon: '💬', label: 'Mesajlar',       path: APP_ROUTES.CHAT },
+  { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.STUDENT },
+  { icon: '📅', label: 'Günlük Quiz', path: APP_ROUTES.DAILY },
+  { icon: '🎈', label: 'Uşaq Klubu', path: APP_ROUTES.KIDS_HUB },
+  { icon: '⚔️', label: 'Yarışlar', path: '/competition' },
+  { icon: '🛡️', label: 'Klanım', path: '/clan/me' },
+  { icon: '🎓', label: 'Kurslar', path: APP_ROUTES.COURSES },
+  { icon: '📊', label: 'Portfoliom', path: '/portfolio/me' },
+  { icon: '💬', label: 'Mesajlar', path: APP_ROUTES.CHAT },
   { icon: '🔮', label: 'Həftənin Sirri', path: APP_ROUTES.WEEKLY_MYSTERY },
 ]
 
 const teacherNav: NavItem[] = [
-  { icon: '🏠', label: 'Ana səhifə',    path: APP_ROUTES.DASHBOARD.TEACHER },
-  { icon: '👥', label: 'Qruplarım',     path: '/groups' },
-  { icon: '✅', label: 'Davamiyyət',    path: '/attendance' },
-  { icon: '⚔️', label: 'Yarış yarat',   path: '/competition/create' },
-  { icon: '🎓', label: 'Kurslarım',     path: '/courses/my' },
-  { icon: '📊', label: 'Analitika',     path: '/analytics' },
-  { icon: '💬', label: 'Mesajlar',      path: APP_ROUTES.CHAT },
-  { icon: '🏫', label: 'Sinif',         path: '/classroom' },
+  { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.TEACHER },
+  { icon: '👥', label: 'Qruplarım', path: '/groups' },
+  { icon: '✅', label: 'Davamiyyət', path: '/attendance' },
+  { icon: '⚔️', label: 'Yarış yarat', path: '/competition/create' },
+  { icon: '🎓', label: 'Kurslarım', path: '/courses/my' },
+  { icon: '📊', label: 'Analitika', path: '/analytics' },
+  { icon: '💬', label: 'Mesajlar', path: APP_ROUTES.CHAT },
+  { icon: '🏫', label: 'Sinif', path: '/classroom' },
 ]
 
 const parentNav: NavItem[] = [
-  { icon: '🏠', label: 'Ana səhifə',   path: APP_ROUTES.DASHBOARD.PARENT },
-  { icon: '👶', label: 'Övladım',      path: '/child' },
-  { icon: '📊', label: 'İrəliləyiş',  path: '/progress' },
-  { icon: '✅', label: 'Davamiyyət',   path: '/attendance/child' },
-  { icon: '💬', label: 'Müəllimlə',   path: APP_ROUTES.CHAT },
-  { icon: '💳', label: 'Ödənişlər',   path: '/payments' },
+  { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.PARENT },
+  { icon: '👶', label: 'Övladım', path: '/child' },
+  { icon: '📊', label: 'İrəliləyiş', path: '/progress' },
+  { icon: '✅', label: 'Davamiyyət', path: '/attendance/child' },
+  { icon: '💬', label: 'Müəllimlə', path: APP_ROUTES.CHAT },
+  { icon: '💳', label: 'Ödənişlər', path: '/payments' },
 ]
 
 const navByRole: Record<string, NavItem[]> = {
   student: studentNav,
   teacher: teacherNav,
-  parent:  parentNav,
+  parent: parentNav,
 }
 
 // ── Role labels ───────────────────────────────────────────────────────────
@@ -61,19 +62,19 @@ const navByRole: Record<string, NavItem[]> = {
 const roleLabelMap: Record<Role, string> = {
   student: 'Tələbə',
   teacher: 'Müəllim',
-  parent:  'Valideyn',
-  admin:   'Admin',
+  parent: 'Valideyn',
+  admin: 'Admin',
   manager: 'Menecer',
 }
 
 // ── League badge color ────────────────────────────────────────────────────
 
 const leagueColor: Record<string, string> = {
-  bronze:   '#CD7F32',
-  silver:   '#C0C0C0',
-  gold:     '#FFD700',
+  bronze: '#CD7F32',
+  silver: '#C0C0C0',
+  gold: '#FFD700',
   platinum: '#E5E4E2',
-  diamond:  '#B9F2FF',
+  diamond: '#B9F2FF',
 }
 
 // ── Avatar circle ─────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ function NavLink({ item, active, color }: { item: NavItem; active: boolean; colo
                  transition-colors duration-150 text-left"
       style={{
         backgroundColor: active ? `${color}18` : 'transparent',
-        color:           active ? '#FFFFFF'     : '#9CA3AF',
+        color: active ? '#FFFFFF' : '#9CA3AF',
       }}
       onMouseEnter={(e) => {
         if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)'
@@ -139,20 +140,20 @@ function NavLink({ item, active, color }: { item: NavItem; active: boolean; colo
 // ── Sidebar ───────────────────────────────────────────────────────────────
 
 export default function Sidebar() {
-  const dispatch   = useDispatch<AppDispatch>()
-  const navigate   = useNavigate()
-  const location   = useLocation()
+  const dispatch = useDispatch<AppDispatch>()
+  const navigate = useNavigate()
+  const location = useLocation()
   const { logout } = useAuth()
 
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
-  const authUser    = useSelector((s: RootState) => s.auth.user)
+  const authUser = useSelector((s: RootState) => s.auth.user)
   const { user: ctxUser } = useAuth()
   const user = authUser ?? ctxUser
 
   const { data: gp } = useQuery<GamificationProfile>({
     queryKey: ['gamification', 'me'],
-    queryFn:  () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
-    enabled:  !!user,
+    queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
+    enabled: !!user,
     staleTime: 1000 * 60 * 2,
   })
 
@@ -162,18 +163,23 @@ export default function Sidebar() {
     navigate(APP_ROUTES.LOGIN, { replace: true })
     toast.success('Sistemdən çıxdınız.')
   }
+  // Uşaq Klubu yalnız kiçik yaş tələbələrinə (3-8 yaş) göstərilir
+  const KID_AGES = ['3-5', '6-8']
+  let navItems = navByRole[user?.role ?? 'student'] ?? studentNav
+  if (user?.role === 'student' && !KID_AGES.includes(user.ageGroup)) {
+    navItems = navItems.filter((i) => i.path !== APP_ROUTES.KIDS_HUB)
+  }
 
-  const navItems  = navByRole[user?.role ?? 'student'] ?? studentNav
-  const xpPct     = gp ? Math.min(((gp.totalXP % (gp.level * 200)) / (gp.level * 200)) * 100, 100) : 0
-  const xpToNext  = gp ? (gp.level * 200) - (gp.totalXP % (gp.level * 200)) : 200
-  const lColor    = gp ? leagueColor[gp.leagueTier] : '#CD7F32'
+  const xpPct = gp ? Math.min(((gp.totalXP % (gp.level * 200)) / (gp.level * 200)) * 100, 100) : 0
+  const xpToNext = gp ? (gp.level * 200) - (gp.totalXP % (gp.level * 200)) : 200
+  const lColor = gp ? leagueColor[gp.leagueTier] : '#CD7F32'
 
   return (
     <aside
       className="fixed left-0 top-0 bottom-0 w-60 hidden lg:flex flex-col z-30"
       style={{
         backgroundColor: '#111827',
-        borderRight:     '1px solid rgba(255,255,255,0.05)',
+        borderRight: '1px solid rgba(255,255,255,0.05)',
       }}
     >
       {/* Logo */}
