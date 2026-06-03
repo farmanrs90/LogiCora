@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
       default: '',
     },
     profileCompleted: { type: Boolean, default: false },
+    characterType: {
+      type: String,
+      enum: ['fast-thinker', 'deep-analyst', 'creative-explorer', null],
+      default: null,
+    },
     hobbies: { type: [String], default: [] },
     isPhoneVerified: { type: Boolean, default: false },
     lastLoginDate: { type: Date, default: null },

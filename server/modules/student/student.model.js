@@ -32,7 +32,20 @@ const studentSchema = new mongoose.Schema(
       enum: ['visual', 'auditory', 'kinesthetic', 'reading_writing'],
       default: 'visual',
     },
-    
+    learningStyle: {
+      type: String,
+      enum: ['visual', 'auditory', 'kinesthetic', 'reading_writing'],
+      default: 'visual',
+    },
+
+    // Onboarding bilik testinin nəticəsi — gündəlik sualların başlanğıc çətinliyi
+    knowledgeLevel: {
+      type: String,
+      enum: ['beginner', 'intermediate', 'advanced'],
+      default: 'beginner',
+    },
+
+
     points: {
       type: Number,
       default: 0,

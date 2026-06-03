@@ -646,6 +646,214 @@ Tur (scroll bölmələri):
 
 ---
 
+### ═══ MƏRHƏLƏ 5: ƏLÇATANLIQ — XÜSUSİ EHTİYACLI UŞAQLAR (20-24) ═══
+
+> **NİYƏ:** Platforma "hamı üçün təhsil" deyirsə, fiziki/idrak əlilliyi olan uşaqlar da
+> istifadə edə bilməlidir. Bu, həm etik, həm də bir çox ölkədə hüquqi tələbdir.
+>
+> **HAZIRKI VƏZİYYƏT (2026-06-01 diaqnoz):** Təməl GÜCLÜDÜR, amma "ölü"dür:
+> - ✅ `accessibility.model.js` — config (fontSize, highContrast, audioQuestions,
+>   simplifiedUI, noAnimations, largeClickTargets, keyboardOnly) + 4 əlillik tipi üçün
+>   hazır preset (`SPECIAL_NEEDS_DEFAULTS`: visual / hearing / motor / cognitive).
+> - ✅ `User` modelində `isSpecialNeeds` + `specialNeedsType`.
+> - ✅ Settings səhifəsi — 4 şrift + 6 toggle, hər dəyişiklik backend-ə yazılır.
+> - ⚠️ **PROBLEM:** Yalnız şrift ölçüsü canlı işləyir. Qalan 6 toggle bazaya yazılır,
+>   amma proqramda HEÇ NƏ etmir — "yüksək kontrast" yandırılır, ekran dəyişmir.
+>   Onlar hələ qoşulmamış düymələrdir. Bu mərhələ məhz o "son sim"i qoşur.
+
+---
+
+#### ADDIM 20 — Global AccessibilityProvider (toggle-ları CANLANDIR) ⭐ ƏN VACİB
+**Yeni fayl:** `client/src/context/AccessibilityProvider.tsx` + `App.tsx`-də bük + `index.css`-ə qaydalar
+
+Məntiq: config-i bir dəfə oxu → `<html>`-ə class əlavə et → CSS reaksiya versin.
+Bütün infrastruktur hazırdır, yalnız config → real davranış körpüsü qalıb.
+
+```tsx
+// AccessibilityProvider.tsx
+const { data: cfg } = useQuery(['accessibility','me'],
+  () => api.get('/accessibility/me').then(r => r.data.data))
+
+useEffect(() => {
+  if (!cfg) return
+  const root = document.documentElement
+  const px = { sm:14, md:16, lg:18, xl:22 }[cfg.fontSize]
+  root.style.fontSize = `${px}px`
+  root.classList.toggle('a11y-contrast',    cfg.highContrast)
+  root.classList.toggle('a11y-no-motion',   cfg.noAnimations)
+  root.classList.toggle('a11y-big-targets', cfg.largeClickTargets)
+  root.classList.toggle('a11y-simple',      cfg.simplifiedUI)
+}, [cfg])
+```
+
+```css
+/* index.css — @layer base içində (bax: css-layer gotcha) */
+.a11y-contrast { filter: contrast(1.4); }
+.a11y-no-motion *, .a11y-no-motion *::before { animation: none !important; transition: none !important; }
+.a11y-big-targets button, .a11y-big-targets a { min-height: 48px; min-width: 48px; }
+.a11y-simple .decorative { display: none; } /* bəzək elementləri gizlət */
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+```
+
+**Test:** Settings-də "Animasiyasız" yandır → bütün animasiyalar dayanmalı (təkcə saxlanmamalı).
+
+---
+
+#### ADDIM 21 — Qeydiyyat/Onboarding-də preset AVTO-tətbiq
+**Fayl:** `server/modules/auth/auth.controller.js` (register/completeProfile)
+
+Uşaq `specialNeedsType: 'visual'` seçəndə → `SPECIAL_NEEDS_DEFAULTS.visual` avtomatik
+onun `AccessibilityConfig`-inə yazılsın. İstifadəçi əl ilə hər toggle-ı axtarmasın.
+
+```js
+const { SPECIAL_NEEDS_DEFAULTS, AccessibilityConfig } = require('../accessibility/accessibility.model')
+
+if (user.isSpecialNeeds && SPECIAL_NEEDS_DEFAULTS[user.specialNeedsType]) {
+  await AccessibilityConfig.create({
+    userId: user._id,
+    ...SPECIAL_NEEDS_DEFAULTS[user.specialNeedsType],
+  })
+}
+```
+
+**Yoxla:** indi register bu preset-i tətbiq edirmi? Etmirsə əlavə et.
+
+---
+
+#### ADDIM 22 — Səsli sual (TTS) — Web Speech API
+**Fayl:** `client/src/hooks/useSpeak.ts` (yeni) + quiz/Kids komponentlərində
+
+`audioQuestions` true olanda sual mətni Azərbaycanca səslə oxunsun (görmə + idrak üçün).
+Brauzerin daxili `speechSynthesis`-i — əlavə kitabxana lazım deyil.
+
+```ts
+export function useSpeak() {
+  return (text: string) => {
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = 'az-AZ'         // dəstəklənmirsə brauzer ən yaxın səsi seçir
+    u.rate = 0.9             // uşaq üçün bir az yavaş
+    speechSynthesis.cancel() // əvvəlkini kəs
+    speechSynthesis.speak(u)
+  }
+}
+// İstifadə: sual göründə → if (cfg.audioQuestions) speak(question.q)
+// Kids VideoPlayer + DailyQuiz + WeeklyMystery-də qoşula bilər.
+```
+
+---
+
+#### ADDIM 23 — Kids Hub idrak (cognitive) adaptasiyası
+**Fayl:** `client/src/pages/kids/VideoPlayer.tsx`
+
+`cognitive` rejimdə quiz sadələşsin:
+- Daha az variant (3 əvəzinə 2)
+- Səsli sual avtomatik açıq (Addım 22 ilə)
+- Vaxt limiti yox / daha çox vaxt
+- Səhv cavabda cəza yox, sadəcə "yenidən cəhd et" — stress azaltma
+- Daha böyük şəkil/emoji, daha az mətn
+
+> Qeyd: bu, mövcud Kids flow-una `if (cfg.simplifiedUI)` şərtləri əlavə etməklə olur —
+> sıfırdan yeni səhifə deyil.
+
+---
+
+#### ADDIM 24 — (UZUN GƏLƏCƏK) Eşitmə: altyazı / işarət dili
+**Fayl:** `kids.model.js` → `KidsVideo`-ya `captions: [{ time, text }]` / `signLanguageUrl`
+
+Eşitmə əlilliyi üçün videolarda altyazı və ya işarət dili tərcüməsi.
+Bu, **məzmun işidir** (hər videoya əl ilə altyazı) — data modeli hazırlanır, amma
+real doldurma uzaq gələcəkdir. MVP-də prioritet deyil, sadəcə unutmamaq üçün qeyd.
+
+---
+
+**Bu mərhələnin sırası:** 20 (provider) → 21 (preset) → 22 (TTS) → 23 (cognitive) → 24 (sonra).
+Addım 20 tək başına 6 ölü toggle-ı canlandırır — ən yüksək təsir/əmək nisbəti odur.
+
+---
+
+### ═══ MƏRHƏLƏ 6: ÇOXDİLLİLİK (i18n — AZ / RUS / ENG) (25-28) ═══
+
+> **NİYƏ:** Platforma Azərbaycan + region üçündür — azərbaycanca, rusca, ingiliscə dəstək.
+>
+> **HAZIRKI VƏZİYYƏT:** Bütün mətnlər kodda BİRBAŞA azərbaycanca yazılıb (hardcoded).
+> Dil dəyişəndə avtomatik tərcümə YOXDUR — i18n sistemi qurulmayıb.
+> - ✅ `User.language` (`'az'|'ru'|'en'`) + `Language` tipi var → təməl hazır.
+> - ⚠️ Tərcümə qatı yoxdur, mətnlər komponentlərə sancılıb.
+>
+> **QƏRAR:** Bu, AYRICA mərhələdir, sona qalsın. Hər komponentə toxunur (yüzlərlə mətn) —
+> indi etmək feature qurmağı yavaşladar. Əvvəlcə funksionallıq bitsin, sonra BİR i18n keçidi.
+
+---
+
+#### ADDIM 25 — i18next qurulumu + 3 tərcümə faylı
+**Yeni:** `npm i react-i18next i18next` + `client/src/i18n/` (az.json, ru.json, en.json) + `i18n.ts`
+
+```ts
+// i18n.ts
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import az from './az.json'; import ru from './ru.json'; import en from './en.json'
+
+i18n.use(initReactI18next).init({
+  resources: { az: { translation: az }, ru: { translation: ru }, en: { translation: en } },
+  lng: 'az', fallbackLng: 'az', interpolation: { escapeValue: false },
+})
+// main.tsx-də: import './i18n/i18n'
+```
+
+```json
+// az.json (nümunə açar quruluşu)
+{ "nav": { "daily": "Günlük Quiz", "kids": "Uşaq Klubu" },
+  "kids": { "watched": "Videonu bitirdim!", "newWords": "Yeni sözlər" } }
+```
+
+---
+
+#### ADDIM 26 — UI mətnlərini t('key')-ə çevir (mexaniki, böyük iş)
+**Fayl:** BÜTÜN komponentlər
+
+```tsx
+const { t } = useTranslation()
+// "Günlük Quiz"  →  {t('nav.daily')}
+// "Videonu bitirdim!"  →  {t('kids.watched')}
+```
+
+> Strategiya: səhifə-səhifə get. Hər hardcoded sətri açara çevir, 3 fayla tərcümə yaz.
+> Sidebar nav label-ları, düymələr, toast-lar, boş state-lər — hamısı.
+
+---
+
+#### ADDIM 27 — Dil dəyişdirici + user.language sinxron
+**Fayl:** `Navbar.tsx` / `Settings.tsx`
+
+```tsx
+const { i18n } = useTranslation()
+const changeLang = (lng: 'az'|'ru'|'en') => {
+  i18n.changeLanguage(lng)
+  api.put('/users/profile', { language: lng }) // backend-ə yaz, login-də bərpa olsun
+}
+// Login-dən sonra: i18n.changeLanguage(user.language)
+```
+
+---
+
+#### ADDIM 28 — Dinamik məzmunun tərcüməsi (data modeli)
+**Fayl:** `kids.model.js`, `question.model.js` və s.
+
+UI mətni ≠ məzmun mətni. Video adı, lüğət, suallar da 3 dildə olmalıdır:
+- `KidsVideo`: indi `title`(en)+`titleAz` var → `titleRu` əlavə et; `vocabulary`/`questions`
+  AZ-only → `{ az, ru, en }` quruluşuna keç (və ya ayrıca sahələr).
+- Frontend `i18n.language`-ə görə düzgün variantı göstərsin.
+
+> Bu, məzmun + data işidir (admin paneldən doldurma) — UI i18n-dən sonra, ən sonda.
+
+---
+
+**Sıra:** 25 (qurulum) → 26 (UI çevir) → 27 (dəyişdirici) → 28 (məzmun, ən sonda).
+i18n-i Onboarding/Landing və Əlçatanlıq (Mərhələ 5) bitəndən sonra başla.
+
+---
+
 ## BÖLMƏ 5 — TEST PROTOKOLU
 
 | # | Test | Necə | Gözlənilən |

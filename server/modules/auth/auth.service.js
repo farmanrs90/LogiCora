@@ -142,10 +142,44 @@ const refreshAccessToken = async (token) => {
 const logoutUser = async (userId) => {
   await User.findByIdAndUpdate(userId, { refreshToken: null });
 };
+const completeOnboarding = async (userId, payload) => {
+  const { name, ageGroup, characterType, knowledgeLevel } = payload;
+
+  // 1) User-i yenilə + onboarding-i bitmiş kimi işarələ
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { name, ageGroup, characterType, profileCompleted: true },
+    { new: true }
+  );
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 2) knowledgeLevel yalnız tələbə profilinə yazılır
+  if (user.role === 'student') {
+    await Student.findOneAndUpdate({ userId: user._id }, { knowledgeLevel });
+  }
+
+  return {
+    id: user._id,
+    name: user.name,
+    surname: user.surname,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    ageGroup: user.ageGroup,
+    characterType: user.characterType,
+    profileCompleted: user.profileCompleted,
+  };
+};
+
 
 module.exports = {
   registerUser,
   loginUser,
   refreshAccessToken,
   logoutUser,
+  completeOnboarding,
 };

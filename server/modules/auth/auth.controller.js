@@ -36,5 +36,15 @@ const logout = async (req, res, next) => {
     return next(error);
   }
 };
+const completeOnboarding = async (req, res, next) => {
+  try {
+    const data = await authService.completeOnboarding(req.user.id, req.body);
+    return res.status(200).json({ success: true, data, message: 'Onboarding completed' });
+  } catch (error) {
+    return next(error);
+  }
+};
 
-module.exports = { register, login, refresh, logout };
+module.exports = { register, login, refresh, logout, completeOnboarding };
+
+
