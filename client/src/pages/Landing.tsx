@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { type Companion } from '../lib/companion'
+
 import {
   motion,
   useTransform,
@@ -113,21 +115,31 @@ export default function Landing() {
   const [mobileOpen, setMobileOpen]       = useState(false)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
 
-  const guide  = searchParams.get('guide') as Guide
+  const [guide, setGuide] = useState<Guide>((searchParams.get('guide') as Guide) ?? null)
   const accent = guideAccent(guide)
 
   const navBg = useTransform(scrollY, [0, 100], ['rgba(13,13,13,0)', 'rgba(13,13,13,0.95)'])
+  // Köməkçi seçiləndə: rəngi tətbiq et + saytı göstərməyə başla (tur)
+function handleGuideSelect(g: Companion) {
+  setGuide(g)
+  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
+}
+
+// Registerə dəvət — seçilmiş köməkçini özü ilə aparır (rəng davam etsin)
+const goRegister = () =>
+  navigate(guide ? `${APP_ROUTES.REGISTER}?guide=${guide}` : APP_ROUTES.REGISTER)
+
 
   const sectionVariants: Variants = {
     hidden:  { opacity: 0, y: 50 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' as const } },
   }
-
+  
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden">
 
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
-      <LogiCoraHero />
+      <LogiCoraHero onSelect={handleGuideSelect} />
 
       {/* ── FIXED NAVBAR (görünür scroll-dan sonra) ─────────────────────────── */}
       <motion.nav
@@ -156,7 +168,7 @@ export default function Landing() {
             </button>
             <motion.button
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
-              onClick={() => navigate(APP_ROUTES.REGISTER)}
+              onClick={goRegister}
               className="text-white rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200"
               style={{ backgroundColor: accent.hex }}
             >
@@ -191,7 +203,7 @@ export default function Landing() {
                 className="border border-white/20 text-white/70 rounded-full px-5 py-3 text-base">
                 Daxil ol
               </button>
-              <button onClick={() => { navigate(APP_ROUTES.REGISTER); setMobileOpen(false) }}
+              <button onClick={goRegister}
                 className="text-white rounded-full px-5 py-3 text-base font-semibold"
                 style={{ backgroundColor: accent.hex }}>
                 Başla →
@@ -467,7 +479,7 @@ export default function Landing() {
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }}
           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
-          onClick={() => navigate(APP_ROUTES.REGISTER)}
+          onClick={goRegister}
           className="mt-10 text-white rounded-full px-10 py-4 font-semibold text-lg transition-colors duration-200"
           style={{ backgroundColor: accent.hex }}>
           Pulsuz qeydiyyat →

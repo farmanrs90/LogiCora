@@ -1,3 +1,5 @@
+import type { CharacterType } from '../lib/companion'
+
 // Auth
 export interface LoginInput {
   email: string
@@ -37,6 +39,8 @@ export interface User {
   isSpecialNeeds: boolean
   specialNeedsType?: string
   isPhoneVerified: boolean
+  characterType?: CharacterType | null   // ← onboarding-dən gəlir, avatarColor mənbəyi
+  profileCompleted?: boolean             // ← onboarding bitibmi? 
   createdAt: string
 }
 

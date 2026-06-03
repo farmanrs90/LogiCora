@@ -71,6 +71,8 @@ const registerUser = async (payload) => {
       phone: created.phone,
       role: created.role,
       ageGroup: created.ageGroup,
+      characterType: created.characterType,
+      profileCompleted: created.profileCompleted,
     },
   };
 };
@@ -107,6 +109,8 @@ const loginUser = async ({ email, password }) => {
       phone: found.phone,
       role: found.role,
       ageGroup: found.ageGroup,
+      characterType: found.characterType,
+      profileCompleted: found.profileCompleted,
     },
   };
 };

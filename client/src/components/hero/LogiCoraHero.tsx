@@ -3,21 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { APP_ROUTES } from '../../constants'
+import { setCompanion,type Companion } from '../../lib/companion'
+
 
 type SelectedGuide = 'logi' | 'cora' | null
 
-export function LogiCoraHero() {
+export function LogiCoraHero({onSelect}: {onSelect: (companion: Companion) => void}) {
   const navigate = useNavigate()
   const [selected, setSelected]       = useState<SelectedGuide>(null)
   const [hoveredSide, setHoveredSide] = useState<'left' | 'right' | null>(null)
 
   const handleSelect = (guide: SelectedGuide) => {
-    setSelected(guide)
-    setTimeout(() => {
-      navigate(`${APP_ROUTES.REGISTER}?guide=${guide}`)
-    }, 2000)
-  }
+  if (!guide) return
+  setSelected(guide)
+  setCompanion(guide)        // ← seçimi cihaza yaz; F5-dən sonra da qalır
+  setTimeout(() => {
+        onSelect(guide)        // register YOX — Landing-ə bildir, o turu başlatsın
 
+  }, 2000)
+}
   return (
     <div
       className="relative min-h-screen w-full overflow-hidden"

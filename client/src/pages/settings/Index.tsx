@@ -2,18 +2,22 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
+import { useSelector, useDispatch } from 'react-redux'
+import { setCompanionVisible } from '../../features/theme/themeSlice'
+import { getCompanion, COMPANIONS, setCompanionVisibleLS } from '../../lib/companion'
+import type { RootState, AppDispatch } from '../../app/store'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import { API_ROUTES } from '../../constants'
 
 interface AccessibilityConfig {
-  fontSize:          'sm' | 'md' | 'lg' | 'xl'
-  highContrast:      boolean
-  audioQuestions:    boolean
-  simplifiedUI:      boolean
-  noAnimations:      boolean
+  fontSize: 'sm' | 'md' | 'lg' | 'xl'
+  highContrast: boolean
+  audioQuestions: boolean
+  simplifiedUI: boolean
+  noAnimations: boolean
   largeClickTargets: boolean
-  keyboardOnly:      boolean
+  keyboardOnly: boolean
 }
 
 const DEFAULT_CONFIG: AccessibilityConfig = {
@@ -27,19 +31,19 @@ const DEFAULT_CONFIG: AccessibilityConfig = {
 }
 
 const FONT_SIZES = [
-  { value: 'sm' as const, label: 'Kiçik',     px: 14 },
-  { value: 'md' as const, label: 'Normal',    px: 16 },
-  { value: 'lg' as const, label: 'Böyük',     px: 18 },
+  { value: 'sm' as const, label: 'Kiçik', px: 14 },
+  { value: 'md' as const, label: 'Normal', px: 16 },
+  { value: 'lg' as const, label: 'Böyük', px: 18 },
   { value: 'xl' as const, label: 'Çox böyük', px: 22 },
 ]
 
 const TOGGLES: { key: keyof AccessibilityConfig; label: string; desc: string; emoji: string }[] = [
-  { key: 'highContrast',      label: 'Yüksək kontrast',  desc: 'Rəngləri daha sezilən et',     emoji: '🌗' },
-  { key: 'audioQuestions',    label: 'Sual səsi',         desc: 'Sualları səslə dinlə',         emoji: '🔊' },
-  { key: 'simplifiedUI',      label: 'Sadə interfeys',    desc: 'Bəzəkləri azalt',              emoji: '✨' },
-  { key: 'noAnimations',      label: 'Animasiyasız',      desc: 'Bütün animasiyaları söndür',   emoji: '🚫' },
-  { key: 'largeClickTargets', label: 'Böyük düymələr',    desc: 'Daha böyük klik sahəsi',       emoji: '👆' },
-  { key: 'keyboardOnly',      label: 'Yalnız klaviatura', desc: 'Klaviatura naviqasiyası',      emoji: '⌨️' },
+  { key: 'highContrast', label: 'Yüksək kontrast', desc: 'Rəngləri daha sezilən et', emoji: '🌗' },
+  { key: 'audioQuestions', label: 'Sual səsi', desc: 'Sualları səslə dinlə', emoji: '🔊' },
+  { key: 'simplifiedUI', label: 'Sadə interfeys', desc: 'Bəzəkləri azalt', emoji: '✨' },
+  { key: 'noAnimations', label: 'Animasiyasız', desc: 'Bütün animasiyaları söndür', emoji: '🚫' },
+  { key: 'largeClickTargets', label: 'Böyük düymələr', desc: 'Daha böyük klik sahəsi', emoji: '👆' },
+  { key: 'keyboardOnly', label: 'Yalnız klaviatura', desc: 'Klaviatura naviqasiyası', emoji: '⌨️' },
 ]
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -62,10 +66,19 @@ export default function Settings() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [local, setLocal] = useState<AccessibilityConfig>(DEFAULT_CONFIG)
+  const dispatch = useDispatch<AppDispatch>()
+  const companionVisible = useSelector((s: RootState) => s.theme.companionVisible)
+  const companion = COMPANIONS[getCompanion()]
+
+  const toggleCompanion = (v: boolean) => {
+    dispatch(setCompanionVisible(v))   // canlı (eyni səhifədə widget dərhal reaksiya verir)
+    setCompanionVisibleLS(v)           // qalıcı (F5-də qalır)
+  }
+
 
   const { data, isLoading } = useQuery<AccessibilityConfig>({
     queryKey: ['accessibility', 'me'],
-    queryFn:  () => api.get<{ data: AccessibilityConfig }>(API_ROUTES.ACCESSIBILITY.ME).then(r => r.data.data),
+    queryFn: () => api.get<{ data: AccessibilityConfig }>(API_ROUTES.ACCESSIBILITY.ME).then(r => r.data.data),
   })
 
   // Backend-dən gələn config-i local state-ə sinxronla
@@ -125,11 +138,10 @@ export default function Settings() {
                 key={opt.value}
                 onClick={() => update({ fontSize: opt.value })}
                 whileTap={{ scale: 0.96 }}
-                className={`py-3 rounded-xl border transition-colors flex flex-col items-center gap-1 ${
-                  local.fontSize === opt.value
+                className={`py-3 rounded-xl border transition-colors flex flex-col items-center gap-1 ${local.fontSize === opt.value
                     ? 'border-indigo-500 bg-indigo-500/15 text-indigo-200'
                     : 'border-white/10 text-white/60 hover:text-white'
-                }`}
+                  }`}
               >
                 <span style={{ fontSize: opt.px, lineHeight: 1 }}>A</span>
                 <span className="text-[10px] text-white/50">{opt.label}</span>
@@ -137,6 +149,22 @@ export default function Settings() {
             ))}
           </div>
         </section>
+                {/* Köməkçi (Logi/Cora) */}
+        <section className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+          <h2 className="font-semibold mb-1">Köməkçi</h2>
+          <p className="text-white/40 text-xs mb-3">Logi/Cora sənə kömək edən dostundur</p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <span className="text-xl shrink-0">{companion.emoji}</span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{companion.name} görünsün</p>
+                <p className="text-xs text-white/40">Küncdə dayanıb lazım olanda kömək edir</p>
+              </div>
+            </div>
+            <Toggle value={companionVisible} onChange={toggleCompanion} />
+          </div>
+        </section>
+
 
         {/* Toggles */}
         <section className="bg-[#141414] border border-white/10 rounded-2xl p-5">

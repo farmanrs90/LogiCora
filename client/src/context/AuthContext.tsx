@@ -1,6 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { useDispatch } from 'react-redux'
 import type { User, LoginInput, RegisterInput, AuthResponse } from '../types'
 import { API_ROUTES } from '../constants'
+import { setAvatarColor } from '../features/theme/themeSlice'
+import { colorForCharacter } from '../lib/companion'
+import type { AppDispatch } from '../app/store'
 import api from '../lib/api'
 
 interface AuthContextType {
@@ -17,6 +21,13 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const dispatch = useDispatch<AppDispatch>()
+
+  // user-i həm state-ə yaz, həm avatarColor-u onun characterType-indən təzələ (tək yer)
+  const applyUser = (u: User | null) => {
+    setUser(u)
+    dispatch(setAvatarColor(colorForCharacter(u?.characterType)))
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
@@ -30,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = async () => {
     try {
       const { data } = await api.get(API_ROUTES.USER.PROFILE)
-      setUser(data.data)
+      applyUser(data.data)
     } catch {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
@@ -43,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data } = await api.post<{ data: AuthResponse }>(API_ROUTES.AUTH.LOGIN, input)
     localStorage.setItem('accessToken', data.data.accessToken)
     localStorage.setItem('refreshToken', data.data.refreshToken)
-    setUser(data.data.user)
+    applyUser(data.data.user)
     return data.data
   }
 
@@ -51,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data } = await api.post<{ data: AuthResponse }>(API_ROUTES.AUTH.REGISTER, input)
     localStorage.setItem('accessToken', data.data.accessToken)
     localStorage.setItem('refreshToken', data.data.refreshToken)
-    setUser(data.data.user)
+    applyUser(data.data.user)
     return data.data
   }
 
@@ -59,19 +70,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     api.post(API_ROUTES.AUTH.LOGOUT).catch(() => {})
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
-    setUser(null)
+    applyUser(null)
   }
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        login,
-        register,
-        logout,
-      }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}
     >
       {children}
     </AuthContext.Provider>
