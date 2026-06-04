@@ -64,7 +64,7 @@ const registerUser = async (payload) => {
     accessToken,
     refreshToken,
     user: {
-      id: created._id,
+      _id: created._id,
       name: created.name,
       surname: created.surname,
       email: created.email,
@@ -102,7 +102,7 @@ const loginUser = async ({ email, password }) => {
     accessToken,
     refreshToken,
     user: {
-      id: found._id,
+      _id: found._id,
       name: found.name,
       surname: found.surname,
       email: found.email,
@@ -167,7 +167,7 @@ const completeOnboarding = async (userId, payload) => {
   }
 
   return {
-    id: user._id,
+    _id: user._id,
     name: user.name,
     surname: user.surname,
     email: user.email,

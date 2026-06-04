@@ -31,14 +31,14 @@ export const API_ROUTES = {
     CERTIFICATE: (id: string) => `/courses/${id}/certificate`,
   },
 
-  // Competitions
   COMPETITIONS: {
     BY_ID:    (id: string) => `/competitions/${id}`,
     RESULTS:  (id: string) => `/competitions/${id}/results`,
     COMPLETE: (id: string) => `/competitions/${id}/complete`,
     ACTIVE:   '/competitions/active',
+    CREATE:   '/competitions',
+    JOIN:     (pin: string) => `/competitions/join/${pin}`,
   },
-
   // Daily Questions
   DAILY: {
     GET: '/daily',

@@ -45,6 +45,8 @@ router.patch(
 
 // VACİB: /active mütləq /:id-dən ƏVVƏL olmalıdır
 router.get('/active', authenticate, controller.getActive);
+router.get('/:id/results', authenticate, controller.getResults);
+
 
 router.get('/:id', authenticate, controller.getCompetition);
 

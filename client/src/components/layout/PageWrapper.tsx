@@ -28,7 +28,7 @@ const studentTabs: TabItem[] = [
 const teacherTabs: TabItem[] = [
   { icon: '🏠', label: 'Ana',      path: APP_ROUTES.DASHBOARD.TEACHER },
   { icon: '👥', label: 'Qruplar',  path: '/groups' },
-  { icon: '✅', label: 'Davamiyyət', path: '/attendance' },
+  { icon: '⚔️', label: 'Yarış',    path: '/competition/create' },
   { icon: '🎓', label: 'Kurslar',  path: '/courses/my' },
   { icon: '💬', label: 'Çat',      path: APP_ROUTES.CHAT },
 ]

@@ -80,6 +80,14 @@ const getCompetition = async (req, res, next) => {
     next(err);
   }
 };
+const getResults = async (req, res, next) => {
+  try {
+    const results = await competitionService.getResults(req.params.id, req.user.id);
+    res.json({ success: true, data: results });
+  } catch (err) {
+    next(err);
+  }
+};
 
 module.exports = {
   createCompetition,
@@ -89,4 +97,5 @@ module.exports = {
   finishCompetition,
   getActive,
   getCompetition,
+  getResults,
 };

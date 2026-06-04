@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
 
-import { useSocket }   from '../../hooks/useSocket'
+import { useSocket } from '../../hooks/useSocket'
 import { useInterval } from '../../hooks/useInterval'
-import { useAuth }     from '../../context/AuthContext'
-import api             from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
+import api from '../../lib/api'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
-import type { RootState }     from '../../app/store'
+import type { RootState } from '../../app/store'
 import type { CompetitionInfo, Participant, Question, AgeGroup } from '../../types'
 import FormatA from '../../features/quiz/formats/FormatA'
 import FormatB from '../../features/quiz/formats/FormatB'
@@ -36,10 +36,10 @@ const DEMO_QUESTIONS: Question[] = [
 function CosmicBackground() {
   const stars = Array.from({ length: 40 }, (_, i) => ({
     id: i,
-    x:  Math.random() * 100,
-    y:  Math.random() * 100,
-    s:  Math.random() * 3 + 1,
-    d:  Math.random() * 3 + 1,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    s: Math.random() * 3 + 1,
+    d: Math.random() * 3 + 1,
   }))
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none"
@@ -126,8 +126,8 @@ function MiniLeaderboard({ board, myId }: { board: Participant[]; myId?: string 
           transition={{ delay: i * 0.06 }}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${p.userId === myId ? 'ring-1' : ''}`}
           style={{
-            background:    p.userId === myId ? 'rgba(147,51,234,0.12)' : 'rgba(255,255,255,0.04)',
-            outline:       p.userId === myId ? '1px solid #9333EA' : undefined,
+            background: p.userId === myId ? 'rgba(147,51,234,0.12)' : 'rgba(255,255,255,0.04)',
+            outline: p.userId === myId ? '1px solid #9333EA' : undefined,
           }}
         >
           <span className="text-base w-6 text-center font-black text-[#9CA3AF]">
@@ -200,47 +200,47 @@ function WaitingForOthers({ waitingCount, total }: { waitingCount: number; total
 type RoomPhase = 'waiting' | 'question' | 'submitted' | 'mini_result'
 
 export default function CompetitionRoom() {
-  const { id }         = useParams<{ id: string }>()
-  const navigate       = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const isSpectator    = searchParams.get('spectator') === 'true'
+  const isSpectator = searchParams.get('spectator') === 'true'
 
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
-  const authUser    = useSelector((s: RootState) => s.auth.user)
+  const authUser = useSelector((s: RootState) => s.auth.user)
   const { user: ctxUser } = useAuth()
   const user = authUser ?? ctxUser
 
-  const ag       = (user?.ageGroup ?? '12-14') as AgeGroup
-  const isChild  = ag === '3-5' || ag === '6-8'
-  const isYoung  = ag === '9-11' || ag === '12-14'
+  const ag = (user?.ageGroup ?? '12-14') as AgeGroup
+  const isChild = ag === '3-5' || ag === '6-8'
+  const isYoung = ag === '9-11' || ag === '12-14'
 
   // Fetch competition metadata
   useQuery<CompetitionInfo>({
     queryKey: ['competition', id],
-    queryFn:  () => api.get<{ data: CompetitionInfo }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
-                       .then(r => r.data.data)
-                       .catch(() => null as unknown as CompetitionInfo),
-    enabled:  !!id,
+    queryFn: () => api.get<{ data: CompetitionInfo }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
+      .then(r => r.data.data)
+      .catch(() => null as unknown as CompetitionInfo),
+    enabled: !!id,
     staleTime: 1000 * 60,
   })
 
   const { socketRef, isConnected, emit } = useSocket(id ?? null)
 
-  const [phase,           setPhase]           = useState<RoomPhase>('waiting')
+  const [phase, setPhase] = useState<RoomPhase>('waiting')
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
-  const [questionNumber,  setQuestionNumber]  = useState(0)
-  const [totalQuestions,  setTotalQuestions]  = useState(10)
-  const [selectedAnswer,  setSelectedAnswer]  = useState<string | null>(null)
-  const [correctAnswer,   setCorrectAnswer]   = useState('')
-  const [isAnswered,      setIsAnswered]       = useState(false)
-  const [timeLeft,        setTimeLeft]         = useState(20)
-  const [myRank,          setMyRank]           = useState(0)
-  const [myScore,         setMyScore]          = useState(0)
-  const [answeredCount,   setAnsweredCount]    = useState(0)
-  const [leaderboard,     setLeaderboard]      = useState<Participant[]>([])
-  const [spectatorCount,  setSpectatorCount]   = useState(0)
-  const [showLeaderboard, setShowLeaderboard]  = useState(false)
-  const [reactionEmoji,   setReactionEmoji]    = useState<{ emoji: string; key: number } | null>(null)
+  const [questionNumber, setQuestionNumber] = useState(0)
+  const [totalQuestions, setTotalQuestions] = useState(10)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [correctAnswer, setCorrectAnswer] = useState('')
+  const [isAnswered, setIsAnswered] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(20)
+  const [myRank, setMyRank] = useState(0)
+  const [myScore, setMyScore] = useState(0)
+  const [answeredCount, setAnsweredCount] = useState(0)
+  const [leaderboard, setLeaderboard] = useState<Participant[]>([])
+  const [spectatorCount, setSpectatorCount] = useState(0)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [reactionEmoji, setReactionEmoji] = useState<{ emoji: string; key: number } | null>(null)
 
   const startTimeRef = useRef<number>(Date.now())
 
@@ -309,22 +309,27 @@ export default function CompetitionRoom() {
     const socket = socketRef.current
     if (!socket || !isConnected) return
 
-    socket.on('competition:question',      handleQuestion)
+    socket.on('competition:question', handleQuestion)
     socket.on('competition:answer_result', handleAnswerResult)
-    socket.on('competition:question_end',  handleQuestionEnd)
-    socket.on('competition:end',           handleEnd)
-    socket.on('competition:spectators',    handleSpectatorCount)
-    socket.on('competition:reaction',      handleReaction)
-
+    socket.on('competition:question_end', handleQuestionEnd)
+    socket.on('competition:end', handleEnd)
+    socket.on('competition:spectators', handleSpectatorCount)
+    socket.on('competition:reaction', handleReaction)
+    // Təzə socket köhnə otaqda deyil → otağa qoşul + cari sualı istə
+    socket.emit('competition:ready', { competitionId: id })
     return () => {
-      socket.off('competition:question',      handleQuestion)
+
+
+
+
+      socket.off('competition:question', handleQuestion)
       socket.off('competition:answer_result', handleAnswerResult)
-      socket.off('competition:question_end',  handleQuestionEnd)
-      socket.off('competition:end',           handleEnd)
-      socket.off('competition:spectators',    handleSpectatorCount)
-      socket.off('competition:reaction',      handleReaction)
+      socket.off('competition:question_end', handleQuestionEnd)
+      socket.off('competition:end', handleEnd)
+      socket.off('competition:spectators', handleSpectatorCount)
+      socket.off('competition:reaction', handleReaction)
     }
-  }, [isConnected, socketRef, handleQuestion, handleAnswerResult, handleQuestionEnd, handleEnd, handleSpectatorCount, handleReaction])
+  }, [id, isConnected, socketRef, handleQuestion, handleAnswerResult, handleQuestionEnd, handleEnd, handleSpectatorCount, handleReaction])
 
   // Tab visibility
   useEffect(() => {
@@ -355,8 +360,8 @@ export default function CompetitionRoom() {
     setIsAnswered(true)
     emit('competition:answer', {
       competitionId: id,
-      questionId:    currentQuestion._id,
-      answer:        answerId,
+      questionId: currentQuestion._id,
+      answer: answerId,
       responseTime,
     })
     // Demo: simulate result locally
@@ -391,7 +396,7 @@ export default function CompetitionRoom() {
 
   const Arena = isChild ? CosmicBackground : isYoung ? StadiumBackground : ClassicBackground
 
-  const timerPct   = currentQuestion ? timeLeft / (currentQuestion.timeLimit ?? 20) : 1
+  const timerPct = currentQuestion ? timeLeft / (currentQuestion.timeLimit ?? 20) : 1
   const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
 
   return (
@@ -496,7 +501,7 @@ export default function CompetitionRoom() {
                   {isChild ? (
                     <FormatA
                       question={currentQuestion}
-                      onAnswer={() => {}}
+                      onAnswer={() => { }}
                       isAnswered
                       correctAnswer={correctAnswer}
                       selectedAnswer={selectedAnswer}
@@ -506,7 +511,7 @@ export default function CompetitionRoom() {
                   ) : (
                     <FormatB
                       question={currentQuestion}
-                      onAnswer={() => {}}
+                      onAnswer={() => { }}
                       isAnswered
                       correctAnswer={correctAnswer}
                       selectedAnswer={selectedAnswer}

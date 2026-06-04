@@ -1,6 +1,10 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 
+// Oyun mühərriki + competition modeli ("start" icazəsini yoxlamaq üçün)
+const competitionEngine = require('./modules/competition/competition.engine');
+const Competition        = require('./modules/competition/competition.model');
+
 let io;
 
 // ─── Auth Middleware ───────────────────────────────────────────────
@@ -37,77 +41,58 @@ const initSocket = (httpServer) => {
 
   console.log('Socket.io initialized');
 
-  // Bütün bağlantılarda auth yoxla
   io.use(socketAuthMiddleware);
 
   io.on('connection', (socket) => {
     const userId = socket.user._id.toString();
 
-    // Hər user öz personal room-una avtomatik qoşulur
-    // Bu room notification göndərmək üçün işlənir
+    // Hər user öz personal room-una qoşulur (notification üçün)
     socket.join(rooms.user(userId));
 
     // ── COMPETITION EVENTS ────────────────────────────────────────
+    // Qeyd: oyunun gedişatını artıq MÜHƏRRİK idarə edir (competition.engine.js).
+    // Socket yalnız "qoşulma / başlatma / cavab / reaksiya" siqnallarını ötürür.
 
-    // Tələbə yarışa qoşulur
-    socket.on('competition:join', ({ competitionId }) => {
+    // Lobby-yə qoşul — room-a gir + digər iştirakçılara özünü bildir
+    socket.on('competition:join', ({ competitionId, userId: uid, name, avatarColor }) => {
       if (!competitionId) return;
       socket.join(rooms.competition(competitionId));
-      socket.to(rooms.competition(competitionId)).emit('competition:participant_joined', {
-        userId,
-        message: 'Yeni iştirakçı qoşuldu.',
+      socket.to(rooms.competition(competitionId)).emit('participant:joined', {
+        userId:      uid || userId,
+        name:        name || 'İştirakçı',
+        avatarColor: avatarColor || '#9333EA',
+        score:       0,
+        rank:        0,
       });
     });
 
-    // Müəllim yarışı başladır — bütün room-a göndərilir
-    socket.on('competition:start', ({ competitionId }) => {
+    // Müəllim yarışı başladır — YALNIZ yarışın sahibi. Mühərrik oyunu sürür.
+    socket.on('competition:start', async ({ competitionId }) => {
       if (!competitionId) return;
-      io.to(rooms.competition(competitionId)).emit('competition:start', {
-        competitionId,
-        message: 'Yarış başladı!',
-        startedAt: new Date(),
-      });
+      try {
+        const comp = await Competition.findById(competitionId).select('createdBy');
+        if (!comp || comp.createdBy.toString() !== userId) return; // yalnız sahib
+        await competitionEngine.startGame(io, competitionId);
+      } catch { /* səssiz keç */ }
     });
 
-    // Müəllim sual göndərir
-    socket.on('competition:question', ({ competitionId, question, index, total }) => {
-      if (!competitionId || !question) return;
-      io.to(rooms.competition(competitionId)).emit('competition:question', {
-        question,
-        index,
-        total,
-        sentAt: new Date(),
-      });
-    });
-
-    // Tələbə cavab göndərir — yalnız müəllimə (room-a deyil)
-    socket.on('competition:answer', ({ competitionId, questionId, answer }) => {
-      if (!competitionId || !questionId) return;
-      socket.to(rooms.competition(competitionId)).emit('competition:answer_received', {
-        userId,
-        questionId,
-        answer,
-        answeredAt: new Date(),
-      });
-    });
-
-    // Sualın nəticəsi — bütün room-a göndərilir
-    socket.on('competition:result', ({ competitionId, questionId, results }) => {
+    // Room mount olanda cari sualı istəyir (ilk sualı qaçırmamaq üçün — race həlli)
+    socket.on('competition:ready', ({ competitionId }) => {
       if (!competitionId) return;
-      io.to(rooms.competition(competitionId)).emit('competition:result', {
-        questionId,
-        results,
-        sentAt: new Date(),
-      });
+      socket.join(rooms.competition(competitionId)); // ehtiyat üçün
+      competitionEngine.sendCurrentQuestionTo(socket, competitionId);
     });
 
-    // Yarış bitmə — bütün room-a göndərilir
-    socket.on('competition:end', ({ competitionId, finalScores }) => {
-      if (!competitionId) return;
-      io.to(rooms.competition(competitionId)).emit('competition:end', {
-        finalScores,
-        finishedAt: new Date(),
-      });
+    // Tələbə cavab göndərir — mühərrik xalı hesablayıb nəticəni qaytarır
+    socket.on('competition:answer', (payload) => {
+      if (!payload || !payload.competitionId) return;
+      competitionEngine.handleAnswer(io, socket, payload).catch(() => {});
+    });
+
+    // İzləyici reaksiyası (🔥/⚡/💪) — room-dakı digərlərinə ötür
+    socket.on('competition:reaction', ({ competitionId, type }) => {
+      if (!competitionId || !type) return;
+      socket.to(rooms.competition(competitionId)).emit('competition:reaction', { type });
     });
 
     // ── CLAN EVENTS ───────────────────────────────────────────────
@@ -194,8 +179,6 @@ const initSocket = (httpServer) => {
 };
 
 // ─── Server tərəfindən notification göndər ─────────────────────────
-// Bu funksiya digər modullardan çağrılır
-// Məsələn: notificationService.createNotification() sonra bu çağrılır
 const emitToUser = (userId, event, data) => {
   if (!io) return;
   io.to(rooms.user(userId.toString())).emit(event, data);

@@ -25,6 +25,8 @@ import DailyQuiz from '../pages/quiz/DailyQuiz'
 import CompetitionRoom from '../pages/competition/CompetitionRoom'
 import CompetitionLobby from '../pages/competition/CompetitionLobby'
 import CompetitionResult from '../pages/competition/CompetitionResult'
+import CompetitionCreate from '../pages/competition/CompetitionCreate'
+import CompetitionJoin from '../pages/competition/CompetitionJoin'
 import WeeklyMystery from '../pages/WeeklyMystery'
 import ClanPage from '../pages/clan/ClanPage'
 import ClanBattle from '../pages/clan/ClanBattle'
@@ -142,6 +144,8 @@ export default function AppRouter() {
 
         {/* ── Feature routes — hamısı PageWrapper ilə ──────────── */}
         <Route path={APP_ROUTES.DAILY} element={<ProtectedRoute><DailyQuiz /></ProtectedRoute>} />
+        <Route path="/competition" element={<PW><CompetitionJoin /></PW>} />
+        <Route path="/competition/create" element={<RoleRoute roles={['teacher']}><PageWrapper><CompetitionCreate /></PageWrapper></RoleRoute>} />
         <Route path="/competition/:id" element={<PW><CompetitionRoom /></PW>} />
         <Route path="/competition/:id/lobby" element={<PW><CompetitionLobby /></PW>} />
         <Route path="/competition/:id/result" element={<PW><CompetitionResult /></PW>} />

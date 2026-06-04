@@ -7,29 +7,75 @@ import { Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { useSocket } from '../../hooks/useSocket'
-import { useAuth }   from '../../context/AuthContext'
-import api            from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
+import api from '../../lib/api'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
-import type { RootState }         from '../../app/store'
+import type { RootState } from '../../app/store'
 import type { CompetitionInfo, Participant } from '../../types'
 
 // ── Mock data ─────────────────────────────────────────────────────────────
 
 const MOCK: CompetitionInfo = {
-  _id:             'mock-comp-1',
-  title:           'Riyaziyyat Müsabiqəsi',
-  subject:         'Riyaziyyat',
-  pin:             '4829',
-  status:          'waiting',
-  organizerId:     'teacher-1',
-  participants:    [
-    { userId: 'u1', name: 'Aytən M.',  avatarColor: '#9333EA', score: 0, rank: 1, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-    { userId: 'u2', name: 'Kənan H.',  avatarColor: '#3B82F6', score: 0, rank: 2, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-    { userId: 'u3', name: 'Nigar Ə.',  avatarColor: '#06B6D4', score: 0, rank: 3, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
+  _id: 'mock-comp-1',
+  title: 'Riyaziyyat Müsabiqəsi',
+  subject: 'Riyaziyyat',
+  pin: '4829',
+  status: 'waiting',
+  organizerId: 'teacher-1',
+  participants: [
+    { userId: 'u1', name: 'Aytən M.', avatarColor: '#9333EA', score: 0, rank: 1, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
+    { userId: 'u2', name: 'Kənan H.', avatarColor: '#3B82F6', score: 0, rank: 2, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
+    { userId: 'u3', name: 'Nigar Ə.', avatarColor: '#06B6D4', score: 0, rank: 3, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
   ],
-  questionCount:   10,
+  questionCount: 10,
   isWeeklyMystery: false,
 }
+// ── Backend → frontend map (REST cavabını CompetitionInfo formatına çevir) ──
+interface RawParticipant {
+  studentId?: { _id: string; userId?: { _id: string; name: string; surname?: string } }
+  score?: number
+  rank?: number
+  correctAnswers?: number
+  totalAnswers?: number
+}
+interface RawCompetition {
+  _id: string
+  title: string
+  pin: string
+  status: 'waiting' | 'active' | 'finished'
+  createdBy: string
+  questions?: { questionId?: { subject?: string } }[]
+  participants?: RawParticipant[]
+}
+
+function mapParticipant(p: RawParticipant): Participant {
+  const u = p.studentId?.userId
+  return {
+    userId: u?._id ?? p.studentId?._id ?? '',     // User._id (vahid kimlik)
+    name: u ? `${u.name} ${u.surname ?? ''}`.trim() : 'İştirakçı',
+    avatarColor: '#9333EA',                            // REST rəng vermir → default
+    score: p.score ?? 0,
+    rank: p.rank ?? 0,
+    correctCount: p.correctAnswers ?? 0,
+    wrongCount: Math.max(0, (p.totalAnswers ?? 0) - (p.correctAnswers ?? 0)),
+    avgResponseTime: 0,
+  }
+}
+
+function mapCompetition(raw: RawCompetition): CompetitionInfo {
+  return {
+    _id: raw._id,
+    title: raw.title,
+    subject: raw.questions?.[0]?.questionId?.subject ?? 'Yarış',
+    pin: raw.pin,
+    status: raw.status,
+    organizerId: raw.createdBy,                        // backend createdBy → organizerId
+    participants: (raw.participants ?? []).map(mapParticipant),
+    questionCount: raw.questions?.length ?? 0,
+    isWeeklyMystery: false,
+  }
+}
+
 
 // ── Participant avatar card ────────────────────────────────────────────────
 
@@ -102,34 +148,34 @@ function CountdownOverlay({ count }: { count: number }) {
 // ── Main Lobby ────────────────────────────────────────────────────────────
 
 export default function CompetitionLobby() {
-  const { id }         = useParams<{ id: string }>()
-  const navigate       = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const isSpectator    = searchParams.get('spectator') === 'true'
+  const isSpectator = searchParams.get('spectator') === 'true'
 
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
-  const authUser    = useSelector((s: RootState) => s.auth.user)
+  const authUser = useSelector((s: RootState) => s.auth.user)
   const { user: ctxUser } = useAuth()
   const user = authUser ?? ctxUser
 
   // Fetch competition info
   const { data: comp, isLoading } = useQuery<CompetitionInfo>({
     queryKey: ['competition', id],
-    queryFn:  () => api.get<{ data: CompetitionInfo }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
-                       .then(r => r.data.data)
-                       .catch(() => MOCK),
-    enabled:  !!id,
+    queryFn: () => api.get<{ data: RawCompetition }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
+      .then(r => mapCompetition(r.data.data))
+      .catch(() => MOCK),
+    enabled: !!id,
     staleTime: 1000 * 30,
   })
 
   const competition = comp ?? MOCK
   const isOrganizer = competition.organizerId === user?._id
-  const maxSlots    = 20
-  const emptySlots  = Math.max(0, maxSlots - competition.participants.length)
+  const maxSlots = 20
+  const emptySlots = Math.max(0, maxSlots - competition.participants.length)
 
   const [participants, setParticipants] = useState<Participant[]>(competition.participants)
-  const [countdown,    setCountdown]    = useState<number | null>(null)
-  const [copied,       setCopied]       = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // Update participants when query data arrives
   useEffect(() => {
@@ -143,14 +189,9 @@ export default function CompetitionLobby() {
   const handleParticipantJoined = useCallback((p: Participant) => {
     setParticipants(prev => [...prev.filter(x => x.userId !== p.userId), p])
   }, [])
-
   const handleCountdown = useCallback((data: { seconds: number }) => {
     setCountdown(data.seconds)
   }, [])
-
-  const handleStarted = useCallback(() => {
-    navigate(APP_ROUTES.COMPETITION.ROOM(id!))
-  }, [id, navigate])
 
   // Attach socket listeners when connected
   useEffect(() => {
@@ -160,21 +201,19 @@ export default function CompetitionLobby() {
     // Announce ourselves
     socket.emit('competition:join', {
       competitionId: id,
-      userId:        user?._id,
-      name:          `${user?.name} ${user?.surname}`,
+      userId: user?._id,
+      name: `${user?.name} ${user?.surname}`,
       avatarColor,
     })
 
     socket.on('participant:joined', handleParticipantJoined)
     socket.on('competition:countdown', handleCountdown)
-    socket.on('competition:started',   handleStarted)
 
     return () => {
       socket.off('participant:joined', handleParticipantJoined)
       socket.off('competition:countdown', handleCountdown)
-      socket.off('competition:started',   handleStarted)
     }
-  }, [isConnected, id, avatarColor, user, handleParticipantJoined, handleCountdown, handleStarted, socketRef])
+  }, [isConnected, id, avatarColor, user, handleParticipantJoined, handleCountdown, socketRef])
 
   // Local countdown tick
   useEffect(() => {
@@ -296,9 +335,9 @@ export default function CompetitionLobby() {
             onClick={handleCopyPin}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
             style={{
-              background:  copied ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)',
-              border:      `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.12)'}`,
-              color:       copied ? '#22C55E' : '#9CA3AF',
+              background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)',
+              border: `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.12)'}`,
+              color: copied ? '#22C55E' : '#9CA3AF',
             }}
           >
             {copied ? <Check size={15} /> : <Copy size={15} />}
@@ -365,7 +404,7 @@ export default function CompetitionLobby() {
               className="w-full py-4 rounded-2xl font-black text-white text-lg disabled:opacity-40"
               style={{
                 background: `linear-gradient(135deg, ${avatarColor}, #9333EA)`,
-                boxShadow:  `0 4px 24px ${avatarColor}40`,
+                boxShadow: `0 4px 24px ${avatarColor}40`,
               }}
             >
               Yarışı Başlat 🚀

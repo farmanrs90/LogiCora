@@ -1,6 +1,7 @@
 const Competition = require('./competition.model');
 const { awardXP } = require('../gamification/gamification.service');
 const { sendToStudent } = require('../notification/notification.service');
+const { addTimelineEntry, updateSkillTree } = require('../portfolio/portfolio.service');
 
 const generatePin = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -143,7 +144,7 @@ const submitAnswer = async (competitionId, studentId, { questionId, selectedAnsw
 };
 
 const finishCompetition = async (competitionId, userId) => {
-  const competition = await Competition.findById(competitionId);
+  const competition = await Competition.findById(competitionId).populate('questions.questionId', 'subject');
   if (!competition) {
     const error = new Error('Competition not found');
     error.statusCode = 404;
@@ -167,13 +168,17 @@ const finishCompetition = async (competitionId, userId) => {
     if (participant) participant.rank = i + 1;
   });
 
-  await competition.save();
+   await competition.save();
+
+  // Yarışın fənni (skillTree üçün) + sual sayı — bütün iştirakçılara eyni
+  const subject = (competition.questions[0] && competition.questions[0].questionId && competition.questions[0].questionId.subject) || 'Ümumi';
+  const totalQ  = competition.questions.length || 1;
 
   for (const participant of competition.participants) {
     if (participant.score > 0) {
       await awardXP(participant.studentId, {
         score: participant.score,
-        percentage: Math.round((participant.correctAnswers / competition.questions.length) * 100),
+        percentage: Math.round((participant.correctAnswers / totalQ) * 100),
         assessmentId: competition._id,
         submissionCount: 1,
       });
@@ -185,6 +190,16 @@ const finishCompetition = async (competitionId, userId) => {
       message: `${competition.title} yarışında ${participant.rank}-ci oldun`,
       meta: { competitionId: competition._id, rank: participant.rank, score: participant.score },
     });
+
+    // Portfolio (BIO) — hər yarışı tələbənin daimi tarixçəsinə yaz
+    await updateSkillTree(participant.studentId, subject, participant.score);
+    await addTimelineEntry(participant.studentId, {
+      type:        'competition',
+      title:       competition.title,
+      description: `${participant.rank}-ci yer · ${participant.correctAnswers}/${totalQ} düzgün`,
+      xpEarned:    participant.score,
+      verified:    true,
+    });
   }
 
   return competition;
@@ -195,6 +210,58 @@ const getCompetition = async (competitionId) => {
     .populate('questions.questionId')
     .populate({ path: 'participants.studentId', populate: { path: 'userId', select: 'name surname' } });
 };
+const getResults = async (competitionId, userId) => {
+  const competition = await Competition.findById(competitionId)
+    .populate('questions.questionId', 'subject')
+    .populate({ path: 'participants.studentId', populate: { path: 'userId', select: 'name surname characterType' } });
+
+  if (!competition) {
+    const error = new Error('Competition not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Hər tələbənin cavab vaxtları (ms) — orta hesablamaq üçün
+  const sumTime = {};
+  const cntTime = {};
+  for (const a of competition.answers) {
+    const sid = a.studentId.toString();
+    sumTime[sid] = (sumTime[sid] || 0) + a.responseTime;
+    cntTime[sid] = (cntTime[sid] || 0) + 1;
+  }
+
+  const sorted = [...competition.participants].sort((a, b) => b.score - a.score);
+
+  const participants = sorted.map((p, i) => {
+    const sid = p.studentId && p.studentId._id ? p.studentId._id.toString() : '';
+    const u = p.studentId && p.studentId.userId;
+    const cnt = cntTime[sid] || 0;
+    return {
+      userId: u ? u._id.toString() : sid,
+      name: u ? `${u.name} ${u.surname || ''}`.trim() : 'İştirakçı',
+      avatarColor: u && u.characterType === 'logi' ? '#3B82F6' : '#9333EA',
+      score: p.score,
+      rank: i + 1,
+      correctCount: p.correctAnswers,
+      wrongCount: Math.max(0, p.totalAnswers - p.correctAnswers),
+      avgResponseTime: cnt ? Math.round((sumTime[sid] / cnt / 1000) * 10) / 10 : 0,
+    };
+  });
+
+  const me = participants.find((x) => x.userId === userId.toString());
+
+  return {
+    competitionId: competition._id,
+    title: competition.title,
+    subject: (competition.questions[0] && competition.questions[0].questionId && competition.questions[0].questionId.subject) || 'Yarış',
+    participants,
+    myResult: me
+      ? { rank: me.rank, score: me.score, xpEarned: me.score, correctCount: me.correctCount, wrongCount: me.wrongCount, avgResponseTime: me.avgResponseTime }
+      : { rank: 0, score: 0, xpEarned: 0, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
+    isClanBattle: false,
+  };
+};
+
 
 module.exports = {
   createCompetition,
@@ -203,4 +270,5 @@ module.exports = {
   submitAnswer,
   finishCompetition,
   getCompetition,
+  getResults,
 };
