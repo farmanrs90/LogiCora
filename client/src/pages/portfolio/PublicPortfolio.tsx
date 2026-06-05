@@ -564,10 +564,11 @@ export default function PublicPortfolio() {
   const { data: portfolio, isLoading } = useQuery({
     queryKey: ['public-portfolio', link],
     queryFn: () =>
-      api.get<PublicPortfolioData>(API_ROUTES.PORTFOLIO.BY_LINK(link!))
+      api.get(API_ROUTES.PORTFOLIO.BY_LINK(link!))
         .then(r => {
-          setMetaTags(r.data)
-          return r.data
+          const data = r.data.data as PublicPortfolioData
+          setMetaTags(data)
+          return data
         })
         .catch(() => {
           setMetaTags(MOCK_PUBLIC)
@@ -575,8 +576,7 @@ export default function PublicPortfolio() {
         }),
     enabled: !!link,
   })
-
-  if (isLoading) {
+ 
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
         <div className="space-y-3 text-center">

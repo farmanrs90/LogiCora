@@ -134,9 +134,17 @@ async function handleAnswer(io, socket, { competitionId, questionId, answer }) {
       responseTime,
     });
   } catch { /* artıq cavablanıb/status — sakitcə keç */ }
-
   const board = await buildLeaderboard(game.id);
+
+  // HOST üçün canlı yayım: neçə nəfər cavab verdi + cari sıralama (hamıya gedir)
+  io.to(`competition:${game.id}`).emit('competition:progress', {
+    answeredCount: game.answered.size,
+    total: game.participantCount,
+    leaderboard: board,
+  });
+
   const me = board.find((p) => p.userId === sid);
+
 
   // Nəticəni YALNIZ cavab verən tələbəyə göndər (düzgün cavabı da ona açırıq).
   socket.emit('competition:answer_result', {
@@ -163,7 +171,11 @@ async function endQuestion(io, competitionId) {
   clearTimeout(game.timer);
 
   const board = await buildLeaderboard(game.id);
-  io.to(`competition:${game.id}`).emit('competition:question_end', { leaderboard: board });
+  const entry = game.questions[game.index];
+  io.to(`competition:${game.id}`).emit('competition:question_end', {
+    leaderboard: board,
+    correctAnswer: entry && entry.questionId ? entry.questionId.correctAnswer : '',
+  });
 
   setTimeout(() => {
     const g = getGame(competitionId);

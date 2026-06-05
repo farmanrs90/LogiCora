@@ -187,6 +187,7 @@ export default function CompetitionResult() {
   const second   = top3.find(p => p.rank === 2)
   const third    = top3.find(p => p.rank === 3)
   const { myResult } = results
+  const isHost = !!results.isHost
 
   const rankLabel = myResult.rank === 1 ? '🥇 Birinci!' : myResult.rank === 2 ? '🥈 İkinci!' : myResult.rank === 3 ? '🥉 Üçüncü!' : `${myResult.rank}-ci yer`
 
@@ -236,38 +237,65 @@ export default function CompetitionResult() {
           {third  && <PodiumBlock p={third}  position={3} delay={0.7} />}
         </motion.div>
 
-        {/* My result */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="w-full rounded-2xl p-5"
-          style={{
-            background: `${avatarColor}0D`,
-            border:     `1px solid ${avatarColor}30`,
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-white font-bold text-sm">Sənin nəticən</p>
-            <span className="font-bold text-sm" style={{ color: avatarColor }}>{rankLabel}</span>
-          </div>
+        {/* My result (tələbə) və ya yekun standings (host) */}
+        {!isHost ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="w-full rounded-2xl p-5"
+            style={{
+              background: `${avatarColor}0D`,
+              border:     `1px solid ${avatarColor}30`,
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white font-bold text-sm">Sənin nəticən</p>
+              <span className="font-bold text-sm" style={{ color: avatarColor }}>{rankLabel}</span>
+            </div>
 
-          {/* XP */}
-          <div className="flex flex-col items-center mb-4">
-            <span className="font-black" style={{ fontSize: 48, color: '#EAB308', lineHeight: 1 }}>
-              +<XPCountUp target={myResult.xpEarned} />
-            </span>
-            <span className="text-[#9CA3AF] text-xs">XP qazandın</span>
-          </div>
+            {/* XP */}
+            <div className="flex flex-col items-center mb-4">
+              <span className="font-black" style={{ fontSize: 48, color: '#EAB308', lineHeight: 1 }}>
+                +<XPCountUp target={myResult.xpEarned} />
+              </span>
+              <span className="text-[#9CA3AF] text-xs">XP qazandın</span>
+            </div>
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-4 gap-2 mt-2">
-            <Stat emoji="✅" label="Düzgün"      value={myResult.correctCount}              color="#22C55E" />
-            <Stat emoji="❌" label="Səhv"         value={myResult.wrongCount}               color="#EF4444" />
-            <Stat emoji="⚡" label="Ort. vaxt"   value={`${myResult.avgResponseTime.toFixed(1)}s`} />
-            <Stat emoji="🏆" label="Xal"          value={myResult.score}                    color={avatarColor} />
-          </div>
-        </motion.div>
+            {/* Stats grid */}
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              <Stat emoji="✅" label="Düzgün"      value={myResult.correctCount}              color="#22C55E" />
+              <Stat emoji="❌" label="Səhv"         value={myResult.wrongCount}               color="#EF4444" />
+              <Stat emoji="⚡" label="Ort. vaxt"   value={`${myResult.avgResponseTime.toFixed(1)}s`} />
+              <Stat emoji="🏆" label="Xal"          value={myResult.score}                    color={avatarColor} />
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="w-full rounded-2xl p-5"
+            style={{ background: 'rgba(147,51,234,0.06)', border: '1px solid rgba(147,51,234,0.25)' }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white font-bold text-sm">Yarış yekunu</p>
+              <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>HOST</span>
+            </div>
+            <p className="text-[#9CA3AF] text-xs mb-3">{results.participants.length} iştirakçı · Qalib: {results.participants[0]?.name ?? '—'}</p>
+            <div className="flex flex-col gap-2">
+              {results.participants.map((p, i) => (
+                <div key={p.userId} className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <span className="w-6 text-center font-black text-[#9CA3AF]">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0" style={{ backgroundColor: p.avatarColor }}>{p.name.charAt(0)}</div>
+                  <span className="flex-1 text-sm font-semibold text-white truncate">{p.name}</span>
+                  <span className="text-xs text-[#9CA3AF]">✅{p.correctCount}</span>
+                  <span className="text-xs font-bold text-white w-10 text-right">{p.score}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Badge */}
         <AnimatePresence>

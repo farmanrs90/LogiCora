@@ -175,12 +175,12 @@ const RARITY_COLORS: Record<string, string> = {
 
 const SUBJECT_META: Record<string, { emoji: string; color: string; worldName: string }> = {
   'Riyaziyyat': { emoji: '🔢', color: '#60A5FA', worldName: 'Rəqəmlər Adası' },
-  'Fizika':     { emoji: '⚗️', color: '#A78BFA', worldName: 'Enerji Dünyası' },
-  'İnformatika':{ emoji: '💻', color: '#34D399', worldName: 'Kod Qalası' },
-  'Kimya':      { emoji: '🔬', color: '#FB923C', worldName: 'Kəşf Mağarası' },
-  'Biologiya':  { emoji: '🌿', color: '#4ADE80', worldName: 'Canlılar Vadisi' },
-  'Tarix':      { emoji: '📜', color: '#FBBF24', worldName: 'Zaman Qalası' },
-  'Dil':        { emoji: '📖', color: '#F472B6', worldName: 'Hekayələr Meşəsi' },
+  'Fizika': { emoji: '⚗️', color: '#A78BFA', worldName: 'Enerji Dünyası' },
+  'İnformatika': { emoji: '💻', color: '#34D399', worldName: 'Kod Qalası' },
+  'Kimya': { emoji: '🔬', color: '#FB923C', worldName: 'Kəşf Mağarası' },
+  'Biologiya': { emoji: '🌿', color: '#4ADE80', worldName: 'Canlılar Vadisi' },
+  'Tarix': { emoji: '📜', color: '#FBBF24', worldName: 'Zaman Qalası' },
+  'Dil': { emoji: '📖', color: '#F472B6', worldName: 'Hekayələr Meşəsi' },
 }
 
 function fmtDate(iso: string): string {
@@ -459,8 +459,8 @@ function TimelineView({ portfolio }: { portfolio: MyPortfolioData }) {
 
   const filtered = portfolio.timeline.filter(ev =>
     filter === 'all' ? true :
-    filter === 'milestone' ? (ev.type === 'milestone' || ev.type === 'level') :
-    ev.type === filter
+      filter === 'milestone' ? (ev.type === 'milestone' || ev.type === 'level') :
+        ev.type === filter
   )
 
   const FILTERS: { key: TimelineFilter; label: string }[] = [
@@ -501,9 +501,8 @@ function TimelineView({ portfolio }: { portfolio: MyPortfolioData }) {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
-                filter === f.key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/50 border border-white/10 hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${filter === f.key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/50 border border-white/10 hover:text-white'
+                }`}
             >
               {f.label}
             </button>
@@ -765,9 +764,8 @@ function LinkedInView({
                 {portfolio.competitions.map((comp, i) => (
                   <motion.div key={comp.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
                     className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${
-                      comp.rank === 1 ? 'bg-yellow-400/20' : comp.rank <= 3 ? 'bg-slate-400/20' : 'bg-white/10'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${comp.rank === 1 ? 'bg-yellow-400/20' : comp.rank <= 3 ? 'bg-slate-400/20' : 'bg-white/10'
+                      }`}>
                       {comp.rank <= 3 ? ['🥇', '🥈', '🥉'][comp.rank - 1] : `#${comp.rank}`}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -927,9 +925,8 @@ function ShareCardModal({ portfolio, onClose }: { portfolio: MyPortfolioData; on
         <div className="grid grid-cols-2 gap-2">
           {(['story', 'pro'] as const).map(f => (
             <button key={f} onClick={() => setFormat(f)}
-              className={`py-3 rounded-xl border text-sm font-medium transition-colors ${
-                format === f ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
-              }`}
+              className={`py-3 rounded-xl border text-sm font-medium transition-colors ${format === f ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
+                }`}
             >
               {f === 'story' ? '📱 Instagram Story' : '💼 Professional'}
             </button>
@@ -970,14 +967,14 @@ export default function MyPortfolio() {
   const { data: portfolio, isLoading } = useQuery({
     queryKey: ['my-portfolio'],
     queryFn: () =>
-      api.get<MyPortfolioData>(API_ROUTES.PORTFOLIO.MY)
-        .then(r => r.data)
+      api.get(API_ROUTES.PORTFOLIO.MY)
+        .then(r => r.data.data as MyPortfolioData)
         .catch(() => MOCK),
   })
 
   const visibilityMutation = useMutation({
     mutationFn: (isPublic: boolean) =>
-      api.put(API_ROUTES.PORTFOLIO.VISIBILITY, { isPublic }).then(r => r.data),
+      api.patch(API_ROUTES.PORTFOLIO.VISIBILITY, { isPublic }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['my-portfolio'] }),
     onError: (_err, isPublic) => {
       qc.setQueryData(['my-portfolio'], (old: MyPortfolioData | undefined) =>
@@ -1019,9 +1016,8 @@ export default function MyPortfolio() {
         <div className="flex gap-1">
           {([['1', '🗺️ Xəritə'], ['2', '📅 Xronologiya'], ['3', '💼 Professional']] as const).map(([v, label]) => (
             <button key={v} onClick={() => setView(v)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                view === v ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white hover:bg-white/5'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${view === v ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white hover:bg-white/5'
+                }`}
             >
               {label}
             </button>

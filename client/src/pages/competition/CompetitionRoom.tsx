@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../lib/api'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
 import type { RootState } from '../../app/store'
-import type { CompetitionInfo, Participant, Question, AgeGroup } from '../../types'
+import type { Participant, Question, AgeGroup } from '../../types'
 import FormatA from '../../features/quiz/formats/FormatA'
 import FormatB from '../../features/quiz/formats/FormatB'
 
@@ -198,6 +198,124 @@ function WaitingForOthers({ waitingCount, total }: { waitingCount: number; total
 // ── Room phases & state ───────────────────────────────────────────────────
 
 type RoomPhase = 'waiting' | 'question' | 'submitted' | 'mini_result'
+// ── Host (müəllim) idarəetmə görünüşü ──────────────────────────────────────
+
+function HostView({
+  question, questionNumber, totalQuestions, timeLeft, phase,
+  correctAnswer, leaderboard, answeredCount, participantTotal, title,
+}: {
+  question: Question | null
+  questionNumber: number
+  totalQuestions: number
+  timeLeft: number
+  phase: RoomPhase
+  correctAnswer: string
+  leaderboard: Participant[]
+  answeredCount: number
+  participantTotal: number
+  title: string
+}) {
+  const timerPct = question ? timeLeft / (question.timeLimit ?? 20) : 1
+  const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
+  const revealed = phase === 'mini_result'
+  const total = participantTotal || leaderboard.length
+
+  return (
+    <div className="min-h-screen flex flex-col relative">
+      <ClassicBackground />
+
+      {/* Header */}
+      <div
+        className="relative z-20 px-4 py-3 flex items-center justify-between"
+        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>HOST</span>
+          <span className="text-[#9CA3AF] text-xs truncate max-w-[160px]">{title}</span>
+        </div>
+        <span className="text-[#9CA3AF] text-xs">{questionNumber}/{totalQuestions} sual</span>
+      </div>
+
+      <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 overflow-hidden">
+        {/* Sual + cavablar (yalnız izləmə, klik yox) */}
+        <div className="lg:col-span-2 flex flex-col">
+          {question ? (
+            <div className="flex-1 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[#9CA3AF] text-sm">Sual {questionNumber}</span>
+                {phase === 'question' && (
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center font-black tabular-nums"
+                    style={{ border: `2px solid ${timerColor}`, color: timerColor, backgroundColor: `${timerColor}15` }}
+                  >
+                    {timeLeft}
+                  </div>
+                )}
+              </div>
+              <h2 className="text-white font-bold text-2xl leading-snug">{question.text}</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {question.options.map((o) => {
+                  const isCorrect = revealed && o.id === correctAnswer
+                  return (
+                    <div
+                      key={o.id}
+                      className="px-4 py-4 rounded-xl text-white font-semibold border transition-colors"
+                      style={{
+                        background: isCorrect ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.04)',
+                        borderColor: isCorrect ? '#22C55E' : 'rgba(255,255,255,0.1)',
+                      }}
+                    >
+                      <span className="opacity-50 mr-2">{o.id}</span>{o.text}
+                      {isCorrect && <span className="ml-2">✅</span>}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Cavab progressi */}
+              <div className="mt-auto pt-4">
+                <div className="flex justify-between text-xs text-[#9CA3AF] mb-1">
+                  <span>Cavab verənlər</span>
+                  <span>{answeredCount}/{total}</span>
+                </div>
+                <div className="h-2 bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: '#9333EA' }}
+                    animate={{ width: `${total ? (answeredCount / total) * 100 : 0}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <motion.span className="text-6xl" animate={{ y: [0, -12, 0] }} transition={{ duration: 1.8, repeat: Infinity }}>🎤</motion.span>
+              <p className="text-white font-bold text-xl">Yarışı idarə edirsən</p>
+              <p className="text-[#9CA3AF] text-sm">İlk sual göndərilir...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Canlı sıralama */}
+        <div className="rounded-2xl p-4 flex flex-col min-h-0" style={{ background: 'rgba(17,24,39,0.7)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <p className="text-white font-bold text-sm mb-3 text-center">Canlı Sıralama 🏅</p>
+          <div className="flex flex-col gap-2 overflow-y-auto">
+            {leaderboard.length === 0 && <p className="text-[#9CA3AF] text-xs text-center mt-4">Hələ xal yoxdur</p>}
+            {leaderboard.map((p, i) => (
+              <div key={p.userId} className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <span className="w-6 text-center font-black text-[#9CA3AF]">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0" style={{ backgroundColor: p.avatarColor }}>{p.name.charAt(0)}</div>
+                <span className="flex-1 text-sm font-semibold text-white truncate">{p.name}</span>
+                <span className="text-xs font-bold text-[#9CA3AF]">{p.score}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function CompetitionRoom() {
   const { id } = useParams<{ id: string }>()
@@ -214,15 +332,17 @@ export default function CompetitionRoom() {
   const isChild = ag === '3-5' || ag === '6-8'
   const isYoung = ag === '9-11' || ag === '12-14'
 
-  // Fetch competition metadata
-  useQuery<CompetitionInfo>({
+  // Fetch competition metadata (host təyini üçün createdBy lazımdır)
+  const { data: competitionMeta } = useQuery({
     queryKey: ['competition', id],
-    queryFn: () => api.get<{ data: CompetitionInfo }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
-      .then(r => r.data.data)
-      .catch(() => null as unknown as CompetitionInfo),
+    queryFn: () => api.get(API_ROUTES.COMPETITIONS.BY_ID(id!))
+      .then(r => r.data.data as { createdBy?: string; title?: string })
+      .catch(() => null),
     enabled: !!id,
     staleTime: 1000 * 60,
   })
+
+  const isHost = !!competitionMeta?.createdBy && competitionMeta.createdBy === user?._id
 
   const { socketRef, isConnected, emit } = useSocket(id ?? null)
 
@@ -238,6 +358,7 @@ export default function CompetitionRoom() {
   const [myScore, setMyScore] = useState(0)
   const [answeredCount, setAnsweredCount] = useState(0)
   const [leaderboard, setLeaderboard] = useState<Participant[]>([])
+  const [participantTotal, setParticipantTotal] = useState(0)
   const [spectatorCount, setSpectatorCount] = useState(0)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [reactionEmoji, setReactionEmoji] = useState<{ emoji: string; key: number } | null>(null)
@@ -268,6 +389,8 @@ export default function CompetitionRoom() {
     setTimeLeft(data.question.timeLimit ?? 20)
     setSelectedAnswer(null)
     setIsAnswered(false)
+    setCorrectAnswer('')
+    setAnsweredCount(0)
     setPhase('question')
     startTimeRef.current = Date.now()
   }, [])
@@ -280,14 +403,21 @@ export default function CompetitionRoom() {
     setPhase('submitted')
   }, [])
 
-  const handleQuestionEnd = useCallback((data: { leaderboard: Participant[] }) => {
+  const handleQuestionEnd = useCallback((data: { leaderboard: Participant[]; correctAnswer?: string }) => {
     setLeaderboard(data.leaderboard)
+    setCorrectAnswer(data.correctAnswer ?? '')
     setShowLeaderboard(true)
     setPhase('mini_result')
     setTimeout(() => {
       setShowLeaderboard(false)
       setPhase('waiting')
     }, 3000)
+  }, [])
+
+  const handleProgress = useCallback((data: { answeredCount: number; total: number; leaderboard?: Participant[] }) => {
+    setAnsweredCount(data.answeredCount)
+    setParticipantTotal(data.total)
+    if (data.leaderboard) setLeaderboard(data.leaderboard)
   }, [])
 
   const handleEnd = useCallback(() => {
@@ -315,6 +445,7 @@ export default function CompetitionRoom() {
     socket.on('competition:end', handleEnd)
     socket.on('competition:spectators', handleSpectatorCount)
     socket.on('competition:reaction', handleReaction)
+    socket.on('competition:progress', handleProgress)
     // Təzə socket köhnə otaqda deyil → otağa qoşul + cari sualı istə
     socket.emit('competition:ready', { competitionId: id })
     return () => {
@@ -328,8 +459,9 @@ export default function CompetitionRoom() {
       socket.off('competition:end', handleEnd)
       socket.off('competition:spectators', handleSpectatorCount)
       socket.off('competition:reaction', handleReaction)
+      socket.off('competition:progress', handleProgress)
     }
-  }, [id, isConnected, socketRef, handleQuestion, handleAnswerResult, handleQuestionEnd, handleEnd, handleSpectatorCount, handleReaction])
+  }, [id, isConnected, socketRef, handleQuestion, handleAnswerResult, handleQuestionEnd, handleEnd, handleSpectatorCount, handleReaction, handleProgress])
 
   // Tab visibility
   useEffect(() => {
@@ -344,6 +476,7 @@ export default function CompetitionRoom() {
 
   // Timer
   const handleTimeUp = useCallback(() => {
+    if (isHost) return
     if (isAnswered || phase !== 'question') return
     handleSubmitAnswer('')
   }, [isAnswered, phase]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -354,6 +487,7 @@ export default function CompetitionRoom() {
   )
 
   function handleSubmitAnswer(answerId: string) {
+    if (isHost) return
     if (isAnswered || !currentQuestion) return
     const responseTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
     setSelectedAnswer(answerId)
@@ -398,6 +532,23 @@ export default function CompetitionRoom() {
 
   const timerPct = currentQuestion ? timeLeft / (currentQuestion.timeLimit ?? 20) : 1
   const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
+
+  if (isHost) {
+    return (
+      <HostView
+        question={currentQuestion}
+        questionNumber={questionNumber}
+        totalQuestions={totalQuestions}
+        timeLeft={timeLeft}
+        phase={phase}
+        correctAnswer={correctAnswer}
+        leaderboard={leaderboard}
+        answeredCount={answeredCount}
+        participantTotal={participantTotal}
+        title={competitionMeta?.title ?? 'Yarış'}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col relative">

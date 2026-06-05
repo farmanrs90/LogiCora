@@ -259,6 +259,8 @@ const getResults = async (competitionId, userId) => {
       ? { rank: me.rank, score: me.score, xpEarned: me.score, correctCount: me.correctCount, wrongCount: me.wrongCount, avgResponseTime: me.avgResponseTime }
       : { rank: 0, score: 0, xpEarned: 0, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
     isClanBattle: false,
+    isHost: competition.createdBy.toString() === userId.toString(),
+
   };
 };
 

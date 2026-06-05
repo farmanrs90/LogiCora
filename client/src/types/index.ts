@@ -214,6 +214,7 @@ export interface CompetitionResults {
     badge?: { name: string; emoji: string }
   }
   isClanBattle: boolean
+  isHost?: boolean
   clanResults?: { clanName: string; score: number; isWinner: boolean }[]
 }
 
