@@ -1,9 +1,9 @@
 import { useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { motion, useInView } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import api from '../../lib/axios'
+import api from '../../lib/api'
 import { API_ROUTES } from '../../constants'
 import { useAuth } from '../../context/AuthContext'
 
@@ -96,42 +96,10 @@ interface PublicPortfolioData {
   isConnected?: boolean
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK_PUBLIC: PublicPortfolioData = {
-  user: {
-    id: 'u2', name: 'Leyla Quliyeva', ageGroup: '12-14', city: 'Gəncə',
-    school: 'Məktəb #23', bio: 'Biologiya və kimya sevgisi.',
-    joinedAt: '2025-10-01', level: 18, league: 'silver',
-  },
-  stats: { totalXP: 8400, currentStreak: 14, longestStreak: 28, totalQuestions: 820, accuracy: 74, rank: 12 },
-  skills: [
-    { subject: 'Biologiya', stars: 5, xp: 3200, level: 78, accuracy: 82, isWeak: false, isVerified: true, questionsAnswered: 290, worlds: { unlocked: 4, total: 5 } },
-    { subject: 'Kimya', stars: 4, xp: 2400, level: 65, accuracy: 76, isWeak: false, isVerified: false, questionsAnswered: 210, worlds: { unlocked: 3, total: 5 } },
-    { subject: 'Riyaziyyat', stars: 3, xp: 1600, level: 50, accuracy: 68, isWeak: false, isVerified: false, questionsAnswered: 180, worlds: { unlocked: 2, total: 5 } },
-    { subject: 'Fizika', stars: 2, xp: 800, level: 32, accuracy: 58, isWeak: true, weakUntil: '2026-06-05', isVerified: false, questionsAnswered: 140, worlds: { unlocked: 1, total: 5 } },
-  ],
-  badges: [
-    { id: 'b1', name: 'Qurucu Tələbə', emoji: '🥇', earnedAt: '2025-10-05', rarity: 'legendary', description: 'İlk 1000 tələbədən biri' },
-    { id: 'b2', name: 'Biologiya Ustası', emoji: '🌿', earnedAt: '2026-01-20', rarity: 'epic', description: 'Biologiyada 5/5 ulduz' },
-    { id: 'b3', name: 'İlk Qalibiyyət', emoji: '🏆', earnedAt: '2025-12-01', rarity: 'common', description: 'İlk yarışma qalibiyyəti' },
-  ],
-  timeline: [
-    { id: 't1', type: 'competition', title: 'Biologiya Olimpiadası', subtitle: '480 iştirakçı arasında', date: '2026-04-05', rank: 1, meta: '91 xal' },
-    { id: 't2', type: 'badge', title: 'Biologiya Ustası nişanı', badgeEmoji: '🌿', date: '2026-01-20' },
-    { id: 't3', type: 'course', title: 'Kimya Əsasları', subtitle: 'Elçin Rəsulzadə', date: '2026-02-10', meta: 'Sertifikat' },
-    { id: 't4', type: 'milestone', title: '14 gün ardıcıl streak', date: '2026-04-10' },
-  ],
-  certificates: [
-    { id: 'c1', courseName: 'Kimya Əsasları', teacherName: 'Elçin Rəsulzadə', issuedAt: '2026-02-10' },
-  ],
-  competitions: [
-    { id: 'k1', title: 'Biologiya Olimpiadası', rank: 1, score: 91, totalParticipants: 480, date: '2026-04-05', subject: 'Biologiya' },
-    { id: 'k2', title: 'Kimya Sınağı', rank: 3, score: 84, totalParticipants: 320, date: '2026-02-20', subject: 'Kimya' },
-  ],
-  shareLink: 'logicora.az/portfolio/leyla-q',
-  isPublic: true,
-  isConnected: false,
+interface ApiEnvelope<T> {
+  success: boolean
+  data: T
+  message?: string
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -145,6 +113,13 @@ const RARITY_COLORS: Record<string, string> = {
   rare: 'border-blue-500/40 bg-blue-500/10',
   epic: 'border-purple-500/40 bg-purple-500/10',
   legendary: 'border-yellow-400/50 bg-yellow-400/10',
+}
+
+const RARITY_LABELS: Record<Badge['rarity'], string> = {
+  common: 'Adi',
+  rare: 'Nadir',
+  epic: 'Epik',
+  legendary: 'Əfsanəvi',
 }
 
 const SUBJECT_META: Record<string, { emoji: string; color: string }> = {
@@ -163,6 +138,97 @@ function fmtDate(iso: string): string {
 
 function isYoung(ag: string): boolean { return ['3-5', '6-8'].includes(ag) }
 function isTeen(ag: string): boolean { return ['9-11', '12-14'].includes(ag) }
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}
+
+function PublicState({
+  icon,
+  title,
+  text,
+  onRetry,
+}: {
+  icon: string
+  title: string
+  text: string
+  onRetry?: () => void
+}) {
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-center px-4">
+      <div className="space-y-4 max-w-sm">
+        <div className="text-7xl">{icon}</div>
+        <h1 className="text-2xl font-bold text-white">{title}</h1>
+        <p className="text-white/50 leading-6">{text}</p>
+        <div className="flex justify-center gap-3 flex-wrap">
+          {onRetry && (
+            <button onClick={onRetry} className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold text-white transition-colors">
+              Yenidən yoxla
+            </button>
+          )}
+          <Link to="/" className="inline-block px-5 py-2.5 border border-white/10 hover:bg-white/10 rounded-xl text-sm font-semibold text-white/70 hover:text-white transition-colors">
+            Ana səhifəyə qayıt
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PublicEmptyState({ icon, title, text }: { icon: string; title: string; text: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center">
+      <div className="mb-2 text-4xl">{icon}</div>
+      <p className="font-bold text-white">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-white/50">{text}</p>
+    </div>
+  )
+}
+
+function PublicPassportSnapshot({ portfolio }: { portfolio: PublicPortfolioData }) {
+  const topSkill = [...portfolio.skills].sort((a, b) => b.xp - a.xp)[0]
+  const topMeta = topSkill ? SUBJECT_META[topSkill.subject] ?? { emoji: '📖', color: '#9CA3AF' } : null
+  const latest = portfolio.timeline[0]
+
+  return (
+    <div className="bg-[#141414] border border-indigo-500/20 rounded-2xl p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-300">Təhsil pasportu</p>
+          <h2 className="mt-1 text-lg font-black text-white">Açıq profil xülasəsi</h2>
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            Bu profil şagirdin LogiCora-da görünməsinə icazə verdiyi öyrənmə izlərini göstərir.
+          </p>
+        </div>
+        {topSkill && topMeta && (
+          <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <p className="text-xs text-white/40">Ən güclü bacarıq</p>
+            <p className="mt-1 font-bold text-white">{topMeta.emoji} {topSkill.subject}</p>
+            <p className="text-xs" style={{ color: topMeta.color }}>{topSkill.level}% · {topSkill.xp.toLocaleString()} XP</p>
+          </div>
+        )}
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          ['Bacarıq', portfolio.skills.length],
+          ['Xronologiya', portfolio.timeline.length],
+          ['Nişan', portfolio.badges.length],
+          ['Sertifikat', portfolio.certificates.length],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+            <p className="text-xl font-black text-white">{value}</p>
+            <p className="text-xs text-white/45">{label}</p>
+          </div>
+        ))}
+      </div>
+      {latest && <p className="mt-3 truncate text-xs text-white/35">Son qeyd: {latest.title}</p>}
+    </div>
+  )
+}
 
 function Stars({ count, size = 14 }: { count: number; size?: number }) {
   return (
@@ -200,16 +266,6 @@ function setMetaTags(portfolio: PublicPortfolioData) {
 function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
   const { user, isAuthenticated } = useAuth()
 
-  const connectMutation = useMutation({
-    mutationFn: () => api.post(`/connections`, { userId: portfolio.user.id }).then(r => r.data),
-    onError: () => { /* mock */ },
-  })
-
-  const inviteMutation = useMutation({
-    mutationFn: () => api.post(API_ROUTES.INVITES.SEND, { toUserId: portfolio.user.id }).then(r => r.data),
-    onError: () => { /* mock */ },
-  })
-
   if (!isAuthenticated) {
     return (
       <div className="flex gap-3">
@@ -224,20 +280,18 @@ function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
     <div className="flex gap-3 flex-wrap">
       {user?.role === 'teacher' && (
         <button
-          onClick={() => inviteMutation.mutate()}
-          disabled={inviteMutation.isPending || inviteMutation.isSuccess}
+          disabled
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
         >
-          {inviteMutation.isSuccess ? '✓ Dəvət göndərildi' : inviteMutation.isPending ? 'Göndərilir...' : '📨 Kurs dəvəti göndər'}
+          📨 Kurs dəvəti hazırlanır
         </button>
       )}
       {user?.role === 'student' && (
         <button
-          onClick={() => connectMutation.mutate()}
-          disabled={connectMutation.isPending || portfolio.isConnected || connectMutation.isSuccess}
+          disabled
           className="flex items-center gap-2 px-4 py-2 border border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl text-sm font-semibold text-indigo-300 transition-colors disabled:opacity-60"
         >
-          {portfolio.isConnected || connectMutation.isSuccess ? '✓ Qoşuldunuz' : connectMutation.isPending ? 'Göndərilir...' : '🤝 Connect ol'}
+          {portfolio.isConnected ? '✓ Qoşuldunuz' : '🤝 Qoşulma hazırlanır'}
         </button>
       )}
     </div>
@@ -268,7 +322,7 @@ function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
           <div className="bg-orange-400/20 border border-orange-400/40 rounded-2xl px-4 py-2 text-center">
             <div className="text-2xl">🔥</div>
             <div className="text-lg font-bold text-orange-300">{portfolio.stats.currentStreak} gün</div>
-            <div className="text-xs text-orange-300/60">Streak</div>
+            <div className="text-xs text-orange-300/60">Seriya</div>
           </div>
         </div>
         <div className="mt-5">
@@ -279,39 +333,55 @@ function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
       {/* Skills as world cards */}
       <div className="max-w-xl mx-auto px-4">
         <h2 className="text-lg font-bold text-center mb-4">🗺️ Bacarıq Dünyaları</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {portfolio.skills.map((skill, i) => {
-            const meta = SUBJECT_META[skill.subject] ?? { emoji: '📖', color: '#9CA3AF' }
-            return (
-              <motion.div key={skill.subject}
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-3xl p-5 border border-white/10 text-center"
-                style={{ background: `${meta.color}15`, borderColor: `${meta.color}30` }}
-              >
-                <div className="text-4xl mb-2">{meta.emoji}</div>
-                <p className="text-sm font-bold mb-1" style={{ color: meta.color }}>{skill.subject}</p>
-                <Stars count={skill.stars} size={13} />
-              </motion.div>
-            )
-          })}
-        </div>
+        {portfolio.skills.length === 0 ? (
+          <PublicEmptyState
+            icon="🗺️"
+            title="Bacarıq dünyaları hələ açılmayıb"
+            text="Öyrənmə nəticələri artdıqca burada fənn dünyaları görünəcək."
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            {portfolio.skills.map((skill, i) => {
+              const meta = SUBJECT_META[skill.subject] ?? { emoji: '📖', color: '#9CA3AF' }
+              return (
+                <motion.div key={skill.subject}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="rounded-3xl p-5 border border-white/10 text-center"
+                  style={{ background: `${meta.color}15`, borderColor: `${meta.color}30` }}
+                >
+                  <div className="text-4xl mb-2">{meta.emoji}</div>
+                  <p className="text-sm font-bold mb-1" style={{ color: meta.color }}>{skill.subject}</p>
+                  <Stars count={skill.stars} size={13} />
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Badges */}
       <div className="max-w-xl mx-auto px-4 mt-8">
         <h2 className="text-lg font-bold text-center mb-4">🎖️ Nailiyyətlər</h2>
-        <div className="flex flex-wrap justify-center gap-3">
-          {portfolio.badges.map((badge, i) => (
-            <motion.div key={badge.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.08 }}
-              className={`flex flex-col items-center p-3 rounded-2xl border ${RARITY_COLORS[badge.rarity]} w-24`}
-            >
-              <span className="text-3xl">{badge.emoji}</span>
-              <span className="text-[10px] text-white/50 mt-1 text-center">{badge.name}</span>
-            </motion.div>
-          ))}
-        </div>
+        {portfolio.badges.length === 0 ? (
+          <PublicEmptyState
+            icon="🏅"
+            title="Nailiyyət yoxdur"
+            text="Nişanlar qazanıldıqca bu açıq profildə görünəcək."
+          />
+        ) : (
+          <div className="flex flex-wrap justify-center gap-3">
+            {portfolio.badges.map((badge, i) => (
+              <motion.div key={badge.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.08 }}
+                className={`flex flex-col items-center p-3 rounded-2xl border ${RARITY_COLORS[badge.rarity]} w-24`}
+              >
+                <span className="text-3xl">{badge.emoji}</span>
+                <span className="text-[10px] text-white/50 mt-1 text-center">{badge.name}</span>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -371,7 +441,7 @@ function TeenPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
         <h1 className="text-2xl font-bold">{portfolio.user.name}</h1>
         <p className="text-white/50 text-sm">{portfolio.user.school ?? portfolio.user.city} · Səviyyə {portfolio.user.level}</p>
         <div className="flex justify-center gap-3 mt-3 flex-wrap">
-          {[['⚡', portfolio.stats.totalXP.toLocaleString(), 'XP'], ['🔥', `${portfolio.stats.currentStreak} gün`, 'Streak'], ['✅', portfolio.stats.totalQuestions.toString(), 'Sual']].map(([icon, v, l]) => (
+          {[['⚡', portfolio.stats.totalXP.toLocaleString(), 'XP'], ['🔥', `${portfolio.stats.currentStreak} gün`, 'Seriya'], ['✅', portfolio.stats.totalQuestions.toString(), 'Sual']].map(([icon, v, l]) => (
             <div key={l} className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center">
               <p className="text-base">{icon}</p>
               <p className="font-bold text-sm">{v}</p>
@@ -388,9 +458,17 @@ function TeenPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
       <div className="max-w-2xl mx-auto px-4 relative">
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/10 -translate-x-1/2" />
         <div className="space-y-4 relative">
-          {portfolio.timeline.map((ev, i) => (
-            <TimelineItem key={ev.id} event={ev} index={i} />
-          ))}
+          {portfolio.timeline.length === 0 ? (
+            <PublicEmptyState
+              icon="📅"
+              title="Xronologiya boşdur"
+              text="Kurs, yarış və nailiyyət qeydləri yarandıqca bu profilin öyrənmə yolu burada görünəcək."
+            />
+          ) : (
+            portfolio.timeline.map((ev, i) => (
+              <TimelineItem key={ev.id} event={ev} index={i} />
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -421,9 +499,9 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-2xl font-bold">{portfolio.user.name}</h1>
-                    <span className="text-xs text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">✓ Verified</span>
+                    <span className="text-xs text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">✓ Təsdiqli</span>
                   </div>
-                  <p className="text-white/50 text-sm mt-0.5">{portfolio.user.school ?? portfolio.user.city}</p>
+                  <p className="text-white/50 text-sm mt-0.5">{portfolio.user.school || portfolio.user.city || 'Məktəb məlumatı yoxdur'}</p>
                   {portfolio.user.bio && <p className="text-white/70 text-sm mt-2 max-w-lg">{portfolio.user.bio}</p>}
                 </div>
               </div>
@@ -439,7 +517,7 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
           {[
             { label: 'Ümumi XP', value: portfolio.stats.totalXP.toLocaleString(), color: 'text-yellow-400' },
             { label: 'Dəqiqlik', value: `${portfolio.stats.accuracy}%`, color: 'text-emerald-400' },
-            { label: 'Streak rekoru', value: `${portfolio.stats.longestStreak} gün`, color: 'text-orange-400' },
+            { label: 'Seriya rekordu', value: `${portfolio.stats.longestStreak} gün`, color: 'text-orange-400' },
             { label: 'Milli reyting', value: `#${portfolio.stats.rank}`, color: 'text-indigo-400' },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-[#141414] border border-white/10 rounded-xl p-4 text-center">
@@ -449,58 +527,82 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
           ))}
         </div>
 
+        <PublicPassportSnapshot portfolio={portfolio} />
+
         {/* Skills */}
         <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
           <h2 className="font-bold mb-4">Bacarıqlar</h2>
-          <div className="space-y-3">
-            {portfolio.skills.filter(s => !s.isWeak).map(s => {
-              const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF' }
-              return (
-                <div key={s.subject} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span>{meta.emoji} <span className="font-medium">{s.subject}</span></span>
-                      {s.isVerified && <span className="text-xs text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded-full">✓ Təsdiqlənib</span>}
+          {portfolio.skills.filter(s => !s.isWeak).length === 0 ? (
+            <PublicEmptyState
+              icon="🧭"
+              title="Açıq bacarıq məlumatı yoxdur"
+              text="Şagirdin görünən bacarıqları formalaşdıqca bu bölmə dolacaq."
+            />
+          ) : (
+            <div className="space-y-3">
+              {portfolio.skills.filter(s => !s.isWeak).map(s => {
+                const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF' }
+                return (
+                  <div key={s.subject} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span>{meta.emoji} <span className="font-medium">{s.subject}</span></span>
+                        {s.isVerified && <span className="text-xs text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded-full">✓ Təsdiqlənib</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Stars count={s.stars} size={12} />
+                        <span className="text-xs text-white/40">{s.accuracy}%</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Stars count={s.stars} size={12} />
-                      <span className="text-xs text-white/40">{s.accuracy}%</span>
+                    <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+                      <motion.div className="h-full rounded-full" style={{ backgroundColor: meta.color }}
+                        initial={{ width: 0 }} animate={{ width: `${s.level}%` }} transition={{ duration: 0.8 }} />
                     </div>
                   </div>
-                  <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
-                    <motion.div className="h-full rounded-full" style={{ backgroundColor: meta.color }}
-                      initial={{ width: 0 }} animate={{ width: `${s.level}%` }} transition={{ duration: 0.8 }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Badges */}
           <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
             <h2 className="font-bold mb-4">Nişanlar</h2>
-            <div className="flex flex-wrap gap-3">
-              {portfolio.badges.map((badge, i) => (
-                <motion.div key={badge.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07 }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${RARITY_COLORS[badge.rarity]}`}
-                  title={badge.description}
-                >
-                  <span className="text-2xl">{badge.emoji}</span>
-                  <div>
-                    <p className="text-xs font-semibold">{badge.name}</p>
-                    <p className="text-[10px] text-white/30 capitalize">{badge.rarity}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            {portfolio.badges.length === 0 ? (
+              <PublicEmptyState
+                icon="🏅"
+                title="Nişan yoxdur"
+                text="Şagird nailiyyət qazandıqca burada təsdiqli nişanlar görünəcək."
+              />
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                {portfolio.badges.map((badge, i) => (
+                  <motion.div key={badge.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07 }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${RARITY_COLORS[badge.rarity]}`}
+                    title={badge.description}
+                  >
+                    <span className="text-2xl">{badge.emoji}</span>
+                    <div>
+                      <p className="text-xs font-semibold">{badge.name}</p>
+                      <p className="text-[10px] text-white/30">{RARITY_LABELS[badge.rarity]}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Certificates */}
-          {portfolio.certificates.length > 0 && (
-            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-              <h2 className="font-bold mb-4">Sertifikatlar</h2>
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+            <h2 className="font-bold mb-4">Sertifikatlar</h2>
+            {portfolio.certificates.length === 0 ? (
+              <PublicEmptyState
+                icon="🎓"
+                title="Sertifikat yoxdur"
+                text="Kurs sertifikatları qoşulduqca açıq profildə burada görünəcək."
+              />
+            ) : (
               <div className="space-y-3">
                 {portfolio.certificates.map(cert => (
                   <div key={cert.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
@@ -512,14 +614,21 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Competition chart */}
-        {portfolio.competitions.length > 0 && (
-          <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-            <h2 className="font-bold mb-4">Yarış Nəticələri</h2>
+        <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+          <h2 className="font-bold mb-4">Yarış Nəticələri</h2>
+          {portfolio.competitions.length === 0 ? (
+            <PublicEmptyState
+              icon="🏆"
+              title="Yarış nəticəsi yoxdur"
+              text="Şagird yarışlarda iştirak etdikcə nəticələr və xal qrafiki burada görünəcək."
+            />
+          ) : (
+            <>
             <div className="space-y-3 mb-5">
               {portfolio.competitions.map(comp => (
                 <div key={comp.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
@@ -544,8 +653,9 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
 
         {/* Footer */}
         <div className="text-center py-4 text-xs text-white/30">
@@ -561,22 +671,18 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
 export default function PublicPortfolio() {
   const { link } = useParams<{ link: string }>()
 
-  const { data: portfolio, isLoading } = useQuery({
+  const { data: portfolio, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['public-portfolio', link],
-    queryFn: () =>
-      api.get(API_ROUTES.PORTFOLIO.BY_LINK(link!))
-        .then(r => {
-          const data = r.data.data as PublicPortfolioData
-          setMetaTags(data)
-          return data
-        })
-        .catch(() => {
-          setMetaTags(MOCK_PUBLIC)
-          return MOCK_PUBLIC
-        }),
+    queryFn: async () => {
+      const response = await api.get<ApiEnvelope<PublicPortfolioData>>(API_ROUTES.PORTFOLIO.BY_LINK(link!))
+      const data = response.data.data
+      setMetaTags(data)
+      return data
+    },
     enabled: !!link,
   })
- 
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
         <div className="space-y-3 text-center">
@@ -588,33 +694,34 @@ export default function PublicPortfolio() {
     )
   }
 
+  if (isError) {
+    return (
+      <PublicState
+        icon="⚠️"
+        title="Portfolio yüklənmədi"
+        text={getErrorMessage(error, 'Bu portfolio məlumatını almaq mümkün olmadı. Link gizli, silinmiş və ya müvəqqəti əlçatmaz ola bilər.')}
+        onRetry={() => void refetch()}
+      />
+    )
+  }
+
   if (!portfolio) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-center px-4">
-        <div className="space-y-4">
-          <div className="text-7xl">🔍</div>
-          <h1 className="text-2xl font-bold text-white">Portfolio tapılmadı</h1>
-          <p className="text-white/50">Bu link mövcud deyil.</p>
-          <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors">
-            Ana səhifəyə qayıt
-          </Link>
-        </div>
-      </div>
+      <PublicState
+        icon="🔍"
+        title="Portfolio tapılmadı"
+        text="Bu link mövcud deyil və ya portfolio məlumatı hələ formalaşmayıb."
+      />
     )
   }
 
   if (!portfolio.isPublic) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-center px-4">
-        <div className="space-y-4 max-w-sm">
-          <div className="text-7xl">🔒</div>
-          <h1 className="text-2xl font-bold text-white">Bu portfolio gizlidir</h1>
-          <p className="text-white/50">Sahibi portfoliosunu ictimai etməyib.</p>
-          <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors">
-            Ana səhifəyə qayıt
-          </Link>
-        </div>
-      </div>
+      <PublicState
+        icon="🔒"
+        title="Bu portfolio gizlidir"
+        text="Sahibi portfoliosunu ictimai etməyib."
+      />
     )
   }
 

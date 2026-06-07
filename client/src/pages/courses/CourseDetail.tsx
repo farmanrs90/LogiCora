@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import api from '../../lib/axios'
+import api from '../../lib/api'
 import { API_ROUTES, APP_ROUTES } from '../../constants'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ interface CourseDetailData {
   title: string
   description: string
   longDescription: string
-  thumbnail: string
+  thumbnail: string | null
   previewVideoUrl?: string
   price: number
   discountedPrice?: number
@@ -45,7 +45,7 @@ interface CourseDetailData {
   reviewCount: number
   studentCount: number
   duration: number // total minutes
-  level: 'başlanğıc' | 'orta' | 'irəliləmiş'
+  level: 'beginner' | 'intermediate' | 'advanced'
   language: string
   updatedAt: string
   tags: string[]
@@ -56,7 +56,7 @@ interface CourseDetailData {
   teacher: {
     id: string
     name: string
-    slug: string
+    slug: string | null
     avatar?: string
     isVerified: boolean
     totalStudents: number
@@ -66,83 +66,208 @@ interface CourseDetailData {
   }
   isEnrolled: boolean
   enrollmentProgress: number // 0-100
-  certificate?: { url: string; issuedAt: string }
+  certificate?: boolean | { url: string; issuedAt: string }
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
+interface ApiEnvelope<T> {
+  success: boolean
+  data: T
+  message?: string
+}
 
-const MOCK_COURSE: CourseDetailData = {
-  id: '1',
-  title: 'Python ilə Tam Proqramlaşdırma Kursu',
-  description: 'Sıfırdan pro səviyyəyə Python öyrənin. Real layihələr, canlı tapşırıqlar.',
-  longDescription: 'Bu kurs sizə Python proqramlaşdırma dilinin əsaslarından başlayaraq irəliləmiş mövzulara qədər tam bilik verəcəkdir. Kurs boyunca 50-dən çox real layihə üzərində işləyəcəksiniz. Hər dərs video + interaktiv quiz ilə tamamlanır.',
-  thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800',
-  previewVideoUrl: undefined,
-  price: 120,
-  discountedPrice: 79,
-  isFree: false,
-  rating: 4.8,
-  reviewCount: 342,
-  studentCount: 2840,
-  duration: 2400,
-  level: 'başlanğıc',
-  language: 'Azərbaycan',
-  updatedAt: '2026-04-15',
-  tags: ['Python', 'Proqramlaşdırma', 'Data Science', 'Backend'],
-  whatYoullLearn: [
-    'Python sintaksisini tam mənimsəmək',
-    'OOP (Obyekt-yönümlü proqramlaşdırma)',
-    'Fayl əməliyyatları və API inteqrasiyası',
-    'Flask ilə web tətbiqləri qurmaq',
-    'Data analizi üçün Pandas / NumPy',
-    'Real dünya layihələri hazırlamaq',
-  ],
-  requirements: [
-    'Kompüter (Windows / Mac / Linux)',
-    'İnternet bağlantısı',
-    'Proqramlaşdırma biliyinə ehtiyac yoxdur',
-  ],
-  sections: [
-    {
-      id: 's1', title: 'Giriş və Quraşdırma', lessons: [
-        { id: 'l1', title: 'Kursa xoş gəldiniz', duration: 5, isFree: true, isCompleted: true, order: 1 },
-        { id: 'l2', title: 'Python-u quraşdırın', duration: 8, isFree: true, isCompleted: true, order: 2 },
-        { id: 'l3', title: 'İlk proqramınız: Hello World', duration: 12, isFree: false, isCompleted: false, order: 3 },
-      ]
+interface BackendTeacher {
+  _id?: string
+  displayName?: string
+  name?: string
+  surname?: string
+  slug?: string
+  avatarColor?: string
+  isVerified?: boolean
+  totalStudents?: number
+  rating?: number
+  bio?: string
+  courseCount?: number
+  specialization?: string
+}
+
+interface BackendCourse {
+  _id?: string
+  id?: string
+  title?: string
+  description?: string
+  thumbnail?: string | null
+  previewVideo?: string | null
+  previewVideoUrl?: string
+  price?: number
+  discountPrice?: number | null
+  discountedPrice?: number
+  rating?: number
+  ratingCount?: number
+  reviewCount?: number
+  totalEnrolled?: number
+  studentCount?: number
+  totalDuration?: number
+  level?: 'beginner' | 'intermediate' | 'advanced'
+  language?: 'az' | 'ru' | 'en' | string
+  updatedAt?: string
+  createdAt?: string
+  tags?: string[]
+  whatYouLearn?: string[]
+  whatYoullLearn?: string[]
+  requirements?: string[]
+  targetAudience?: string
+  teacherId?: string | BackendTeacher
+  teacher?: BackendTeacher
+  isEnrolled?: boolean
+  enrollmentProgress?: number
+  certificate?: boolean | { url: string; issuedAt: string }
+}
+
+interface BackendLesson {
+  _id?: string
+  id?: string
+  title?: string
+  duration?: number
+  videoUrl?: string | null
+  isFree?: boolean
+  isCompleted?: boolean
+  order?: number
+}
+
+interface CourseDetailPayload {
+  course?: BackendCourse | null
+  lessons?: BackendLesson[]
+}
+
+const DETAIL_LEVEL_LABELS: Record<CourseDetailData['level'], string> = {
+  beginner: 'Başlanğıc',
+  intermediate: 'Orta',
+  advanced: 'İrəliləmiş',
+}
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  az: 'Azərbaycan',
+  ru: 'Rus',
+  en: 'İngilis',
+}
+
+function backendTeacherName(course: BackendCourse): string {
+  const teacher = course.teacher ?? (typeof course.teacherId === 'object' ? course.teacherId : null)
+  const fullName = [teacher?.name, teacher?.surname].filter(Boolean).join(' ')
+  if (teacher?.displayName) return teacher.displayName
+  if (fullName) return fullName
+  if (teacher?.specialization) return `${teacher.specialization} müəllimi`
+  return 'LogiCora müəllimi'
+}
+
+function normalizeLesson(raw: BackendLesson): Lesson | null {
+  const id = raw._id ?? raw.id
+  if (!id) return null
+
+  return {
+    id,
+    title: raw.title ?? 'Adsız dərs',
+    duration: raw.duration ?? 0,
+    videoUrl: raw.videoUrl ?? undefined,
+    isFree: raw.isFree ?? false,
+    isCompleted: raw.isCompleted ?? false,
+    order: raw.order ?? 0,
+  }
+}
+
+function normalizeCourseDetail(payload: CourseDetailPayload): CourseDetailData | null {
+  const raw = payload.course
+  const id = raw?._id ?? raw?.id
+  if (!raw || !id) return null
+
+  const teacher = raw.teacher ?? (typeof raw.teacherId === 'object' ? raw.teacherId : null)
+  const lessons = (payload.lessons ?? [])
+    .map(normalizeLesson)
+    .filter((lesson): lesson is Lesson => lesson !== null)
+
+  return {
+    id,
+    title: raw.title ?? 'Adsız kurs',
+    description: raw.description ?? 'Bu kurs üçün açıqlama hələ əlavə edilməyib.',
+    longDescription: raw.description ?? 'Bu kurs üçün ətraflı məlumat hələ əlavə edilməyib.',
+    thumbnail: raw.thumbnail ?? null,
+    previewVideoUrl: raw.previewVideoUrl ?? raw.previewVideo ?? undefined,
+    price: raw.price ?? 0,
+    discountedPrice: raw.discountedPrice ?? raw.discountPrice ?? undefined,
+    isFree: (raw.price ?? 0) === 0,
+    rating: raw.rating ?? 0,
+    reviewCount: raw.reviewCount ?? raw.ratingCount ?? 0,
+    studentCount: raw.studentCount ?? raw.totalEnrolled ?? 0,
+    duration: raw.totalDuration ?? lessons.reduce((sum, lesson) => sum + lesson.duration, 0),
+    level: raw.level ?? 'beginner',
+    language: LANGUAGE_LABELS[raw.language ?? 'az'] ?? raw.language ?? 'Azərbaycan',
+    updatedAt: raw.updatedAt ?? raw.createdAt ?? new Date().toISOString(),
+    tags: raw.tags ?? [],
+    whatYoullLearn: raw.whatYoullLearn ?? raw.whatYouLearn ?? [],
+    requirements: raw.requirements ?? [],
+    sections: lessons.length > 0 ? [{ id: `${id}-lessons`, title: 'Kurs dərsləri', lessons }] : [],
+    reviews: [],
+    teacher: {
+      id: typeof raw.teacherId === 'string' ? raw.teacherId : teacher?._id ?? '',
+      name: backendTeacherName(raw),
+      slug: teacher?.slug ?? null,
+      avatar: teacher?.avatarColor,
+      isVerified: teacher?.isVerified ?? false,
+      totalStudents: teacher?.totalStudents ?? 0,
+      rating: teacher?.rating ?? raw.rating ?? 0,
+      bio: teacher?.bio ?? 'Müəllim haqqında məlumat hələ əlavə edilməyib.',
+      courseCount: teacher?.courseCount ?? 1,
     },
-    {
-      id: 's2', title: 'Dəyişənlər və Tipləri', lessons: [
-        { id: 'l4', title: 'Dəyişənlər nədir?', duration: 15, isFree: false, isCompleted: false, order: 4 },
-        { id: 'l5', title: 'String, int, float, bool', duration: 18, isFree: false, isCompleted: false, order: 5 },
-        { id: 'l6', title: 'Tip çevirmə (type casting)', duration: 10, isFree: false, isCompleted: false, order: 6 },
-      ]
-    },
-    {
-      id: 's3', title: 'Şərt operatorları və Dövrlər', lessons: [
-        { id: 'l7', title: 'if / elif / else', duration: 20, isFree: false, isCompleted: false, order: 7 },
-        { id: 'l8', title: 'for dövrü', duration: 22, isFree: false, isCompleted: false, order: 8 },
-        { id: 'l9', title: 'while dövrü', duration: 18, isFree: false, isCompleted: false, order: 9 },
-      ]
-    },
-  ],
-  reviews: [
-    { id: 'r1', user: { name: 'Aynur M.', avatar: undefined }, rating: 5, comment: 'Möhtəşəm kurs! Hər şey çox aydın izah olunur.', createdAt: '2026-03-10' },
-    { id: 'r2', user: { name: 'Tural Q.', avatar: undefined }, rating: 5, comment: 'Python-u bu kursdan öyrəndim. İndi işləyirəm!', createdAt: '2026-02-28' },
-    { id: 'r3', user: { name: 'Leyla H.', avatar: undefined }, rating: 4, comment: 'Çox yaxşı kurs. Bəzi dərslər daha ətraflı ola bilərdi.', createdAt: '2026-02-15' },
-  ],
-  teacher: {
-    id: 't1',
-    name: 'Rəşad Əliyev',
-    slug: 'rashad-aliyev',
-    avatar: undefined,
-    isVerified: true,
-    totalStudents: 12400,
-    rating: 4.9,
-    bio: '10 il təcrübəli proqramçı. Google, Microsoft sertifikatları var. 5000+ tələbəyə Python öyrədib.',
-    courseCount: 8,
-  },
-  isEnrolled: false,
-  enrollmentProgress: 0,
+    isEnrolled: raw.isEnrolled ?? false,
+    enrollmentProgress: raw.enrollmentProgress ?? 0,
+    certificate: raw.certificate && typeof raw.certificate === 'object' ? raw.certificate : undefined,
+  }
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}
+
+function CourseDetailState({
+  icon,
+  title,
+  message,
+  onRetry,
+}: {
+  icon: string
+  title: string
+  message: string
+  onRetry?: () => void
+}) {
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] px-4 py-12 text-white">
+      <div className="mx-auto max-w-xl rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center">
+        <div className="mb-4 text-5xl">{icon}</div>
+        <h1 className="mb-2 text-2xl font-bold">{title}</h1>
+        <p className="mx-auto max-w-md text-sm leading-6 text-white/60">{message}</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
+            >
+              Yenidən yoxla
+            </button>
+          )}
+          <Link
+            to={APP_ROUTES.COURSES}
+            className="rounded-xl border border-white/10 px-5 py-2.5 text-sm font-bold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            Kurslara qayıt
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -308,7 +433,13 @@ function EnrollmentCard({
     >
       {/* Thumbnail preview */}
       <div className="relative aspect-video bg-black">
-        <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover opacity-80" />
+        {course.thumbnail ? (
+          <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover opacity-80" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-950 to-purple-950 text-5xl">
+            🎓
+          </div>
+        )}
         {course.previewVideoUrl && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
@@ -438,53 +569,46 @@ export default function CourseDetail() {
   }, [])
 
   // ── Data ───────────────────────────────────────────────────────────────────
-  const { data: course, isLoading } = useQuery({
+  const { data: course, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['course', id],
-    queryFn: () =>
-      api.get<CourseDetailData>(API_ROUTES.COURSES.BY_ID(id!))
-        .then(r => r.data)
-        .catch(() => MOCK_COURSE),
+    queryFn: async () => {
+      const response = await api.get<ApiEnvelope<CourseDetailPayload>>(API_ROUTES.COURSES.BY_ID(id!))
+      return normalizeCourseDetail(response.data.data)
+    },
     enabled: !!id,
   })
 
   const enrollMutation = useMutation({
-    mutationFn: () => api.post(API_ROUTES.COURSES.ENROLL, { courseId: id }).then(r => r.data),
+    mutationFn: () => api.post<ApiEnvelope<unknown>>(API_ROUTES.COURSES.ENROLL, { courseId: id }).then(r => r.data.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['course', id] }),
-    onError: () => {
-      // Mock success for demo
-      qc.setQueryData(['course', id], (old: CourseDetailData | undefined) =>
-        old ? { ...old, isEnrolled: true, enrollmentProgress: 5 } : old
-      )
-    },
   })
 
   const completeMutation = useMutation({
     mutationFn: (lessonId: string) =>
-      api.post(API_ROUTES.COURSES.COMPLETE_LESSON(id!), { lessonId }).then(r => r.data),
+      api.post<ApiEnvelope<unknown>>(API_ROUTES.COURSES.COMPLETE_LESSON(id!), { lessonId }).then(r => r.data.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['course', id] }),
-    onError: (_err, lessonId) => {
-      // Mock: mark lesson completed locally
-      qc.setQueryData(['course', id], (old: CourseDetailData | undefined) => {
-        if (!old) return old
-        return {
-          ...old,
-          sections: old.sections.map(s => ({
-            ...s,
-            lessons: s.lessons.map(l => l.id === lessonId ? { ...l, isCompleted: true } : l),
-          })),
-        }
-      })
-    },
   })
 
   const handleCertificate = async () => {
     if (!id) return
     try {
-      const res = await api.get(API_ROUTES.COURSES.CERTIFICATE(id))
-      window.open(res.data.url, '_blank')
+      const res = await api.get<ApiEnvelope<{ url?: string; certificateUrl?: string }>>(API_ROUTES.COURSES.CERTIFICATE(id))
+      const url = res.data.data?.url ?? res.data.data?.certificateUrl
+      if (url) window.open(url, '_blank')
+      else alert('Sertifikat hələ hazır deyil.')
     } catch {
-      alert('Sertifikat hazırlanır...')
+      alert('Sertifikat hələ hazır deyil.')
     }
+  }
+
+  if (!id) {
+    return (
+      <CourseDetailState
+        icon="🎓"
+        title="Kurs tapılmadı"
+        message="Bu kurs üçün keçid düzgün deyil. Kurslar siyahısına qayıdıb mövcud kurslardan birini seçin."
+      />
+    )
   }
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
@@ -504,7 +628,26 @@ export default function CourseDetail() {
     )
   }
 
-  if (!course) return null
+  if (isError) {
+    return (
+      <CourseDetailState
+        icon="⚠️"
+        title="Kurs yüklənmədi"
+        message={errorMessage(error, 'Kurs məlumatı alınmadı. Zəhmət olmasa bir az sonra yenidən yoxlayın.')}
+        onRetry={() => void refetch()}
+      />
+    )
+  }
+
+  if (!course) {
+    return (
+      <CourseDetailState
+        icon="🎓"
+        title="Kurs məlumatı boşdur"
+        message="Server bu kurs üçün məlumat qaytarmadı. Kurslar siyahısından başqa kurs seçə bilərsiniz."
+      />
+    )
+  }
 
   const visibleLearn = showAllLearn ? course.whatYoullLearn : course.whatYoullLearn.slice(0, 6)
   const totalLessons = course.sections.reduce((s, sec) => s + sec.lessons.length, 0)
@@ -538,31 +681,45 @@ export default function CourseDetail() {
                 <span className="text-white/30">·</span>
                 <span className="text-white/60">{course.studentCount.toLocaleString()} tələbə</span>
                 <span className="text-white/30">·</span>
-                <span className="capitalize text-white/60">{course.level}</span>
+                <span className="text-white/60">{DETAIL_LEVEL_LABELS[course.level]}</span>
                 <span className="text-white/30">·</span>
                 <span className="text-white/60">{course.language} dilində</span>
               </div>
 
               {/* Teacher */}
-              <Link
-                to={`/teachers/${course.teacher.slug}`}
-                className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors w-fit"
-              >
-                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
-                  {course.teacher.name[0]}
+              {course.teacher.slug ? (
+                <Link
+                  to={APP_ROUTES.TEACHER(course.teacher.slug)}
+                  className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors w-fit"
+                >
+                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
+                    {course.teacher.name[0]}
+                  </div>
+                  {course.teacher.name}
+                  {course.teacher.isVerified && (
+                    <span className="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded">✓ Təsdiqlənmiş</span>
+                  )}
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-white/60 w-fit">
+                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+                    {course.teacher.name[0]}
+                  </div>
+                  {course.teacher.name}
+                  {course.teacher.isVerified && (
+                    <span className="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded">✓ Təsdiqlənmiş</span>
+                  )}
                 </div>
-                {course.teacher.name}
-                {course.teacher.isVerified && (
-                  <span className="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded">✓ Təsdiqlənmiş</span>
-                )}
-              </Link>
+              )}
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-2">
-                {course.tags.map(tag => (
-                  <span key={tag} className="text-xs bg-white/5 border border-white/10 text-white/60 px-2.5 py-1 rounded-full">{tag}</span>
-                ))}
-              </div>
+              {course.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {course.tags.map(tag => (
+                    <span key={tag} className="text-xs bg-white/5 border border-white/10 text-white/60 px-2.5 py-1 rounded-full">{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Right: enrollment card — visible on desktop in hero, hidden on mobile (appears below) */}
@@ -632,16 +789,22 @@ export default function CourseDetail() {
                     {/* What you'll learn */}
                     <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-2xl p-6 space-y-4">
                       <h2 className="text-lg font-bold">Bu kursda nə öyrənəcəksiniz?</h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {visibleLearn.map(item => (
-                          <div key={item} className="flex items-start gap-2 text-sm text-white/80">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818CF8" strokeWidth="2.5" className="mt-0.5 shrink-0">
-                              <path d="M20 6L9 17l-5-5" />
-                            </svg>
-                            {item}
-                          </div>
-                        ))}
-                      </div>
+                      {visibleLearn.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {visibleLearn.map(item => (
+                            <div key={item} className="flex items-start gap-2 text-sm text-white/80">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818CF8" strokeWidth="2.5" className="mt-0.5 shrink-0">
+                                <path d="M20 6L9 17l-5-5" />
+                              </svg>
+                              {item}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+                          Bu kurs üçün öyrənmə nəticələri hələ əlavə edilməyib.
+                        </p>
+                      )}
                       {course.whatYoullLearn.length > 6 && (
                         <button
                           onClick={() => setShowAllLearn(o => !o)}
@@ -655,14 +818,20 @@ export default function CourseDetail() {
                     {/* Requirements */}
                     <div className="space-y-3">
                       <h2 className="text-lg font-bold">Tələblər</h2>
-                      <ul className="space-y-2">
-                        {course.requirements.map(req => (
-                          <li key={req} className="flex items-start gap-2 text-sm text-white/70">
-                            <span className="text-indigo-400 mt-0.5">•</span>
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
+                      {course.requirements.length > 0 ? (
+                        <ul className="space-y-2">
+                          {course.requirements.map(req => (
+                            <li key={req} className="flex items-start gap-2 text-sm text-white/70">
+                              <span className="text-indigo-400 mt-0.5">•</span>
+                              {req}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+                          Bu kurs üçün xüsusi tələb qeyd edilməyib.
+                        </p>
+                      )}
                     </div>
 
                     {/* Description */}
@@ -677,7 +846,7 @@ export default function CourseDetail() {
                         { label: 'Ümumi müddət', value: fmtDuration(course.duration) },
                         { label: 'Dərslər', value: `${totalLessons} dərs` },
                         { label: 'Yeniləndi', value: fmtDate(course.updatedAt) },
-                        { label: 'Səviyyə', value: course.level },
+                        { label: 'Səviyyə', value: DETAIL_LEVEL_LABELS[course.level] },
                       ].map(({ label, value }) => (
                         <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
                           <p className="text-xs text-white/40 mb-1">{label}</p>
@@ -699,25 +868,37 @@ export default function CourseDetail() {
                         <span className="text-xs text-white/40">Pulsuz dərslər açıqdır</span>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      {displayedSections.map(section => (
-                        <SectionAccordion
-                          key={section.id}
-                          section={section}
-                          isEnrolled={course.isEnrolled}
-                          onComplete={(lessonId) => completeMutation.mutate(lessonId)}
-                        />
-                      ))}
-                    </div>
-                    {course.sections.length > 3 && (
-                      <button
-                        onClick={() => setShowAllSections(o => !o)}
-                        className="w-full py-3 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white hover:border-white/20 transition-colors"
-                      >
-                        {showAllSections
-                          ? 'Daha az göstər'
-                          : `Bütün ${course.sections.length} bölməni göstər`}
-                      </button>
+                    {course.sections.length === 0 ? (
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
+                        <div className="mb-3 text-4xl">📚</div>
+                        <h3 className="mb-2 text-lg font-bold text-white">Dərs siyahısı boşdur</h3>
+                        <p className="text-sm leading-6 text-white/60">
+                          Bu kurs üçün dərslər hələ əlavə edilməyib.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          {displayedSections.map(section => (
+                            <SectionAccordion
+                              key={section.id}
+                              section={section}
+                              isEnrolled={course.isEnrolled}
+                              onComplete={(lessonId) => completeMutation.mutate(lessonId)}
+                            />
+                          ))}
+                        </div>
+                        {course.sections.length > 3 && (
+                          <button
+                            onClick={() => setShowAllSections(o => !o)}
+                            className="w-full py-3 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white hover:border-white/20 transition-colors"
+                          >
+                            {showAllSections
+                              ? 'Daha az göstər'
+                              : `Bütün ${course.sections.length} bölməni göstər`}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -725,50 +906,62 @@ export default function CourseDetail() {
                 {/* ── TAB 3: Rəylər ───────────────────────────────────── */}
                 {activeTab === 'Rəylər' && (
                   <div className="space-y-6">
-                    {/* Rating summary */}
-                    <div className="flex gap-8 items-center">
-                      <div className="text-center">
-                        <p className="text-6xl font-bold text-yellow-400">{course.rating}</p>
-                        <StarRating value={course.rating} size={20} />
-                        <p className="text-xs text-white/40 mt-1">{course.reviewCount} rəy</p>
+                    {course.reviews.length === 0 ? (
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
+                        <div className="mb-3 text-4xl">⭐</div>
+                        <h3 className="mb-2 text-lg font-bold text-white">Rəy yoxdur</h3>
+                        <p className="text-sm leading-6 text-white/60">
+                          Bu kurs üçün rəy məlumatı hələ əlavə edilməyib.
+                        </p>
                       </div>
-                      <div className="flex-1 space-y-2">
-                        {[5, 4, 3, 2, 1].map(star => {
-                          const count = star === 5 ? Math.round(course.reviewCount * 0.65)
-                            : star === 4 ? Math.round(course.reviewCount * 0.22)
-                            : star === 3 ? Math.round(course.reviewCount * 0.08)
-                            : star === 2 ? Math.round(course.reviewCount * 0.03)
-                            : Math.round(course.reviewCount * 0.02)
-                          return <RatingBar key={star} label={`${star}★`} count={count} total={course.reviewCount} />
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Review list */}
-                    <div className="space-y-4">
-                      {course.reviews.map(review => (
-                        <motion.div
-                          key={review.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-white/5 border border-white/8 rounded-xl p-4 space-y-2"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-indigo-600/60 flex items-center justify-center text-sm font-bold">
-                                {review.user.name[0]}
-                              </div>
-                              <span className="font-medium text-sm">{review.user.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <StarRating value={review.rating} size={12} />
-                              <span className="text-xs text-white/40">{fmtDate(review.createdAt)}</span>
-                            </div>
+                    ) : (
+                      <>
+                        {/* Rating summary */}
+                        <div className="flex gap-8 items-center">
+                          <div className="text-center">
+                            <p className="text-6xl font-bold text-yellow-400">{course.rating}</p>
+                            <StarRating value={course.rating} size={20} />
+                            <p className="text-xs text-white/40 mt-1">{course.reviewCount} rəy</p>
                           </div>
-                          <p className="text-sm text-white/70 leading-relaxed">{review.comment}</p>
-                        </motion.div>
-                      ))}
-                    </div>
+                          <div className="flex-1 space-y-2">
+                            {[5, 4, 3, 2, 1].map(star => {
+                              const count = star === 5 ? Math.round(course.reviewCount * 0.65)
+                                : star === 4 ? Math.round(course.reviewCount * 0.22)
+                                : star === 3 ? Math.round(course.reviewCount * 0.08)
+                                : star === 2 ? Math.round(course.reviewCount * 0.03)
+                                : Math.round(course.reviewCount * 0.02)
+                              return <RatingBar key={star} label={`${star}★`} count={count} total={course.reviewCount} />
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Review list */}
+                        <div className="space-y-4">
+                          {course.reviews.map(review => (
+                            <motion.div
+                              key={review.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="bg-white/5 border border-white/8 rounded-xl p-4 space-y-2"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-indigo-600/60 flex items-center justify-center text-sm font-bold">
+                                    {review.user.name[0]}
+                                  </div>
+                                  <span className="font-medium text-sm">{review.user.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <StarRating value={review.rating} size={12} />
+                                  <span className="text-xs text-white/40">{fmtDate(review.createdAt)}</span>
+                                </div>
+                              </div>
+                              <p className="text-sm text-white/70 leading-relaxed">{review.comment}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </>
+                    )}
 
                     {/* Write review (only enrolled) */}
                     {course.isEnrolled && (
@@ -804,15 +997,17 @@ export default function CourseDetail() {
                       </div>
                     </div>
                     <p className="text-white/70 leading-relaxed">{course.teacher.bio}</p>
-                    <Link
-                      to={`/teachers/${course.teacher.slug}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm transition-colors"
-                    >
-                      Tam profili gör
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </Link>
+                    {course.teacher.slug && (
+                      <Link
+                        to={APP_ROUTES.TEACHER(course.teacher.slug)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm transition-colors"
+                      >
+                        Tam profili gör
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      </Link>
+                    )}
                   </div>
                 )}
               </motion.div>

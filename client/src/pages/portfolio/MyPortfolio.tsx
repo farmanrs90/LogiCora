@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../../app/store'
-import api from '../../lib/axios'
+import api from '../../lib/api'
 import { API_ROUTES } from '../../constants'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -104,60 +104,10 @@ interface MyPortfolioData {
   aiBio: string
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK: MyPortfolioData = {
-  user: {
-    id: 'u1', name: 'Anar Hüseynov', ageGroup: '15-17', city: 'Bakı',
-    school: 'Məktəb #6', bio: 'Proqramlaşdırma və riyaziyyat sevgisi.',
-    joinedAt: '2025-09-01', level: 28, league: 'gold', eloRating: 1640,
-  },
-  stats: { totalXP: 14840, currentStreak: 22, longestStreak: 45, totalQuestions: 1240, accuracy: 78, rank: 3 },
-  skills: [
-    { subject: 'Riyaziyyat', stars: 5, xp: 4200, level: 84, accuracy: 85, isWeak: false, isVerified: true, questionsAnswered: 380, worlds: { unlocked: 4, total: 5 } },
-    { subject: 'Fizika', stars: 4, xp: 2800, level: 67, accuracy: 79, isWeak: false, isVerified: false, questionsAnswered: 220, worlds: { unlocked: 3, total: 5 } },
-    { subject: 'İnformatika', stars: 5, xp: 3600, level: 80, accuracy: 88, isWeak: false, isVerified: true, questionsAnswered: 310, worlds: { unlocked: 4, total: 5 } },
-    { subject: 'Kimya', stars: 2, xp: 800, level: 31, accuracy: 51, isWeak: true, weakUntil: '2026-05-30', isVerified: false, questionsAnswered: 90, worlds: { unlocked: 1, total: 5 } },
-    { subject: 'Biologiya', stars: 3, xp: 1400, level: 52, accuracy: 63, isWeak: false, isVerified: false, questionsAnswered: 140, worlds: { unlocked: 2, total: 5 } },
-    { subject: 'Tarix', stars: 3, xp: 1200, level: 48, accuracy: 70, isWeak: false, isVerified: false, questionsAnswered: 100, worlds: { unlocked: 2, total: 5 } },
-  ],
-  badges: [
-    { id: 'b1', name: 'Qurucu Tələbə', emoji: '🥇', earnedAt: '2025-09-05', rarity: 'legendary', description: 'LogiCora-nın ilk 1000 tələbəsindən biri' },
-    { id: 'b2', name: '30 Günlük Streak', emoji: '🔥', earnedAt: '2025-11-01', rarity: 'rare', description: '30 gün ardıcıl dərslər keçildi' },
-    { id: 'b3', name: 'Riyaziyyat Çempionu', emoji: '🧮', earnedAt: '2025-12-15', rarity: 'epic', description: 'Riyaziyyat olimpiadasında 1-ci yer' },
-    { id: 'b4', name: 'Sürət Ustası', emoji: '⚡', earnedAt: '2026-01-10', rarity: 'rare', description: 'Yarışda ən sürətli cavabçı' },
-    { id: 'b5', name: 'Həftənin Sirri', emoji: '🔮', earnedAt: '2026-02-14', rarity: 'epic', description: 'Həftəlik sirr sualını cavablandırdı' },
-    { id: 'b6', name: 'İlk Qalibiyyət', emoji: '🏆', earnedAt: '2025-10-05', rarity: 'common', description: 'İlk yarışma qalibiyyəti' },
-  ],
-  timeline: [
-    { id: 't1', type: 'level', title: 'Level 28-ə çatdın!', subtitle: undefined, date: '2026-04-10', level: 28 },
-    { id: 't2', type: 'competition', title: 'Riyaziyyat Olimpiadası #4', subtitle: '840 iştirakçı arasında 1-ci oldun', date: '2026-03-01', rank: 1, meta: '96 xal' },
-    { id: 't3', type: 'course', title: 'Python ilə Proqramlaşdırma', subtitle: 'Rəşad Əliyev · Sertifikat qazanıldı', date: '2026-03-20', meta: 'Sertifikat' },
-    { id: 't4', type: 'badge', title: 'Həftənin Sirri nişanı qazanıldı', badgeEmoji: '🔮', date: '2026-02-14', isMystery: true },
-    { id: 't5', type: 'milestone', title: '30 dərs ardıcıl keçildi', subtitle: 'Streak milestonu!', date: '2025-11-01' },
-    { id: 't6', type: 'competition', title: 'İnformatika Sprint', subtitle: '520 iştirakçı arasında', date: '2026-02-15', rank: 2, meta: '88 xal' },
-    { id: 't7', type: 'course', title: 'Web Development Əsasları', subtitle: 'Günel Hüseyni', date: '2026-01-15', meta: 'Sertifikat' },
-    { id: 't8', type: 'badge', title: 'Sürət Ustası nişanı', badgeEmoji: '⚡', date: '2026-01-10' },
-  ],
-  certificates: [
-    { id: 'c1', courseName: 'Python ilə Proqramlaşdırma', teacherName: 'Rəşad Əliyev', issuedAt: '2026-03-20' },
-    { id: 'c2', courseName: 'Web Development Əsasları', teacherName: 'Günel Hüseyni', issuedAt: '2026-01-15' },
-  ],
-  competitions: [
-    { id: 'k1', title: 'Riyaziyyat Olimpiadası #4', rank: 1, score: 96, totalParticipants: 840, date: '2026-03-01', subject: 'Riyaziyyat' },
-    { id: 'k2', title: 'İnformatika Sprint', rank: 2, score: 88, totalParticipants: 520, date: '2026-02-15', subject: 'İnformatika' },
-    { id: 'k3', title: 'Fizika Yarışması', rank: 5, score: 71, totalParticipants: 380, date: '2026-01-20', subject: 'Fizika' },
-    { id: 'k4', title: 'Riyaziyyat Sprint #2', rank: 1, score: 94, totalParticipants: 650, date: '2025-12-10', subject: 'Riyaziyyat' },
-    { id: 'k5', title: 'Kimya Sınağı', rank: 12, score: 55, totalParticipants: 290, date: '2025-11-20', subject: 'Kimya' },
-  ],
-  shareLink: 'logicora.az/portfolio/anar-h',
-  isPublic: true,
-  careerSuggestions: [
-    { icon: '🤖', title: 'Süni İntellekt Mühəndisi', why: 'Riyaziyyat və İnformatikada üstün nəticələr', skills: ['Riyaziyyat', 'İnformatika', 'Fizika'] },
-    { icon: '🔐', title: 'Kibertəhlükəsizlik Mütəxəssisi', why: 'Analitik düşüncə + texnologiya bilgisi', skills: ['İnformatika', 'Riyaziyyat'] },
-    { icon: '📊', title: 'Data Scientist', why: 'Statistik düşüncə + proqramlaşdırma bacarığı', skills: ['Riyaziyyat', 'İnformatika', 'Fizika'] },
-  ],
-  aiBio: 'Anar 2025-dən bəri LogiCora-da riyaziyyat, fizika və informatika fənlərində güclü nəticələr göstərir. 47 yarışda iştirak etmiş, 12-sini qazanmışdır. Cari streak-i 22 gündür. Texnologiya sahəsindəki güclü bacarıqları gələcəkdə müvəffəqiyyətli bir karyera üçün möhkəm əsas yaradır.',
+interface ApiEnvelope<T> {
+  success: boolean
+  data: T
+  message?: string
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -171,6 +121,13 @@ const RARITY_COLORS: Record<string, string> = {
   rare: 'border-blue-500/40 bg-blue-500/10 text-blue-300',
   epic: 'border-purple-500/40 bg-purple-500/10 text-purple-300',
   legendary: 'border-yellow-400/50 bg-yellow-400/10 text-yellow-300',
+}
+
+const RARITY_LABELS: Record<Badge['rarity'], string> = {
+  common: 'Adi',
+  rare: 'Nadir',
+  epic: 'Epik',
+  legendary: 'Əfsanəvi',
 }
 
 const SUBJECT_META: Record<string, { emoji: string; color: string; worldName: string }> = {
@@ -195,6 +152,62 @@ function defaultView(ag: string): ViewMode {
   if (isView1(ag)) return '1'
   if (isView2(ag)) return '2'
   return '3'
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}
+
+function EmptyState({
+  icon,
+  title,
+  text,
+}: {
+  icon: string
+  title: string
+  text: string
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
+      <div className="mb-3 text-4xl">{icon}</div>
+      <p className="font-bold text-white">{title}</p>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/50">{text}</p>
+    </div>
+  )
+}
+
+function PortfolioState({
+  icon,
+  title,
+  text,
+  onRetry,
+}: {
+  icon: string
+  title: string
+  text: string
+  onRetry?: () => void
+}) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#0D0D0D] px-4 text-center text-white">
+      <div className="max-w-md space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-8">
+        <div className="text-6xl">{icon}</div>
+        <h1 className="text-2xl font-bold">{title}</h1>
+        <p className="text-sm leading-6 text-white/55">{text}</p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
+          >
+            Yenidən yoxla
+          </button>
+        )}
+      </div>
+    </div>
+  )
 }
 
 // ── Stars ─────────────────────────────────────────────────────────────────────
@@ -274,6 +287,15 @@ function SkillTreeView({ portfolio }: { portfolio: MyPortfolioData }) {
 
       {/* World map — relative container */}
       <div className="relative z-10 w-full" style={{ height: '70vw', maxHeight: '520px' }}>
+        {portfolio.skills.length === 0 && (
+          <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
+            <EmptyState
+              icon="🗺️"
+              title="Bacarıq adaları hələ açılmayıb"
+              text="Quiz və kurs nəticələri artdıqca burada fənn adaları görünəcək."
+            />
+          </div>
+        )}
         {portfolio.skills.slice(0, 6).map((skill, i) => {
           const pos = islandPositions[i] ?? { x: '50%', y: '80%' }
           const meta = SUBJECT_META[skill.subject] ?? { emoji: '📖', color: '#9CA3AF', worldName: skill.subject }
@@ -432,7 +454,7 @@ function TimelineCard({ event, index }: { event: TimelineEvent; index: number })
                 {event.meta && <span className="text-xs text-white/40 ml-2">{event.meta}</span>}
               </div>
             )}
-            {event.level && <p className="text-xs text-cyan-400 mt-0.5">Level {event.level}</p>}
+            {event.level && <p className="text-xs text-cyan-400 mt-0.5">Səviyyə {event.level}</p>}
             <p className="text-xs text-white/30 mt-1.5">{fmtDate(event.date)}</p>
           </div>
         </div>
@@ -468,7 +490,7 @@ function TimelineView({ portfolio }: { portfolio: MyPortfolioData }) {
     { key: 'course', label: '🎓 Kurslar' },
     { key: 'competition', label: '🏆 Yarışlar' },
     { key: 'badge', label: '🎖️ Nişanlar' },
-    { key: 'milestone', label: '📅 Milestonlar' },
+    { key: 'milestone', label: '📅 Mərhələlər' },
   ]
 
   return (
@@ -483,7 +505,7 @@ function TimelineView({ portfolio }: { portfolio: MyPortfolioData }) {
         <div className="flex justify-center gap-3 mt-4">
           {[
             { v: portfolio.stats.totalXP.toLocaleString(), l: 'XP' },
-            { v: `${portfolio.stats.currentStreak}🔥`, l: 'Streak' },
+            { v: `${portfolio.stats.currentStreak}🔥`, l: 'Seriya' },
             { v: portfolio.stats.totalQuestions.toString(), l: 'Sual' },
           ].map(({ v, l }) => (
             <div key={l} className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center">
@@ -546,6 +568,80 @@ function WeakCountdown({ until }: { until: string }) {
   )
 }
 
+function PassportSnapshot({ portfolio }: { portfolio: MyPortfolioData }) {
+  const topSkill = [...portfolio.skills].sort((a, b) => b.xp - a.xp)[0]
+  const latestEvent = portfolio.timeline[0]
+  const verifiedSkillCount = portfolio.skills.filter(s => s.isVerified).length
+  const recordCount = portfolio.timeline.length + portfolio.badges.length + portfolio.certificates.length + portfolio.competitions.length
+  const topMeta = topSkill
+    ? SUBJECT_META[topSkill.subject] ?? { emoji: '📖', color: '#9CA3AF', worldName: topSkill.subject }
+    : null
+
+  const cells = [
+    { label: 'Bacarığa çevrilən fənlər', value: portfolio.skills.length.toString(), sub: verifiedSkillCount > 0 ? `${verifiedSkillCount} təsdiqli` : 'təsdiq gözləyir' },
+    { label: 'Xronologiya qeydi', value: portfolio.timeline.length.toString(), sub: latestEvent ? latestEvent.title : 'hələ boşdur' },
+    { label: 'Nişan və uğur', value: portfolio.badges.length.toString(), sub: portfolio.badges[0]?.name ?? 'hələ yoxdur' },
+    { label: 'Sertifikat', value: portfolio.certificates.length.toString(), sub: portfolio.certificates[0]?.courseName ?? 'hələ bağlanmayıb' },
+  ]
+
+  return (
+    <div className="bg-[#141414] border border-indigo-500/20 rounded-2xl p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-300">Rəqəmsal Təhsil Pasportu</p>
+          <h2 className="mt-1 text-xl font-black text-white">Öyrənmə kimliyi</h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-white/60">
+            Bu pasport LogiCora-da toplanan XP, bacarıq, yarış, nişan və sertifikat izlərini bir yerdə göstərir.
+          </p>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-right">
+          <p className="text-xs text-white/40">Ümumi iz</p>
+          <p className="text-2xl font-black text-white">{recordCount}</p>
+        </div>
+      </div>
+
+      {topSkill && topMeta && (
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl text-2xl" style={{ backgroundColor: `${topMeta.color}20` }}>
+                {topMeta.emoji}
+              </div>
+              <div>
+                <p className="text-xs text-white/40">Ən güclü bacarıq</p>
+                <p className="font-bold text-white">{topSkill.subject}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-black" style={{ color: topMeta.color }}>{topSkill.level}%</p>
+              <p className="text-xs text-white/40">{topSkill.xp.toLocaleString()} XP</p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ backgroundColor: topMeta.color }}
+              initial={{ width: 0 }}
+              animate={{ width: `${topSkill.level}%` }}
+              transition={{ duration: 0.8 }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {cells.map(cell => (
+          <div key={cell.label} className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+            <p className="text-2xl font-black text-white">{cell.value}</p>
+            <p className="mt-1 text-xs font-semibold text-white/70">{cell.label}</p>
+            <p className="mt-1 truncate text-[11px] text-white/35">{cell.sub}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function LinkedInView({
   portfolio,
   onShare,
@@ -584,13 +680,13 @@ function LinkedInView({
                   </div>
                 </div>
                 <h2 className="font-bold text-base">{portfolio.user.name}</h2>
-                <p className="text-xs text-white/50 mb-1">{portfolio.user.school ?? portfolio.user.city}</p>
+                <p className="text-xs text-white/50 mb-1">{portfolio.user.school || portfolio.user.city || 'Məktəb məlumatı yoxdur'}</p>
                 <div className="flex items-center gap-1.5 text-xs text-indigo-400 mb-3">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
-                  LogiCora Verified
+                  LogiCora təsdiqli
                 </div>
 
-                {/* Level + Elo */}
+                {/* Səviyyə + reytinq */}
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div className="bg-white/5 rounded-xl p-2 text-center">
                     <p className="text-lg font-bold">{portfolio.user.level}</p>
@@ -599,14 +695,14 @@ function LinkedInView({
                   {portfolio.user.eloRating && (
                     <div className="bg-white/5 rounded-xl p-2 text-center">
                       <p className="text-lg font-bold" style={{ color: LEAGUE_COLORS[portfolio.user.league] }}>{portfolio.user.eloRating}</p>
-                      <p className="text-xs text-white/40">Elo</p>
+                      <p className="text-xs text-white/40">Reytinq</p>
                     </div>
                   )}
                 </div>
 
                 {/* Top 3 skills */}
                 <div className="space-y-2 mb-4">
-                  {portfolio.skills.slice(0, 3).sort((a, b) => b.level - a.level).map(s => {
+                  {portfolio.skills.length > 0 ? portfolio.skills.slice(0, 3).sort((a, b) => b.level - a.level).map(s => {
                     const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF', worldName: s.subject }
                     return (
                       <div key={s.subject} className="space-y-1">
@@ -620,7 +716,11 @@ function LinkedInView({
                         </div>
                       </div>
                     )
-                  })}
+                  }) : (
+                    <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs leading-5 text-white/45">
+                      Bacarıq məlumatı hələ formalaşmayıb.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -630,7 +730,7 @@ function LinkedInView({
                   </button>
                   <button onClick={onPdf}
                     className="w-full py-2 border border-white/15 hover:border-white/30 rounded-xl text-xs text-white/60 hover:text-white transition-colors">
-                    📄 PDF Export
+                    📄 PDF-ə çıxar
                   </button>
                   <button onClick={() => onVisibility(!portfolio.isPublic)}
                     className="w-full py-2 border border-white/10 rounded-xl text-xs text-white/50 hover:text-white transition-colors flex items-center justify-center gap-1.5">
@@ -644,6 +744,8 @@ function LinkedInView({
 
           {/* ── Right content ────────────────────────────────────────── */}
           <div className="lg:col-span-2 space-y-5">
+            <PassportSnapshot portfolio={portfolio} />
+
             {/* Xülasə */}
             <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -667,78 +769,100 @@ function LinkedInView({
             {/* Bacarıqlar */}
             <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
               <h2 className="font-bold mb-4">Bacarıqlar</h2>
-              <div className="space-y-3">
-                {portfolio.skills.map(s => {
-                  const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF', worldName: s.subject }
-                  return (
-                    <div key={s.subject} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span>{meta.emoji} <span className="font-medium">{s.subject}</span></span>
-                          {s.isVerified && (
-                            <span className="text-xs text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded-full">✓ Təsdiqlənib</span>
-                          )}
-                          {s.isWeak && s.weakUntil && <WeakCountdown until={s.weakUntil} />}
+              {portfolio.skills.length === 0 ? (
+                <EmptyState
+                  icon="🧭"
+                  title="Bacarıq xəritəsi boşdur"
+                  text="Gündəlik quiz, kurs və yarış nəticələri artdıqca burada fənlər üzrə bacarıq qrafiki görünəcək."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {portfolio.skills.map(s => {
+                    const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF', worldName: s.subject }
+                    return (
+                      <div key={s.subject} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{meta.emoji} <span className="font-medium">{s.subject}</span></span>
+                            {s.isVerified && (
+                              <span className="text-xs text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded-full">✓ Təsdiqlənib</span>
+                            )}
+                            {s.isWeak && s.weakUntil && <WeakCountdown until={s.weakUntil} />}
+                          </div>
+                          <span className="text-xs text-white/50">{s.accuracy}% dəqiqlik</span>
                         </div>
-                        <span className="text-xs text-white/50">{s.accuracy}% dəqiqlik</span>
+                        <div className="h-2 bg-white/8 rounded-full overflow-hidden">
+                          <motion.div className="h-full rounded-full" style={{ backgroundColor: meta.color }}
+                            initial={{ width: 0 }} animate={{ width: `${s.level}%` }} transition={{ duration: 0.8 }} />
+                        </div>
                       </div>
-                      <div className="h-2 bg-white/8 rounded-full overflow-hidden">
-                        <motion.div className="h-full rounded-full" style={{ backgroundColor: meta.color }}
-                          initial={{ width: 0 }} animate={{ width: `${s.level}%` }} transition={{ duration: 0.8 }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Nailiyyət nişanları */}
             <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
               <h2 className="font-bold mb-4">Nailiyyət Nişanları</h2>
-              <div className="flex flex-wrap gap-3">
-                {portfolio.badges.map((badge, i) => (
-                  <div
-                    key={badge.id}
-                    className="relative"
-                    onMouseEnter={() => setHoveredBadge(badge.id)}
-                    onMouseLeave={() => setHoveredBadge(null)}
-                  >
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-default ${RARITY_COLORS[badge.rarity]}`}
+              {portfolio.badges.length === 0 ? (
+                <EmptyState
+                  icon="🏅"
+                  title="Nişan yoxdur"
+                  text="Quiz seriyaları, yarışlar və xüsusi uğurlar tamamlandıqca nişanlar burada görünəcək."
+                />
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  {portfolio.badges.map((badge, i) => (
+                    <div
+                      key={badge.id}
+                      className="relative"
+                      onMouseEnter={() => setHoveredBadge(badge.id)}
+                      onMouseLeave={() => setHoveredBadge(null)}
                     >
-                      <span className="text-2xl">{badge.emoji}</span>
-                      <div>
-                        <p className="text-xs font-semibold">{badge.name}</p>
-                        <p className="text-[10px] opacity-50 capitalize">{badge.rarity}</p>
-                      </div>
-                    </motion.div>
-                    {/* Tooltip */}
-                    <AnimatePresence>
-                      {hoveredBadge === badge.id && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 6 }}
-                          className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#1E1E1E] border border-white/20 rounded-xl p-3 text-xs text-white/70 w-48 z-20 shadow-xl whitespace-normal"
-                        >
-                          <p className="font-semibold text-white mb-1">{badge.name}</p>
-                          <p>{badge.description}</p>
-                          <p className="text-white/30 mt-1">{fmtDate(badge.earnedAt)}</p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ))}
-              </div>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-default ${RARITY_COLORS[badge.rarity]}`}
+                      >
+                        <span className="text-2xl">{badge.emoji}</span>
+                        <div>
+                          <p className="text-xs font-semibold">{badge.name}</p>
+                          <p className="text-[10px] opacity-50">{RARITY_LABELS[badge.rarity]}</p>
+                        </div>
+                      </motion.div>
+                      {/* Tooltip */}
+                      <AnimatePresence>
+                        {hoveredBadge === badge.id && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 6 }}
+                            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#1E1E1E] border border-white/20 rounded-xl p-3 text-xs text-white/70 w-48 z-20 shadow-xl whitespace-normal"
+                          >
+                            <p className="font-semibold text-white mb-1">{badge.name}</p>
+                            <p>{badge.description}</p>
+                            <p className="text-white/30 mt-1">{fmtDate(badge.earnedAt)}</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Sertifikatlar */}
-            {portfolio.certificates.length > 0 && (
-              <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-                <h2 className="font-bold mb-4">Kurs Sertifikatları</h2>
+            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+              <h2 className="font-bold mb-4">Kurs Sertifikatları</h2>
+              {portfolio.certificates.length === 0 ? (
+                <EmptyState
+                  icon="🎓"
+                  title="Sertifikat hələ yoxdur"
+                  text="Kurs tamamlamaları sertifikat sistemi ilə bağlandıqda bu bölmə avtomatik dolacaq."
+                />
+              ) : (
                 <div className="space-y-3">
                   {portfolio.certificates.map(cert => (
                     <div key={cert.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
@@ -754,39 +878,49 @@ function LinkedInView({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Yarış tarixi + chart */}
             <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
               <h2 className="font-bold mb-4">Yarış Tarixi</h2>
-              <div className="space-y-3 mb-5">
-                {portfolio.competitions.map((comp, i) => (
-                  <motion.div key={comp.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
-                    className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${comp.rank === 1 ? 'bg-yellow-400/20' : comp.rank <= 3 ? 'bg-slate-400/20' : 'bg-white/10'
-                      }`}>
-                      {comp.rank <= 3 ? ['🥇', '🥈', '🥉'][comp.rank - 1] : `#${comp.rank}`}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{comp.title}</p>
-                      <p className="text-xs text-white/40">{comp.totalParticipants} iştirakçı · {fmtDate(comp.date)}</p>
-                    </div>
-                    <span className="text-sm font-bold text-white/70 shrink-0">{comp.score} xal</span>
-                  </motion.div>
-                ))}
-              </div>
-              {/* Score chart */}
-              <div className="h-36">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} />
-                    <Line type="monotone" dataKey="xal" stroke="#818CF8" strokeWidth={2} dot={{ fill: '#818CF8', r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {portfolio.competitions.length === 0 ? (
+                <EmptyState
+                  icon="🏆"
+                  title="Yarış izi yoxdur"
+                  text="Yarış nəticələri portfolio xronologiyasına düşdükcə burada güclü nəticələr və xal qrafiki görünəcək."
+                />
+              ) : (
+                <>
+                  <div className="space-y-3 mb-5">
+                    {portfolio.competitions.map((comp, i) => (
+                      <motion.div key={comp.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
+                        className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${comp.rank === 1 ? 'bg-yellow-400/20' : comp.rank <= 3 ? 'bg-slate-400/20' : 'bg-white/10'
+                          }`}>
+                          {comp.rank <= 3 ? ['🥇', '🥈', '🥉'][comp.rank - 1] : `#${comp.rank}`}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{comp.title}</p>
+                          <p className="text-xs text-white/40">{comp.totalParticipants} iştirakçı · {fmtDate(comp.date)}</p>
+                        </div>
+                        <span className="text-sm font-bold text-white/70 shrink-0">{comp.score} xal</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                  {/* Score chart */}
+                  <div className="h-36">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
+                        <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} />
+                        <Line type="monotone" dataKey="xal" stroke="#818CF8" strokeWidth={2} dot={{ fill: '#818CF8', r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Peşə Kompas */}
@@ -794,28 +928,36 @@ function LinkedInView({
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-xl">🧭</span>
                 <h2 className="font-bold">Peşə Kompas</h2>
-                <span className="text-xs bg-indigo-600/30 text-indigo-300 px-2 py-0.5 rounded-full">AI</span>
+                <span className="text-xs bg-indigo-600/30 text-indigo-300 px-2 py-0.5 rounded-full">Sİ</span>
               </div>
               <p className="text-xs text-white/50 mb-4">Sənin profilinə görə tövsiyə olunan sahələr:</p>
-              <div className="space-y-3">
-                {portfolio.careerSuggestions.map((career, i) => (
-                  <motion.div key={career.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                    className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <span className="text-3xl">{career.icon}</span>
-                      <div className="flex-1">
-                        <p className="font-semibold text-sm">{career.title}</p>
-                        <p className="text-xs text-white/50 mt-0.5">{career.why}</p>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {career.skills.map(s => (
-                            <span key={s} className="text-xs bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded-full">{s}</span>
-                          ))}
+              {portfolio.careerSuggestions.length === 0 ? (
+                <EmptyState
+                  icon="🧭"
+                  title="Peşə siqnalı üçün məlumat azdır"
+                  text="Bacarıq xəritəsi zənginləşdikcə LogiCora profilə uyğun sahələri burada göstərəcək."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {portfolio.careerSuggestions.map((career, i) => (
+                    <motion.div key={career.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+                      className="bg-white/5 border border-white/10 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl">{career.icon}</span>
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm">{career.title}</p>
+                          <p className="text-xs text-white/50 mt-0.5">{career.why}</p>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {career.skills.map(s => (
+                              <span key={s} className="text-xs bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded-full">{s}</span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -875,7 +1017,7 @@ function ShareCardModal({ portfolio, onClose }: { portfolio: MyPortfolioData; on
     ctx.textAlign = 'left'; ctx.font = 'bold 48px sans-serif'; ctx.fillStyle = '#fff'
     ctx.fillText(portfolio.user.name, 320, 180)
     ctx.font = '30px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.5)'
-    ctx.fillText(`LogiCora Verified · Səviyyə ${portfolio.user.level}`, 320, 230)
+    ctx.fillText(`LogiCora təsdiqli · Səviyyə ${portfolio.user.level}`, 320, 230)
     // Top skills
     ctx.font = 'bold 28px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.7)'
     portfolio.skills.slice(0, 3).forEach((s, i) => {
@@ -928,7 +1070,7 @@ function ShareCardModal({ portfolio, onClose }: { portfolio: MyPortfolioData; on
               className={`py-3 rounded-xl border text-sm font-medium transition-colors ${format === f ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
                 }`}
             >
-              {f === 'story' ? '📱 Instagram Story' : '💼 Professional'}
+              {f === 'story' ? '📱 Instagram hekayəsi' : '💼 Peşəkar'}
             </button>
           ))}
         </div>
@@ -964,17 +1106,17 @@ export default function MyPortfolio() {
   const [view, setView] = useState<ViewMode>(defaultView(ageGroup))
   const [showShare, setShowShare] = useState(false)
 
-  const { data: portfolio, isLoading } = useQuery({
+  const { data: portfolio, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['my-portfolio'],
-    queryFn: () =>
-      api.get(API_ROUTES.PORTFOLIO.MY)
-        .then(r => r.data.data as MyPortfolioData)
-        .catch(() => MOCK),
+    queryFn: async () => {
+      const response = await api.get<ApiEnvelope<MyPortfolioData>>(API_ROUTES.PORTFOLIO.MY)
+      return response.data.data
+    },
   })
 
   const visibilityMutation = useMutation({
     mutationFn: (isPublic: boolean) =>
-      api.patch(API_ROUTES.PORTFOLIO.VISIBILITY, { isPublic }).then(r => r.data),
+      api.patch<ApiEnvelope<unknown>>(API_ROUTES.PORTFOLIO.VISIBILITY, { isPublic }).then(r => r.data.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['my-portfolio'] }),
     onError: (_err, isPublic) => {
       qc.setQueryData(['my-portfolio'], (old: MyPortfolioData | undefined) =>
@@ -1007,14 +1149,33 @@ export default function MyPortfolio() {
     )
   }
 
-  if (!portfolio) return null
+  if (isError) {
+    return (
+      <PortfolioState
+        icon="⚠️"
+        title="Portfolio yüklənmədi"
+        text={getErrorMessage(error, 'Təhsil pasportunu almaq mümkün olmadı. Zəhmət olmasa bir az sonra yenidən yoxlayın.')}
+        onRetry={() => void refetch()}
+      />
+    )
+  }
+
+  if (!portfolio) {
+    return (
+      <PortfolioState
+        icon="📁"
+        title="Portfolio məlumatı boşdur"
+        text="Server portfolio üçün məlumat qaytarmadı. İlk quiz, kurs və yarış nəticələrindən sonra bu səhifə avtomatik dolacaq."
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
       {/* View switcher bar */}
       <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-sm border-b border-white/10 px-4 py-2 flex items-center justify-between">
         <div className="flex gap-1">
-          {([['1', '🗺️ Xəritə'], ['2', '📅 Xronologiya'], ['3', '💼 Professional']] as const).map(([v, label]) => (
+          {([['1', '🗺️ Xəritə'], ['2', '📅 Xronologiya'], ['3', '💼 Peşəkar']] as const).map(([v, label]) => (
             <button key={v} onClick={() => setView(v)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${view === v ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white hover:bg-white/5'
                 }`}

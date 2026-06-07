@@ -9,22 +9,6 @@ import { APP_ROUTES, API_ROUTES } from '../../constants'
 import type { RootState }         from '../../app/store'
 import type { CompetitionResults, Participant } from '../../types'
 
-// ── Mock results ──────────────────────────────────────────────────────────
-
-const MOCK_RESULTS: CompetitionResults = {
-  competitionId: 'mock-comp-1',
-  title:         'Riyaziyyat Müsabiqəsi',
-  subject:       'Riyaziyyat',
-  participants: [
-    { userId: 'u1', name: 'Aytən M.',  avatarColor: '#9333EA', score: 850, rank: 1, correctCount: 9, wrongCount: 1, avgResponseTime: 3.2 },
-    { userId: 'u2', name: 'Kənan H.',  avatarColor: '#3B82F6', score: 720, rank: 2, correctCount: 8, wrongCount: 2, avgResponseTime: 4.1 },
-    { userId: 'u3', name: 'Nigar Ə.',  avatarColor: '#06B6D4', score: 650, rank: 3, correctCount: 7, wrongCount: 3, avgResponseTime: 5.0 },
-    { userId: 'u4', name: 'Siz',        avatarColor: '#58CC02', score: 580, rank: 4, correctCount: 6, wrongCount: 4, avgResponseTime: 5.5 },
-  ],
-  myResult: { rank: 4, score: 580, xpEarned: 120, correctCount: 6, wrongCount: 4, avgResponseTime: 5.5 },
-  isClanBattle: false,
-}
-
 // ── Confetti ──────────────────────────────────────────────────────────────
 
 function ConfettiPiece({ i }: { i: number }) {
@@ -145,6 +129,55 @@ function Stat({ emoji, label, value, color }: { emoji: string; label: string; va
   )
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}
+
+function ResultState({
+  icon,
+  title,
+  text,
+  onRetry,
+}: {
+  icon: string
+  title: string
+  text: string
+  onRetry?: () => void
+}) {
+  const navigate = useNavigate()
+
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4 text-center">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+        <div className="text-6xl mb-4">{icon}</div>
+        <h1 className="text-white font-black text-2xl">{title}</h1>
+        <p className="mt-3 text-[#9CA3AF] text-sm leading-6">{text}</p>
+        <div className="mt-6 flex flex-col gap-3">
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="w-full py-3 rounded-2xl font-bold text-white text-sm"
+              style={{ background: 'linear-gradient(135deg, #9333EA, #3B82F6)' }}
+            >
+              Yenidən yoxla
+            </button>
+          )}
+          <button
+            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+            className="w-full py-3 rounded-2xl text-sm text-[#9CA3AF] font-medium border border-[rgba(255,255,255,0.08)] hover:text-white transition-colors"
+          >
+            Tələbə panelinə qayıt
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Result ───────────────────────────────────────────────────────────
 
 export default function CompetitionResult() {
@@ -152,16 +185,14 @@ export default function CompetitionResult() {
   const navigate   = useNavigate()
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
 
-  const { data, isLoading } = useQuery<CompetitionResults>({
+  const { data: results, isLoading, isError, error, refetch } = useQuery<CompetitionResults>({
     queryKey: ['competition', id, 'results'],
     queryFn:  () => api.get<{ data: CompetitionResults }>(API_ROUTES.COMPETITIONS.RESULTS(id!))
-                       .then(r => r.data.data)
-                       .catch(() => MOCK_RESULTS),
+                       .then(r => r.data.data),
     enabled:  !!id,
     staleTime: 1000 * 60 * 5,
   })
 
-  const results = data ?? MOCK_RESULTS
   const [showConfetti, setShowConfetti] = useState(true)
 
   useEffect(() => {
@@ -182,6 +213,38 @@ export default function CompetitionResult() {
     )
   }
 
+  if (isError) {
+    return (
+      <ResultState
+        icon="⚠️"
+        title="Yarış nəticələri yüklənmədi"
+        text={getErrorMessage(error, 'Bu yarışın nəticələrini almaq mümkün olmadı. Yarış hələ bitməyib və ya bağlantı müvəqqəti kəsilib.')}
+        onRetry={() => void refetch()}
+      />
+    )
+  }
+
+  if (!results) {
+    return (
+      <ResultState
+        icon="🔍"
+        title="Nəticə tapılmadı"
+        text="Bu yarış üçün nəticə məlumatı yoxdur."
+      />
+    )
+  }
+
+  if (results.participants.length === 0) {
+    return (
+      <ResultState
+        icon="📊"
+        title="Nəticə siyahısı boşdur"
+        text="Yarış nəticələri hesablanmayıb. Əvvəlcə yarışın tamamlandığından əmin olmaq lazımdır."
+        onRetry={() => void refetch()}
+      />
+    )
+  }
+
   const top3     = results.participants.slice(0, 3)
   const first    = top3.find(p => p.rank === 1)
   const second   = top3.find(p => p.rank === 2)
@@ -189,7 +252,7 @@ export default function CompetitionResult() {
   const { myResult } = results
   const isHost = !!results.isHost
 
-  const rankLabel = myResult.rank === 1 ? '🥇 Birinci!' : myResult.rank === 2 ? '🥈 İkinci!' : myResult.rank === 3 ? '🥉 Üçüncü!' : `${myResult.rank}-ci yer`
+  const rankLabel = myResult.rank === 1 ? '🥇 Birinci!' : myResult.rank === 2 ? '🥈 İkinci!' : myResult.rank === 3 ? '🥉 Üçüncü!' : myResult.rank > 0 ? `${myResult.rank}-ci yer` : 'Nəticə yoxdur'
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col">
@@ -220,7 +283,7 @@ export default function CompetitionResult() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            Mərhəba, qaliblər!
+            Yarış tamamlandı!
           </h1>
           <p className="text-[#9CA3AF] text-sm mt-1">{results.title}</p>
         </motion.div>
@@ -280,7 +343,7 @@ export default function CompetitionResult() {
           >
             <div className="flex items-center justify-between mb-4">
               <p className="text-white font-bold text-sm">Yarış yekunu</p>
-              <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>HOST</span>
+              <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>Aparıcı</span>
             </div>
             <p className="text-[#9CA3AF] text-xs mb-3">{results.participants.length} iştirakçı · Qalib: {results.participants[0]?.name ?? '—'}</p>
             <div className="flex flex-col gap-2">
@@ -309,7 +372,7 @@ export default function CompetitionResult() {
             >
               <span className="text-4xl">{myResult.badge.emoji}</span>
               <span className="text-white font-bold text-sm">{myResult.badge.name}</span>
-              <span className="text-[#9CA3AF] text-xs">Yeni badge qazandın! 🎉</span>
+              <span className="text-[#9CA3AF] text-xs">Yeni nişan qazandın! 🎉</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -360,7 +423,7 @@ export default function CompetitionResult() {
             className="w-full py-3 rounded-2xl text-sm text-[#9CA3AF] font-medium
                        hover:text-white transition-colors border border-[rgba(255,255,255,0.08)]"
           >
-            Dashboarda qayıt
+            Tələbə panelinə qayıt
           </button>
         </motion.div>
 

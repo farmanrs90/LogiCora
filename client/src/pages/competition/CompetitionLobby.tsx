@@ -12,24 +12,6 @@ import api from '../../lib/api'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
 import type { RootState } from '../../app/store'
 import type { CompetitionInfo, Participant } from '../../types'
-
-// ── Mock data ─────────────────────────────────────────────────────────────
-
-const MOCK: CompetitionInfo = {
-  _id: 'mock-comp-1',
-  title: 'Riyaziyyat Müsabiqəsi',
-  subject: 'Riyaziyyat',
-  pin: '4829',
-  status: 'waiting',
-  organizerId: 'teacher-1',
-  participants: [
-    { userId: 'u1', name: 'Aytən M.', avatarColor: '#9333EA', score: 0, rank: 1, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-    { userId: 'u2', name: 'Kənan H.', avatarColor: '#3B82F6', score: 0, rank: 2, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-    { userId: 'u3', name: 'Nigar Ə.', avatarColor: '#06B6D4', score: 0, rank: 3, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-  ],
-  questionCount: 10,
-  isWeeklyMystery: false,
-}
 // ── Backend → frontend map (REST cavabını CompetitionInfo formatına çevir) ──
 interface RawParticipant {
   studentId?: { _id: string; userId?: { _id: string; name: string; surname?: string } }
@@ -74,6 +56,55 @@ function mapCompetition(raw: RawCompetition): CompetitionInfo {
     questionCount: raw.questions?.length ?? 0,
     isWeeklyMystery: false,
   }
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}
+
+function LobbyState({
+  icon,
+  title,
+  text,
+  onRetry,
+}: {
+  icon: string
+  title: string
+  text: string
+  onRetry?: () => void
+}) {
+  const navigate = useNavigate()
+
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4 text-center">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+        <div className="text-6xl mb-4">{icon}</div>
+        <h1 className="text-white font-black text-2xl">{title}</h1>
+        <p className="mt-3 text-[#9CA3AF] text-sm leading-6">{text}</p>
+        <div className="mt-6 flex flex-col gap-3">
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="w-full py-3 rounded-2xl font-bold text-white text-sm"
+              style={{ background: 'linear-gradient(135deg, #3B82F6, #9333EA)' }}
+            >
+              Yenidən yoxla
+            </button>
+          )}
+          <button
+            onClick={() => navigate('/competition')}
+            className="w-full py-3 rounded-2xl text-sm text-[#9CA3AF] font-medium border border-[rgba(255,255,255,0.08)] hover:text-white transition-colors"
+          >
+            Yarışa qoşulma ekranına qayıt
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 
@@ -159,23 +190,22 @@ export default function CompetitionLobby() {
   const user = authUser ?? ctxUser
 
   // Fetch competition info
-  const { data: comp, isLoading } = useQuery<CompetitionInfo>({
+  const { data: comp, isLoading, isError, error, refetch } = useQuery<CompetitionInfo>({
     queryKey: ['competition', id],
     queryFn: () => api.get<{ data: RawCompetition }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
-      .then(r => mapCompetition(r.data.data))
-      .catch(() => MOCK),
+      .then(r => mapCompetition(r.data.data)),
     enabled: !!id,
     staleTime: 1000 * 30,
   })
 
-  const competition = comp ?? MOCK
-  const isOrganizer = competition.organizerId === user?._id
+  const competition = comp
+  const isOrganizer = competition?.organizerId === user?._id
   const maxSlots = 20
-  const emptySlots = Math.max(0, maxSlots - competition.participants.length)
 
-  const [participants, setParticipants] = useState<Participant[]>(competition.participants)
+  const [participants, setParticipants] = useState<Participant[]>([])
   const [countdown, setCountdown] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
+  const emptySlots = Math.max(0, maxSlots - participants.length)
 
   // Update participants when query data arrives
   useEffect(() => {
@@ -227,6 +257,7 @@ export default function CompetitionLobby() {
   }, [countdown, id, navigate])
 
   function handleCopyPin() {
+    if (!competition) return
     navigator.clipboard.writeText(competition.pin).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -234,6 +265,7 @@ export default function CompetitionLobby() {
   }
 
   function handleStart() {
+    if (!competition) return
     if (participants.length < 2) {
       toast.error('Minimum 2 iştirakçı lazımdır!')
       return
@@ -252,6 +284,27 @@ export default function CompetitionLobby() {
           style={{ borderColor: `${avatarColor} ${avatarColor}30 ${avatarColor}30 ${avatarColor}30` }}
         />
       </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <LobbyState
+        icon="⚠️"
+        title="Yarış lobbisi yüklənmədi"
+        text={getErrorMessage(error, 'Bu yarışın məlumatlarını almaq mümkün olmadı. PIN və ya link səhv ola bilər.')}
+        onRetry={() => void refetch()}
+      />
+    )
+  }
+
+  if (!competition) {
+    return (
+      <LobbyState
+        icon="🔍"
+        title="Yarış tapılmadı"
+        text="Bu link üçün yarış məlumatı yoxdur. PIN ilə yenidən qoşulmaq daha etibarlıdır."
+      />
     )
   }
 
@@ -370,7 +423,7 @@ export default function CompetitionLobby() {
             {participants.map((p, i) => (
               <ParticipantCard key={p.userId} p={p} index={i} />
             ))}
-            {[...Array(Math.min(emptySlots, 16 - participants.length))].map((_, i) => (
+            {[...Array(Math.max(0, Math.min(emptySlots, 16 - participants.length)))].map((_, i) => (
               <EmptySlot key={`empty-${i}`} index={i} />
             ))}
           </div>

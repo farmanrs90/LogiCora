@@ -39,6 +39,50 @@ interface CoursePage {
   total:    number
 }
 
+interface ApiEnvelope<T> {
+  success: boolean
+  data: T
+  message?: string
+}
+
+interface BackendTeacher {
+  _id?: string
+  displayName?: string
+  name?: string
+  surname?: string
+  slug?: string
+  avatarColor?: string
+  isVerified?: boolean
+  specialization?: string
+}
+
+interface BackendCourse {
+  _id?: string
+  id?: string
+  title?: string
+  description?: string
+  thumbnail?: string | null
+  thumbnailUrl?: string | null
+  teacherId?: string | BackendTeacher
+  teacherName?: string
+  teacherAvatar?: string
+  teacherVerified?: boolean
+  price?: number
+  discountPrice?: number | null
+  category?: string
+  level?: 'beginner' | 'intermediate' | 'advanced'
+  ageGroup?: string[]
+  rating?: number
+  ratingCount?: number
+  totalEnrolled?: number
+  isFeatured?: boolean
+  language?: string
+  totalDuration?: number
+  slug?: string
+}
+
+type CourseListPayload = BackendCourse[] | CoursePage | { courses?: BackendCourse[]; nextPage?: number | null; total?: number }
+
 interface FeaturedTeacher {
   _id:         string
   name:        string
@@ -70,21 +114,13 @@ const MOCK_TEACHERS: FeaturedTeacher[] = [
   { _id: 't4', name: 'Nigar',  surname: 'Sultanova', slug: 'nigar-sultanova', avatarColor: '#F97316', specialty: 'Fizika',   rating: 4.6, totalStudents: 190, isVerified: true,  isFounding: false, isFeatured: false },
 ]
 
-const MOCK_COURSES: CourseCard[] = [
-  { _id: 'c1', title: 'Cəbr: Sıfırdan Ali Riyaziyyata', description: 'Cəbrin bütün bölmələrini addım-addım öyrənin. Olimpiad tapşırıqları ilə real praktika.', thumbnailUrl: null, teacherId: 't1', teacherName: 'Əli Həsənov', teacherAvatar: '#9333EA', teacherVerified: true, price: 0, discountPrice: null, category: 'Riyaziyyat', level: 'beginner', ageGroup: ['9-11', '12-14'], rating: 4.9, ratingCount: 124, totalEnrolled: 340, isFeatured: true, language: 'az', totalDuration: 3600, slug: 'cebr-sifirdan' },
-  { _id: 'c2', title: 'İngilis dili — A1-dən B2-yə', description: '6 aylıq intensiv kurs. IELTS hazırlığı daxildir.', thumbnailUrl: null, teacherId: 't2', teacherName: 'Günel Muradova', teacherAvatar: '#3B82F6', teacherVerified: true, price: 49, discountPrice: 29, category: 'İngilis dili', level: 'beginner', ageGroup: ['12-14', '15-17'], rating: 4.8, ratingCount: 89, totalEnrolled: 220, isFeatured: true, language: 'az', totalDuration: 7200, slug: 'ingilis-a1-b2' },
-  { _id: 'c3', title: 'Python ilə Proqramlaşdırma', description: 'Sıfırdan başlayaraq layihə inkişaf etdir. AI, web, data science.', thumbnailUrl: null, teacherId: 't3', teacherName: 'Rəşad Əliyev', teacherAvatar: '#22C55E', teacherVerified: true, price: 79, discountPrice: null, category: 'Proqramlaşdırma', level: 'beginner', ageGroup: ['15-17', '18-22'], rating: 4.7, ratingCount: 67, totalEnrolled: 180, isFeatured: false, language: 'az', totalDuration: 5400, slug: 'python-baslangic' },
-  { _id: 'c4', title: 'Kvant Fizikası — Əsaslar', description: 'Dalğa mexanikası, atomlar, nüvə fizikası. Olimpiad səviyyəsi.', thumbnailUrl: null, teacherId: 't4', teacherName: 'Nigar Sultanova', teacherAvatar: '#F97316', teacherVerified: true, price: 35, discountPrice: 25, category: 'Fizika', level: 'advanced', ageGroup: ['15-17', '18-22'], rating: 4.6, ratingCount: 41, totalEnrolled: 95, isFeatured: false, language: 'az', totalDuration: 4800, slug: 'kvant-fizika' },
-  { _id: 'c5', title: 'Uşaqlar üçün Şahmat', description: 'Şahmat dünyasına giriş. Taktika, strategiya, tur oyunları.', thumbnailUrl: null, teacherId: 't1', teacherName: 'Əli Həsənov', teacherAvatar: '#9333EA', teacherVerified: true, price: 0, discountPrice: null, category: 'Şahmat', level: 'beginner', ageGroup: ['6-8', '9-11'], rating: 4.9, ratingCount: 203, totalEnrolled: 510, isFeatured: true, language: 'az', totalDuration: 2700, slug: 'usaqlar-satranc' },
-  { _id: 'c6', title: 'Orqanik Kimya Başlanğıc', description: 'Karbon birləşmələri, reaksiya mexanizmləri, laboratoriya.', thumbnailUrl: null, teacherId: 't3', teacherName: 'Rəşad Əliyev', teacherAvatar: '#22C55E', teacherVerified: true, price: 45, discountPrice: null, category: 'Kimya', level: 'intermediate', ageGroup: ['15-17'], rating: 4.5, ratingCount: 28, totalEnrolled: 62, isFeatured: false, language: 'az', totalDuration: 3900, slug: 'organik-kimya' },
-]
-
 const CATEGORIES = [
   'Riyaziyyat', 'Fizika', 'Kimya', 'Biologiya', 'Tarix', 'Coğrafiya',
   'İngilis dili', 'Proqramlaşdırma', 'Şahmat', 'Musiqi', 'İncəsənət',
 ]
 
 const DEFAULT_FILTERS: Filters = { category: '', level: '', ageGroup: '', price: '', rating: '' }
+const COURSE_PAGE_SIZE = 12
 
 // ── Custom debounce hook ───────────────────────────────────────────────────
 
@@ -103,6 +139,117 @@ function fmtDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   return h > 0 ? `${h} s ${m} d` : `${m} dəq`
+}
+
+function teacherNameFrom(course: BackendCourse): string {
+  if (course.teacherName) return course.teacherName
+  const teacher = typeof course.teacherId === 'object' ? course.teacherId : null
+  const fullName = [teacher?.name, teacher?.surname].filter(Boolean).join(' ')
+  if (teacher?.displayName) return teacher.displayName
+  if (fullName) return fullName
+  if (teacher?.specialization) return `${teacher.specialization} müəllimi`
+  return 'LogiCora müəllimi'
+}
+
+function normalizeCourse(raw: BackendCourse): CourseCard | null {
+  const id = raw._id ?? raw.id
+  if (!id) return null
+
+  const teacher = typeof raw.teacherId === 'object' ? raw.teacherId : null
+  const teacherId = typeof raw.teacherId === 'string' ? raw.teacherId : teacher?._id ?? ''
+
+  return {
+    _id: id,
+    title: raw.title ?? 'Adsız kurs',
+    description: raw.description ?? 'Bu kurs üçün açıqlama hələ əlavə edilməyib.',
+    thumbnailUrl: raw.thumbnailUrl ?? raw.thumbnail ?? null,
+    teacherId,
+    teacherName: teacherNameFrom(raw),
+    teacherAvatar: raw.teacherAvatar ?? teacher?.avatarColor ?? '#6366F1',
+    teacherVerified: raw.teacherVerified ?? teacher?.isVerified ?? false,
+    price: raw.price ?? 0,
+    discountPrice: raw.discountPrice ?? null,
+    category: raw.category ?? 'Ümumi',
+    level: raw.level ?? 'beginner',
+    ageGroup: raw.ageGroup ?? [],
+    rating: raw.rating ?? 0,
+    ratingCount: raw.ratingCount ?? 0,
+    totalEnrolled: raw.totalEnrolled ?? 0,
+    isFeatured: raw.isFeatured ?? false,
+    language: raw.language ?? 'az',
+    totalDuration: raw.totalDuration ?? 0,
+    slug: raw.slug ?? id,
+  }
+}
+
+function clientFilterCourses(courses: CourseCard[], search: string, filters: Filters): CourseCard[] {
+  const query = search.trim().toLowerCase()
+
+  return courses.filter((course) => {
+    if (query && !course.title.toLowerCase().includes(query) && !course.category.toLowerCase().includes(query)) return false
+    if (filters.category && course.category !== filters.category) return false
+    if (filters.level && course.level !== filters.level) return false
+    if (filters.ageGroup && !course.ageGroup.includes(filters.ageGroup)) return false
+    if (filters.price === 'free' && course.price !== 0) return false
+    if (filters.price === 'paid' && course.price === 0) return false
+    if (filters.rating && course.rating < Number(filters.rating)) return false
+    return true
+  })
+}
+
+function unwrapCoursePage(
+  envelope: ApiEnvelope<CourseListPayload>,
+  page: number,
+  search: string,
+  filters: Filters
+): CoursePage {
+  const payload = envelope.data
+  const rawCourses = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload.courses)
+      ? payload.courses
+      : []
+
+  const courses = clientFilterCourses(
+    rawCourses.map(normalizeCourse).filter((course): course is CourseCard => course !== null),
+    search,
+    filters
+  )
+
+  const nextPage = Array.isArray(payload)
+    ? null
+    : payload.nextPage ?? null
+
+  return {
+    courses,
+    nextPage: nextPage && nextPage > page ? nextPage : null,
+    total: courses.length,
+  }
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}
+
+function CoursesErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-10 text-center">
+      <div className="mb-3 text-4xl">⚠️</div>
+      <h3 className="mb-2 text-xl font-bold text-white">Kurslar yüklənmədi</h3>
+      <p className="mx-auto max-w-md text-sm leading-6 text-[#FCA5A5]">{message}</p>
+      <button
+        onClick={onRetry}
+        className="mt-5 rounded-2xl px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+        style={{ background: 'linear-gradient(135deg, #EF4444, #9333EA)' }}
+      >
+        Yenidən yoxla
+      </button>
+    </div>
+  )
 }
 
 function StarRating({ value, size = 12 }: { value: number; size?: number }) {
@@ -460,25 +607,18 @@ export default function CourseList() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
+    error,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ['courses', debouncedSearch, filters],
-    queryFn: ({ pageParam }: { pageParam: number }) =>
-      api.get<{ data: CoursePage }>(API_ROUTES.COURSES.LIST, {
-        params: { page: pageParam, limit: 12, search: debouncedSearch, ...filters },
-      }).then(r => r.data.data)
-        .catch((): CoursePage => ({
-          courses: MOCK_COURSES.filter(c => {
-            if (debouncedSearch && !c.title.toLowerCase().includes(debouncedSearch.toLowerCase()) && !c.category.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
-            if (filters.category && c.category !== filters.category) return false
-            if (filters.level && c.level !== filters.level) return false
-            if (filters.price === 'free' && c.price !== 0) return false
-            if (filters.price === 'paid' && c.price === 0) return false
-            if (filters.rating && c.rating < Number(filters.rating)) return false
-            return true
-          }),
-          nextPage: null,
-          total: MOCK_COURSES.length,
-        })),
+    queryFn: async ({ pageParam }) => {
+      const page = Number(pageParam)
+      const response = await api.get<ApiEnvelope<CourseListPayload>>(API_ROUTES.COURSES.LIST, {
+        params: { page, limit: COURSE_PAGE_SIZE, search: debouncedSearch, ...filters },
+      })
+      return unwrapCoursePage(response.data, page, debouncedSearch, filters)
+    },
     initialPageParam: 1,
     getNextPageParam: (lastPage: CoursePage) => lastPage.nextPage ?? undefined,
   })
@@ -500,6 +640,7 @@ export default function CourseList() {
 
   const allCourses = data?.pages.flatMap(p => p.courses) ?? []
   const teachers   = featuredTeachers ?? MOCK_TEACHERS
+  const totalCourses = data?.pages[0]?.total ?? 0
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pb-24">
@@ -539,10 +680,10 @@ export default function CourseList() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            🎓 Kurs Marketplace
+            🎓 Kurs bazarı
           </motion.h1>
           <p className="text-[#9CA3AF] text-sm mb-6">
-            {data?.pages[0]?.total ?? MOCK_COURSES.length} kurs mövcuddur
+            {isLoading ? 'Kurslar yüklənir...' : `${totalCourses} kurs mövcuddur`}
           </p>
 
           {/* Search */}
@@ -637,7 +778,12 @@ export default function CourseList() {
             )}
 
             {/* Grid */}
-            {isLoading ? (
+            {isError ? (
+              <CoursesErrorState
+                message={errorMessage(error, 'Kurs siyahısı alınmadı. Zəhmət olmasa bir az sonra yenidən yoxlayın.')}
+                onRetry={() => void refetch()}
+              />
+            ) : isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => <CourseCardSkeleton key={i} />)}
               </div>

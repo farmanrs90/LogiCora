@@ -22,23 +22,16 @@ const studentTabs: TabItem[] = [
   { icon: '📅', label: 'Quiz',    path: APP_ROUTES.DAILY },
   { icon: '⚔️', label: 'Yarış',   path: '/competition' },
   { icon: '🎓', label: 'Kurslar', path: APP_ROUTES.COURSES },
-  { icon: '💬', label: 'Çat',     path: APP_ROUTES.CHAT },
+  { icon: '📊', label: 'Portfolio', path: '/portfolio/me' },
 ]
 
 const teacherTabs: TabItem[] = [
   { icon: '🏠', label: 'Ana',      path: APP_ROUTES.DASHBOARD.TEACHER },
-  { icon: '👥', label: 'Qruplar',  path: '/groups' },
   { icon: '⚔️', label: 'Yarış',    path: '/competition/create' },
-  { icon: '🎓', label: 'Kurslar',  path: '/courses/my' },
-  { icon: '💬', label: 'Çat',      path: APP_ROUTES.CHAT },
 ]
 
 const parentTabs: TabItem[] = [
   { icon: '🏠', label: 'Ana',      path: APP_ROUTES.DASHBOARD.PARENT },
-  { icon: '👶', label: 'Övladım',  path: '/child' },
-  { icon: '📊', label: 'İrəliləyiş', path: '/progress' },
-  { icon: '💬', label: 'Çat',      path: APP_ROUTES.CHAT },
-  { icon: '💳', label: 'Ödəniş',   path: '/payments' },
 ]
 
 const tabsByRole: Record<string, TabItem[]> = {

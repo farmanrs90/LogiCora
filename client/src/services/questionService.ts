@@ -1,4 +1,5 @@
 import api from '../lib/api'
+import { API_ROUTES } from '../constants'
 import type { Question, AnswerResponse, AgeGroup, QuestionFormat } from '../types'
 
 // ── Backend formatları ────────────────────────────────────────────────────
@@ -53,7 +54,8 @@ function mapQuestion(q: BackendQuestion): Question {
 export const questionService = {
   // Backend token-dəki user-in yaşına görə sualları özü seçir
   async fetchDaily(_ageGroup?: AgeGroup): Promise<Question[]> {
-    const res = await api.get<{ data: { questions: BackendQuestion[] } }>('/daily')
+    void _ageGroup
+    const res = await api.get<{ data: { questions: BackendQuestion[] } }>(API_ROUTES.DAILY.GET)
     const questions = res.data.data?.questions ?? []
     return questions.map(mapQuestion)
   },
@@ -63,7 +65,8 @@ export const questionService = {
     answer:        string,
     _responseTime: number, // daily-də istifadə olunmur (validation naməlum açarı rədd edir)
   ): Promise<AnswerResponse> {
-    const res = await api.post<{ data: BackendAnswerResult }>('/daily/answer', {
+    void _responseTime
+    const res = await api.post<{ data: BackendAnswerResult }>(API_ROUTES.DAILY.ANSWER, {
       questionId,
       answer,
     })

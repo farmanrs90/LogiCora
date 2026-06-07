@@ -14,23 +14,6 @@ import type { Participant, Question, AgeGroup } from '../../types'
 import FormatA from '../../features/quiz/formats/FormatA'
 import FormatB from '../../features/quiz/formats/FormatB'
 
-// ── Mock questions for offline/demo mode ──────────────────────────────────
-
-const DEMO_QUESTIONS: Question[] = [
-  {
-    _id: 'cq1', text: 'Azərbaycanın milli simvolu hansıdır?', emoji: '🦅',
-    format: 'A',
-    options: [{ id: 'a', text: 'Qartal' }, { id: 'b', text: 'Şir' }, { id: 'c', text: 'At' }],
-    correctAnswer: 'a', subject: 'Tarix', ageGroups: ['9-11'], xpReward: 10, timeLimit: 20,
-  },
-  {
-    _id: 'cq2', text: '3² + 4² = ?', emoji: '🔢',
-    format: 'B',
-    options: [{ id: 'a', text: '25' }, { id: 'b', text: '49' }, { id: 'c', text: '12' }, { id: 'd', text: '7' }],
-    correctAnswer: 'a', subject: 'Riyaziyyat', ageGroups: ['9-11'], xpReward: 10, timeLimit: 15,
-  },
-]
-
 // ── Arena backgrounds ─────────────────────────────────────────────────────
 
 function CosmicBackground() {
@@ -230,7 +213,7 @@ function HostView({
         style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>HOST</span>
+          <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>Aparıcı</span>
           <span className="text-[#9CA3AF] text-xs truncate max-w-[160px]">{title}</span>
         </div>
         <span className="text-[#9CA3AF] text-xs">{questionNumber}/{totalQuestions} sual</span>
@@ -362,20 +345,15 @@ export default function CompetitionRoom() {
   const [spectatorCount, setSpectatorCount] = useState(0)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [reactionEmoji, setReactionEmoji] = useState<{ emoji: string; key: number } | null>(null)
+  const [connectionSlow, setConnectionSlow] = useState(false)
 
   const startTimeRef = useRef<number>(Date.now())
 
-  // Demo mode: simulate first question if socket doesn't connect in 4s
+  // Socket gecikəndə real vəziyyəti göstər, saxta sual axınına keçmə.
   useEffect(() => {
     const t = setTimeout(() => {
       if (!isConnected && phase === 'waiting') {
-        const q = DEMO_QUESTIONS[0]
-        setCurrentQuestion(q)
-        setQuestionNumber(1)
-        setTotalQuestions(DEMO_QUESTIONS.length)
-        setTimeLeft(q.timeLimit)
-        setPhase('question')
-        startTimeRef.current = Date.now()
+        setConnectionSlow(true)
       }
     }, 4000)
     return () => clearTimeout(t)
@@ -391,6 +369,7 @@ export default function CompetitionRoom() {
     setIsAnswered(false)
     setCorrectAnswer('')
     setAnsweredCount(0)
+    setConnectionSlow(false)
     setPhase('question')
     startTimeRef.current = Date.now()
   }, [])
@@ -438,6 +417,7 @@ export default function CompetitionRoom() {
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !isConnected) return
+    setConnectionSlow(false)
 
     socket.on('competition:question', handleQuestion)
     socket.on('competition:answer_result', handleAnswerResult)
@@ -498,28 +478,6 @@ export default function CompetitionRoom() {
       answer: answerId,
       responseTime,
     })
-    // Demo: simulate result locally
-    if (!isConnected) {
-      const correct = answerId === currentQuestion.correctAnswer
-      setCorrectAnswer(currentQuestion.correctAnswer)
-      setPhase('submitted')
-      setTimeout(() => {
-        const nextIdx = questionNumber
-        if (nextIdx < DEMO_QUESTIONS.length) {
-          const q = DEMO_QUESTIONS[nextIdx]
-          setCurrentQuestion(q)
-          setQuestionNumber(nextIdx + 1)
-          setTimeLeft(q.timeLimit)
-          setSelectedAnswer(null)
-          setIsAnswered(false)
-          setPhase('question')
-          startTimeRef.current = Date.now()
-        } else {
-          navigate(APP_ROUTES.COMPETITION.RESULT(id!))
-        }
-        if (correct) setMyScore(s => s + 10)
-      }, 2000)
-    }
   }
 
   function handleSendReaction(type: string) {
@@ -621,8 +579,13 @@ export default function CompetitionRoom() {
                 🤖
               </motion.span>
               <p className="text-white font-bold text-xl text-center">
-                {isConnected ? 'Sual gəlir...' : 'Demo rejiminə keçilir...'}
+                {isConnected ? 'Sual gəlir...' : connectionSlow ? 'Yarış bağlantısı gecikir' : 'Yarış bağlantısı yoxlanılır...'}
               </p>
+              {connectionSlow && (
+                <p className="max-w-xs text-center text-sm leading-6 text-[#9CA3AF]">
+                  Canlı bağlantı olmadan yarış sualları etibarlı başlamır. Lobby-ə qayıdıb yenidən yoxla.
+                </p>
+              )}
               <div className="flex gap-1">
                 {[0, 1, 2].map(i => (
                   <motion.span
@@ -634,6 +597,14 @@ export default function CompetitionRoom() {
                   />
                 ))}
               </div>
+              {connectionSlow && (
+                <button
+                  onClick={() => navigate(APP_ROUTES.COMPETITION.LOBBY(id!))}
+                  className="rounded-2xl border border-white/10 px-4 py-2 text-sm font-bold text-[#9CA3AF] transition-colors hover:text-white"
+                >
+                  Lobby-ə qayıt
+                </button>
+              )}
             </motion.div>
           )}
 
