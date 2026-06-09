@@ -3,7 +3,7 @@ const Joi = require('joi');
 const registerValidation = Joi.object({
   name: Joi.string().min(2).max(50).required(),
   surname: Joi.string().allow('').optional(),
-  email: Joi.string().email().required(),
+  email: Joi.string().trim().email().required(),
   phone: Joi.string().min(7).max(20).required(),
   role: Joi.string().valid('student', 'parent', 'teacher', 'admin', 'manager').default('student'),
   password: Joi.string().min(6).max(128).required(),
@@ -18,7 +18,7 @@ const completeOnboardingValidation = Joi.object({
 
 
 const loginValidation = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().trim().email().required(),
   password: Joi.string().required(),
 });
 

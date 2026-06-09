@@ -29,7 +29,7 @@ const teacherTabs: TabItem[] = [
   { icon: '🏠', label: 'Ana',      path: APP_ROUTES.DASHBOARD.TEACHER },
   { icon: '👥', label: 'Qruplar',  path: '/groups' },
   { icon: '⚔️', label: 'Yarış',    path: '/competition/create' },
-  { icon: '🎓', label: 'Kurslar',  path: '/courses/my' },
+  { icon: '🎓', label: 'Kurslar',  path: '/courses' },
   { icon: '💬', label: 'Çat',      path: APP_ROUTES.CHAT },
 ]
 
@@ -74,7 +74,7 @@ function BottomTabBar({ role }: { role: Role | undefined }) {
 
         return (
           <button
-            key={tab.path}
+            key={tab.label}
             onClick={() => navigate(tab.path)}
             className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl
                        transition-colors duration-150 relative"

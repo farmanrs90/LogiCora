@@ -7,6 +7,7 @@ const { hashPassword } = require('./utils/hashPassword');
 const User = require('./modules/user/user.model');
 const Student = require('./modules/student/student.model');
 const Teacher = require('./modules/teacher/teacher.model');
+const Parent = require('./modules/parent/parent.model');
 const Gamification = require('./modules/gamification/gamification.model');
 const Question = require('./modules/question/question.model');
 const Course = require('./modules/course/course.model');
@@ -146,15 +147,28 @@ const seed = async () => {
     { name: 'Kənan', surname: 'Məmmədov', email: 'student2@logicora.az', phone: '0504444444', ageGroup: '12-14', grade: 7 },
     { name: 'Nilay', surname: 'Rəhimova', email: 'student3@logicora.az', phone: '0505555555', ageGroup: '6-8', grade: 2 },
   ];
+  const studentUsers = [];
   for (const s of studentsData) {
     const u = await User.create({
       name: s.name, surname: s.surname, email: s.email, phone: s.phone,
       password: demoPass, role: 'student', ageGroup: s.ageGroup,
       isPhoneVerified: true, profileCompleted: true,
     });
+    studentUsers.push(u);
     const student = await Student.create({ userId: u._id, grade: s.grade, school: 'Demo məktəb' });
     await Gamification.create({ studentId: student._id });
   }
+
+  // --- Valideyn (parent) + uşaq bağlantısı ---
+  const pUser = await User.create({
+    name: 'Elçin', surname: 'Quliyev', email: 'parent1@logicora.az',
+    phone: '0506666666', password: demoPass, role: 'parent', ageGroup: '23+',
+    isPhoneVerified: true, profileCompleted: true,
+  });
+  await Parent.create({
+    userId: pUser._id,
+    children: studentUsers.map((u) => u._id),
+  });
 
   // --- Kurslar ---
   await Course.create([
@@ -249,6 +263,7 @@ const seed = async () => {
   console.log('   Tələbə:   student1@logicora.az / Test123!  (9-11 yaş)');
   console.log('   Tələbə:   student2@logicora.az / Test123!  (12-14 yaş)');
   console.log('   Tələbə:   student3@logicora.az / Test123!  (6-8 yaş)');
+  console.log('   Valideyn: parent1@logicora.az / Test123!');
   console.log('   Suallar:  50 ədəd (5 fənn)\n');
 
   await mongoose.connection.close();

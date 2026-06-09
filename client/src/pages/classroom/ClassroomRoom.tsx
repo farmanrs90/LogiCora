@@ -759,7 +759,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                         className="w-9 h-9 rounded-full flex items-center justify-center font-black text-white text-sm flex-shrink-0"
                         style={{ backgroundColor: a.avatarColor }}
                       >
-                        {a.name.charAt(0)}
+                        {a.name?.charAt(0) ?? '?'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-bold text-sm">{a.name}</p>
@@ -945,7 +945,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                           className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg"
                           style={{ backgroundColor: s.avatarColor }}
                         >
-                          {s.name.charAt(0)}
+                          {s.name?.charAt(0) ?? '?'}
                         </div>
                         {s.isDistant && (
                           <span className="absolute -bottom-1 -right-1 text-xs bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center">💻</span>
@@ -1114,7 +1114,7 @@ function StudentView({ classroom, classroomId }: { classroom: ClassroomData; cla
               className="w-20 h-20 rounded-full flex items-center justify-center font-black text-white text-3xl mb-3"
               style={{ backgroundColor: classroom.teacherAvatar, boxShadow: `0 0 32px ${classroom.teacherAvatar}50` }}
             >
-              {classroom.teacherName.charAt(0)}
+              {classroom.teacherName?.charAt(0) ?? '?'}
             </div>
             <p className="text-white font-bold text-lg">{classroom.teacherName}</p>
             <p className="text-[#9CA3AF] text-sm mt-1">{classroom.title}</p>

@@ -32,7 +32,7 @@ export default function Login() {
   async function onSubmit(values: LoginValues) {
     try {
       const authData = await login({
-        email: values.email.toLowerCase(),
+        email: values.email.trim().toLowerCase(),
         password: values.password,
       })
       dispatch(setCredentials({ user: authData.user, token: authData.accessToken }))

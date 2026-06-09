@@ -36,7 +36,7 @@ function xpToNext(totalXP: number, level: number): number {
 // ── Avatar circle ─────────────────────────────────────────────────────────
 
 function AvatarCircle({ name, color, size = 36 }: { name: string; color: string; size?: number }) {
-  const initial = name.charAt(0).toUpperCase()
+  const initial = (name?.charAt(0) ?? '?').toUpperCase()
   return (
     <div
       className="rounded-full flex items-center justify-center font-bold text-white shrink-0 cursor-pointer"

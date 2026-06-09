@@ -97,7 +97,37 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
+// ── Response adapter ───────────────────────────────────────────────────────
+// Backend `data` sahəsi həm massiv (Course[]), həm də { courses, nextPage, total }
+// formatında gələ bilər. Bu funksiya hər iki halı tək, etibarlı CoursePage formasına salır.
+// Beləcə şəkil uyğunsuzluğu zamanı app ağ ekrana düşmür.
+function normalizeCoursePage(raw: unknown): CoursePage {
+  // Hal 1 — backend birbaşa massiv qaytarır: data: Course[]
+  if (Array.isArray(raw)) {
+    return { courses: raw as CourseCard[], nextPage: null, total: raw.length }
+  }
+  // Hal 2 — backend obyekt qaytarır: { courses, nextPage, total } və ya { data: [...] }
+  if (raw && typeof raw === 'object') {
+    const obj = raw as Partial<CoursePage> & { data?: CourseCard[] }
+    const courses = Array.isArray(obj.courses)
+      ? obj.courses
+      : Array.isArray(obj.data)
+        ? obj.data
+        : []
+    return {
+      courses,
+      nextPage: typeof obj.nextPage === 'number' ? obj.nextPage : null,
+      total:    typeof obj.total === 'number' ? obj.total : courses.length,
+    }
+  }
+  // Hal 3 — gözlənilməz / boş cavab
+  return { courses: [], nextPage: null, total: 0 }
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+
+
 
 function fmtDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -265,7 +295,7 @@ function CourseCardComponent({ course }: { course: CourseCard }) {
               className="w-5 h-5 rounded-full flex items-center justify-center text-white font-black"
               style={{ backgroundColor: course.teacherAvatar, fontSize: 9 }}
             >
-              {course.teacherName.charAt(0)}
+              {course.teacherName?.charAt(0) ?? '?'}
             </div>
             <span className="text-[#9CA3AF] text-[11px] truncate">{course.teacherName}</span>
             {course.teacherVerified && (
@@ -311,7 +341,7 @@ function FeaturedTeacherCard({ t }: { t: FeaturedTeacher }) {
             className="w-14 h-14 rounded-full flex items-center justify-center font-black text-white text-xl"
             style={{ backgroundColor: t.avatarColor }}
           >
-            {t.name.charAt(0)}
+            {t.name?.charAt(0) ?? '?'}
           </motion.div>
           {t.isVerified && (
             <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-[9px] font-black">✓</span>
@@ -463,9 +493,9 @@ export default function CourseList() {
   } = useInfiniteQuery({
     queryKey: ['courses', debouncedSearch, filters],
     queryFn: ({ pageParam }: { pageParam: number }) =>
-      api.get<{ data: CoursePage }>(API_ROUTES.COURSES.LIST, {
+      api.get<{ data: unknown }>(API_ROUTES.COURSES.LIST, {
         params: { page: pageParam, limit: 12, search: debouncedSearch, ...filters },
-      }).then(r => r.data.data)
+      }).then(r => normalizeCoursePage(r.data.data))
         .catch((): CoursePage => ({
           courses: MOCK_COURSES.filter(c => {
             if (debouncedSearch && !c.title.toLowerCase().includes(debouncedSearch.toLowerCase()) && !c.category.toLowerCase().includes(debouncedSearch.toLowerCase())) return false

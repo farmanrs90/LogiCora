@@ -236,7 +236,7 @@ function MemberCard({ m, rank, onChallenge }: {
             className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg"
             style={{ backgroundColor: m.avatarColor, boxShadow: `0 0 16px ${m.avatarColor}50` }}
           >
-            {m.name.charAt(0)}
+            {m.name?.charAt(0) ?? '?'}
           </div>
           {m.role === 'leader' && (
             <motion.span

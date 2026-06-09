@@ -91,7 +91,7 @@ function ParticipantCard({ p, index }: { p: Participant; index: number }) {
         className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg shadow-lg"
         style={{ backgroundColor: p.avatarColor, boxShadow: `0 0 16px ${p.avatarColor}60` }}
       >
-        {p.name.charAt(0).toUpperCase()}
+        {(p.name?.charAt(0) ?? '?').toUpperCase()}
       </div>
       <span className="text-[#9CA3AF] text-[10px] text-center leading-tight max-w-[60px] truncate">{p.name}</span>
     </motion.div>

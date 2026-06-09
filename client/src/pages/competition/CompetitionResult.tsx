@@ -97,7 +97,7 @@ function PodiumBlock({
             boxShadow:       `0 0 24px ${p.avatarColor}60`,
           }}
         >
-          {p.name.charAt(0).toUpperCase()}
+          {(p.name?.charAt(0) ?? '?').toUpperCase()}
         </div>
         <span className="absolute -top-3 -right-1 text-xl">{medals[position]}</span>
 
@@ -287,7 +287,7 @@ export default function CompetitionResult() {
               {results.participants.map((p, i) => (
                 <div key={p.userId} className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
                   <span className="w-6 text-center font-black text-[#9CA3AF]">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0" style={{ backgroundColor: p.avatarColor }}>{p.name.charAt(0)}</div>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0" style={{ backgroundColor: p.avatarColor }}>{p.name?.charAt(0) ?? '?'}</div>
                   <span className="flex-1 text-sm font-semibold text-white truncate">{p.name}</span>
                   <span className="text-xs text-[#9CA3AF]">✅{p.correctCount}</span>
                   <span className="text-xs font-bold text-white w-10 text-right">{p.score}</span>

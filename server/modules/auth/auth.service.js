@@ -78,7 +78,8 @@ const registerUser = async (payload) => {
 };
 
 const loginUser = async ({ email, password }) => {
-  const found = await User.findOne({ email }).select('+password');
+  const normalizedEmail = email.trim().toLowerCase();
+  const found = await User.findOne({ email: normalizedEmail }).select('+password');
   if (!found) {
     const error = new Error('Invalid credentials');
     error.statusCode = 401;

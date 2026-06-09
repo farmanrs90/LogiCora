@@ -20,7 +20,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Auth endpointlərinin (login/register/refresh) öz 401-i "sessiya bitdi" demək deyil —
+    // bu, sadəcə yanlış email/şifrədir. Onları refresh+redirect məntiqinə salmırıq,
+    // əks halda login səhifəsi reload olub formu silir.
+    const isAuthEndpoint = typeof originalRequest?.url === 'string'
+      && originalRequest.url.includes('/auth/')
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true
 
       try {

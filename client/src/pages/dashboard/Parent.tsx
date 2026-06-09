@@ -527,7 +527,7 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

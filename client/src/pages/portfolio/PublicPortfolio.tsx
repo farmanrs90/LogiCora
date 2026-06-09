@@ -576,7 +576,8 @@ export default function PublicPortfolio() {
         }),
     enabled: !!link,
   })
- 
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
         <div className="space-y-3 text-center">

@@ -309,7 +309,7 @@ export default function DailyQuiz() {
   const isChild = isChildAge(ageGroup)
 
   // Fetch questions
-  const { data: questions, isLoading } = useQuery<Question[]>({
+  const { data: questions, isLoading, isError, refetch } = useQuery<Question[]>({
     queryKey: ['daily', 'questions'],
     queryFn: () => questionService.fetchDaily(ageGroup),
     staleTime: 1000 * 60 * 5,
@@ -422,13 +422,25 @@ export default function DailyQuiz() {
       }, 1400)
 
     } catch {
-      toast.error('Cavab göndərilmədi')
+      // Backend timeout sentinel-ini (__timeout__) qəbul etmir (400) və ya şəbəkə xətası baş verir.
+      // UI donmamalı — cavabı buraxılmış sayıb feedback-siz növbəti suala / nəticəyə keçirik.
+      toast(answerId === '__timeout__' ? 'Vaxt bitdi ⏱️' : 'Cavab göndərilmədi, növbəti suala keçirik')
+      setShowMascot(false)
+      setAnsweredCount(prev => prev + 1)
+      setTimeout(() => {
+        if (currentIndex + 1 >= totalQuestions) {
+          setPhase('result')
+        } else {
+          setCurrentIndex(i => i + 1)
+          setPhase('question')
+        }
+      }, 800)
     }
   }
 
   // ── Render: loading ────────────────────────────────────────────────────
 
-  if (isLoading || !questions) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-6">
         <motion.div
@@ -438,6 +450,36 @@ export default function DailyQuiz() {
           style={{ borderColor: `${avatarColor} ${avatarColor}40 ${avatarColor}40 ${avatarColor}40` }}
         />
         <p className="text-[#9CA3AF] text-sm">Suallar yüklənir...</p>
+      </div>
+    )
+  }
+
+  // ── Render: boş / xəta (sonsuz loading-in qarşısını alır) ───────────────
+  if (isError || !questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-4 text-center">
+        <div className="text-6xl">🧩</div>
+        <div>
+          <h2 className="text-white font-bold text-xl mb-1">Bugünkü suallar hazır deyil</h2>
+          <p className="text-[#9CA3AF] text-sm max-w-sm">
+            Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
+            style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+          >
+            Yenidən cəhd et
+          </button>
+          <button
+            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+            className="px-5 py-2.5 rounded-2xl text-sm font-bold text-[#9CA3AF] border border-white/10 hover:text-white transition-colors"
+          >
+            Panelə qayıt
+          </button>
+        </div>
       </div>
     )
   }

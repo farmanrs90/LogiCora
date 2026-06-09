@@ -7,6 +7,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
 } from 'recharts'
 import api from '../../lib/axios'
+import toast from 'react-hot-toast'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -393,6 +394,37 @@ export default function TeacherAnalytics() {
   const data = analytics ?? MOCK
   const mergedXP = mergeGroupXP(data.groupXP)
 
+  // Mövcud analitika datasını sadə CSV kimi ixrac edir (yeni backend/endpoint tələb etmir)
+  const handleExport = () => {
+    const esc = (v: string | number) => {
+      const s = String(v ?? '')
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    }
+    const lines: string[] = []
+    lines.push('LogiCora — Analitika')
+    lines.push(`Period,${period}`)
+    lines.push('')
+    lines.push(['Göstərici', 'Dəyər', 'Trend %', 'Qeyd'].join(','))
+    data.metrics.forEach((m) => lines.push([m.label, m.value, m.trend, m.sub].map(esc).join(',')))
+    lines.push('')
+    lines.push(['Ən aktiv tələbə', 'XP artımı', 'Davamiyyət %', 'Son görünmə'].join(','))
+    data.topStudents.forEach((s) => lines.push([s.name, s.xpGain, s.attendancePct, s.lastSeen].map(esc).join(',')))
+    lines.push('')
+    lines.push(['Dəstək tələb edən tələbə', 'XP artımı', 'Davamiyyət %', 'Son görünmə'].join(','))
+    data.weakStudents.forEach((s) => lines.push([s.name, s.xpGain, s.attendancePct, s.lastSeen].map(esc).join(',')))
+
+    const csv = '﻿' + lines.join('\n')   // BOM — Excel-də Azərbaycan hərfləri düzgün görünsün
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `logicora-analitika-${period}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success('Analitika CSV kimi yükləndi')
+  }
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
@@ -405,7 +437,7 @@ export default function TeacherAnalytics() {
           </div>
           <div className="flex items-center gap-3">
             <PeriodSelector value={period} onChange={setPeriod} />
-            <button className="px-4 py-2 border border-white/15 hover:border-white/30 rounded-xl text-sm text-white/60 hover:text-white transition-colors">
+            <button onClick={handleExport} className="px-4 py-2 border border-white/15 hover:border-white/30 rounded-xl text-sm text-white/60 hover:text-white transition-colors">
               📄 Export
             </button>
           </div>

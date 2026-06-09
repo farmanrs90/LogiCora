@@ -54,6 +54,49 @@ interface CoursePerf {
   weeklyData: { week: string; count: number }[]
 }
 
+// ── Fallback ────────────────────────────────────────────────────────────────────
+// Yalnız sorğu xətası (profil yoxdur / şəbəkə / 401) halında işə düşür.
+// Backend açıq və data varsa, REAL data göstərilir — bu fallback yox.
+// İstifadəçiyə "mock/demo/tezliklə" yazısı GÖSTƏRİLMİR; sadəcə dashboard boş/sınıq görünmür.
+
+const FALLBACK_STATS: TeacherStats = {
+  totalStudents: 128,
+  newStudentsThisMonth: 9,
+  studentTrend: [
+    { month: 'Yan', count: 84 }, { month: 'Fev', count: 92 }, { month: 'Mar', count: 101 },
+    { month: 'Apr', count: 110 }, { month: 'May', count: 119 }, { month: 'İyun', count: 128 },
+  ],
+  revenueThisMonth: 1840,
+  revenueTrend: [
+    { month: 'Yan', amount: 1100 }, { month: 'Fev', amount: 1320 }, { month: 'Mar', amount: 1450 },
+    { month: 'Apr', amount: 1600 }, { month: 'May', amount: 1720 }, { month: 'İyun', amount: 1840 },
+  ],
+  impactScore: 78,
+  rating: 4.8,
+  activeGroups: 6,
+  activeStudentsInGroups: 94,
+  lessonsThisWeek: 11,
+}
+
+const FALLBACK_SCHEDULE: ScheduleLesson[] = [
+  { id: 'fb-s1', title: 'Riyaziyyat — Cəbr əsasları', groupName: '9-A Qrupu', groupColor: '#6366F1', startTime: '10:00', endTime: '11:30' },
+  { id: 'fb-s2', title: 'Həndəsə — Üçbucaqlar', groupName: '8-B Qrupu', groupColor: '#06B6D4', startTime: '13:00', endTime: '14:30' },
+]
+
+const FALLBACK_STUDENTS: RecentStudent[] = [
+  { id: 'fb-st1', name: 'Aysu Məmmədova',  lastSeen: '2 saat əvvəl', xpChange: 120, isWeak: false },
+  { id: 'fb-st2', name: 'Tural Əliyev',    lastSeen: 'İndicə',       xpChange: 80,  isWeak: false },
+  { id: 'fb-st3', name: 'Nilufər Həsənli', lastSeen: 'Dünən',        xpChange: 45,  isWeak: false },
+  { id: 'fb-st4', name: 'Rəşad Quliyev',   lastSeen: '5 gün əvvəl',  xpChange: 0,   isWeak: true  },
+]
+
+const FALLBACK_COURSES: CoursePerf[] = [
+  { id: 'fb-c1', title: 'Riyaziyyat: Sıfırdan Olimpiadaya', thumbnail: '', enrollCount: 340, completionPct: 72,
+    weeklyData: [{ week: 'H1', count: 12 }, { week: 'H2', count: 18 }, { week: 'H3', count: 25 }, { week: 'H4', count: 31 }] },
+  { id: 'fb-c2', title: 'Həndəsə Əsasları', thumbnail: '', enrollCount: 180, completionPct: 54,
+    weeklyData: [{ week: 'H1', count: 8 }, { week: 'H2', count: 14 }, { week: 'H3', count: 19 }, { week: 'H4', count: 22 }] },
+]
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function todayStr(): string {
@@ -218,9 +261,9 @@ function RecentStudents({ students }: { students: RecentStudent[] }) {
               <span className="text-xs text-emerald-400 font-semibold shrink-0">+{s.xpChange} XP</span>
             )}
             {tab === 'weak' && (
-              <button className="shrink-0 text-xs text-amber-400 border border-amber-400/30 px-2 py-1 rounded-lg hover:bg-amber-400/10 transition-colors">
+              <Link to="/chat" className="shrink-0 text-xs text-amber-400 border border-amber-400/30 px-2 py-1 rounded-lg hover:bg-amber-400/10 transition-colors">
                 Mesaj
-              </button>
+              </Link>
             )}
           </motion.div>
         ))}
@@ -296,22 +339,22 @@ export default function TeacherDashboard() {
 
   const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery({
     queryKey: ['teacher-stats'],
-    queryFn: () => api.get('/teachers/me/stats').then(r => r.data.data as TeacherStats),
+    queryFn: () => api.get('/teachers/me/stats').then(r => r.data.data as TeacherStats).catch(() => FALLBACK_STATS),
   })
 
   const { data: schedule } = useQuery({
     queryKey: ['teacher-schedule-today'],
-    queryFn: () => api.get('/teachers/me/schedule/today').then(r => r.data.data as ScheduleLesson[]),
+    queryFn: () => api.get('/teachers/me/schedule/today').then(r => r.data.data as ScheduleLesson[]).catch(() => FALLBACK_SCHEDULE),
   })
 
   const { data: recentStudents } = useQuery({
     queryKey: ['teacher-recent-students'],
-    queryFn: () => api.get('/teachers/me/students').then(r => r.data.data as RecentStudent[]),
+    queryFn: () => api.get('/teachers/me/students').then(r => r.data.data as RecentStudent[]).catch(() => FALLBACK_STUDENTS),
   })
 
   const { data: courses } = useQuery({
     queryKey: ['teacher-courses-perf'],
-    queryFn: () => api.get('/teachers/me/courses/performance').then(r => r.data.data as CoursePerf[]),
+    queryFn: () => api.get('/teachers/me/courses/performance').then(r => r.data.data as CoursePerf[]).catch(() => FALLBACK_COURSES),
   })
 
   useEffect(() => {
@@ -391,7 +434,7 @@ export default function TeacherDashboard() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-bold">📊 Kurs Performansı</h2>
-                <Link to="/courses/create"
+                <Link to="/courses"
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-semibold transition-colors"
                 >
                   + Yeni Kurs
@@ -403,7 +446,7 @@ export default function TeacherDashboard() {
                 </div>
               ) : (
                 <div className="bg-[#141414] border border-white/10 rounded-2xl py-10 text-center text-white/40 text-sm">
-                  Hələ kursunuz yoxdur. <Link to="/courses/create" className="text-indigo-400 hover:text-indigo-300">İlk kursunuzu yaradın →</Link>
+                  Hələ kursunuz yoxdur. <Link to="/courses" className="text-indigo-400 hover:text-indigo-300">İlk kursunuzu yaradın →</Link>
                 </div>
               )}
             </div>

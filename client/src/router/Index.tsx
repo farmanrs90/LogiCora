@@ -142,6 +142,14 @@ export default function AppRouter() {
           }
         />
 
+        {/* ── Parent alias route-ları ───────────────────────────── */}
+        {/* Semantik URL-lər qalır, amma parent dashboard-a redirect olur.
+            RoleRoute parent olmayan/giriş etməmiş user-i öz yerinə yönləndirir. */}
+        <Route path="/child"            element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
+        <Route path="/progress"         element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
+        <Route path="/attendance/child" element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
+        <Route path="/payments"         element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
+
         {/* ── Feature routes — hamısı PageWrapper ilə ──────────── */}
         <Route path={APP_ROUTES.DAILY} element={<ProtectedRoute><DailyQuiz /></ProtectedRoute>} />
         <Route path="/competition" element={<PW><CompetitionJoin /></PW>} />
@@ -154,6 +162,9 @@ export default function AppRouter() {
         <Route path="/clan/:slug/battle/:battleId" element={<PW><ClanBattle /></PW>} />
         <Route path="/leaderboard/clans" element={<PW><ClanLeaderboard /></PW>} />
         <Route path={APP_ROUTES.COURSES} element={<PW><Courses /></PW>} />
+        {/* /courses/create səhifəsi yoxdur — "create" id kimi qəbul olunub CourseDetail mock açmasın deyə
+            /:id-dən ƏVVƏL kurslar səhifəsinə yönləndirilir. */}
+        <Route path="/courses/create" element={<Navigate to={APP_ROUTES.COURSES} replace />} />
         <Route path="/courses/:id" element={<PW><CourseDetail /></PW>} />
         <Route path="/classroom/:id" element={<PW><ClassroomRoom /></PW>} />
         <Route path="/classroom/:id/qr" element={<ProtectedRoute><AttendanceQR /></ProtectedRoute>} />

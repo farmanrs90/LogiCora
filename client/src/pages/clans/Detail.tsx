@@ -166,7 +166,7 @@ function MemberRow({ m, rank }: { m: ClanMemberDetail; rank: number }) {
         className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-sm flex-shrink-0"
         style={{ backgroundColor: m.avatarColor, boxShadow: `0 0 12px ${m.avatarColor}50` }}
       >
-        {m.name.charAt(0)}
+        {m.name?.charAt(0) ?? '?'}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -601,7 +601,7 @@ export default function ClanDetail() {
                 className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white"
                 style={{ backgroundColor: leader.avatarColor }}
               >
-                {leader.name.charAt(0)}
+                {leader.name?.charAt(0) ?? '?'}
               </div>
               <span className="text-[#9CA3AF] text-xs">
                 Lider: <span className="text-white font-bold">{leader.name}</span>

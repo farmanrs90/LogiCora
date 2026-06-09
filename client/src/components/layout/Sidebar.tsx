@@ -34,12 +34,12 @@ const studentNav: NavItem[] = [
 const teacherNav: NavItem[] = [
   { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.TEACHER },
   { icon: '👥', label: 'Qruplarım', path: '/groups' },
-  { icon: '✅', label: 'Davamiyyət', path: '/attendance' },
+  { icon: '✅', label: 'Davamiyyət', path: '/groups' },
   { icon: '⚔️', label: 'Yarış yarat', path: '/competition/create' },
-  { icon: '🎓', label: 'Kurslarım', path: '/courses/my' },
+  { icon: '🎓', label: 'Kurslarım', path: '/courses' },
   { icon: '📊', label: 'Analitika', path: '/analytics' },
   { icon: '💬', label: 'Mesajlar', path: APP_ROUTES.CHAT },
-  { icon: '🏫', label: 'Sinif', path: '/classroom' },
+  { icon: '🏫', label: 'Sinif', path: '/groups' },
 ]
 
 const parentNav: NavItem[] = [
@@ -90,7 +90,7 @@ function AvatarCircle({ name, color, size = 52 }: { name: string; color: string;
         fontSize: size * 0.38,
       }}
     >
-      {name.charAt(0).toUpperCase()}
+      {(name?.charAt(0) ?? '?').toUpperCase()}
     </div>
   )
 }
@@ -224,7 +224,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-0.5" aria-label="Əsas naviqasiya">
         {navItems.map((item) => (
           <NavLink
-            key={item.path}
+            key={item.label}
             item={item}
             active={location.pathname === item.path || (item.path !== APP_ROUTES.DASHBOARD.STUDENT && location.pathname.startsWith(item.path) && item.path.length > 1)}
             color={avatarColor}

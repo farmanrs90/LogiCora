@@ -176,7 +176,7 @@ function PastWinnersSection({ winners }: { winners: WeeklyWinner[] }) {
               className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg"
               style={{ backgroundColor: w.avatarColor, boxShadow: `0 0 16px ${w.avatarColor}50` }}
             >
-              {w.name.charAt(0)}
+              {w.name?.charAt(0) ?? '?'}
             </div>
             <p className="text-white font-semibold text-xs text-center truncate w-full">{w.name}</p>
             <p className="text-[#9CA3AF] text-[10px] text-center">{w.city}</p>
@@ -461,7 +461,7 @@ function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correct
           className="w-20 h-20 rounded-full flex items-center justify-center font-black text-white text-3xl"
           style={{ backgroundColor: winner.avatarColor, boxShadow: `0 0 40px ${winner.avatarColor}70` }}
         >
-          {winner.name.charAt(0)}
+          {winner.name?.charAt(0) ?? '?'}
         </div>
       </motion.div>
 
@@ -604,7 +604,7 @@ function FinalSection({ avatarColor }: { avatarColor: string }) {
               className="w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-base"
               style={{ backgroundColor: f.color, boxShadow: `0 0 12px ${f.color}50` }}
             >
-              {f.name.charAt(0)}
+              {f.name?.charAt(0) ?? '?'}
             </div>
             <span className="text-[#9CA3AF] text-[9px] text-center">{f.name}</span>
             <span className="text-[9px]" style={{ color: f.color }}>#{f.week}</span>

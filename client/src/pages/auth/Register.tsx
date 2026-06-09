@@ -182,7 +182,7 @@ export default function Register() {
       const authData = await registerUser({
         name: data.name.trim(),
         surname: data.surname.trim(),
-        email: data.email.toLowerCase(),
+        email: data.email.trim().toLowerCase(),
         password: data.password,
         phone: data.phone.trim(),
         role: data.role,
