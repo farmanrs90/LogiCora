@@ -111,6 +111,13 @@ const getChildActivity = async (req, res, next) => {
   } catch (error) { return next(error); }
 };
 
+const getChildProgress = async (req, res, next) => {
+  try {
+    const data = await parentService.getChildProgress(req.user.id, req.params.id);
+    return res.status(200).json(data);
+  } catch (error) { return next(error); }
+};
+
 const getTimeCapsules = async (req, res, next) => {
   try {
     const data = await parentService.getTimeCapsules(req.user.id);
@@ -141,6 +148,7 @@ module.exports = {
   getChildTeachers,
   getPayments,
   getChildActivity,
+  getChildProgress,
   getTimeCapsules,
   createTimeCapsule,
 };

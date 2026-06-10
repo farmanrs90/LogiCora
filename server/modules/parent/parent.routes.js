@@ -25,6 +25,7 @@ router.get('/child/:id/stats', auth, roleCheck(['parent']), parentController.get
 router.get('/child/:id/attendance', auth, roleCheck(['parent']), parentController.getChildAttendance);
 router.get('/child/:id/teachers', auth, roleCheck(['parent']), parentController.getChildTeachers);
 router.get('/child/:id/activity', auth, roleCheck(['parent']), parentController.getChildActivity);
+router.get('/child/:id/progress', auth, roleCheck(['parent']), parentController.getChildProgress);
 
 
 module.exports = router;

@@ -35,10 +35,10 @@ const teacherTabs: TabItem[] = [
 
 const parentTabs: TabItem[] = [
   { icon: '🏠', label: 'Ana',      path: APP_ROUTES.DASHBOARD.PARENT },
-  { icon: '👶', label: 'Övladım',  path: '/child' },
-  { icon: '📊', label: 'İrəliləyiş', path: '/progress' },
+  { icon: '👶', label: 'Övladım',  path: `${APP_ROUTES.DASHBOARD.PARENT}#child-section` },
+  { icon: '📊', label: 'İrəliləyiş', path: `${APP_ROUTES.DASHBOARD.PARENT}#progress-section` },
   { icon: '💬', label: 'Çat',      path: APP_ROUTES.CHAT },
-  { icon: '💳', label: 'Ödəniş',   path: '/payments' },
+  { icon: '💳', label: 'Ödəniş',   path: `${APP_ROUTES.DASHBOARD.PARENT}#payments-section` },
 ]
 
 const tabsByRole: Record<string, TabItem[]> = {

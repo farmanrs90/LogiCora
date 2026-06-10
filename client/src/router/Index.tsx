@@ -145,10 +145,10 @@ export default function AppRouter() {
         {/* ── Parent alias route-ları ───────────────────────────── */}
         {/* Semantik URL-lər qalır, amma parent dashboard-a redirect olur.
             RoleRoute parent olmayan/giriş etməmiş user-i öz yerinə yönləndirir. */}
-        <Route path="/child"            element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
-        <Route path="/progress"         element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
-        <Route path="/attendance/child" element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
-        <Route path="/payments"         element={<RoleRoute roles={['parent']}><Navigate to={APP_ROUTES.DASHBOARD.PARENT} replace /></RoleRoute>} />
+        <Route path="/child"            element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#child-section`} replace /></RoleRoute>} />
+        <Route path="/progress"         element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#progress-section`} replace /></RoleRoute>} />
+        <Route path="/attendance/child" element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#attendance-section`} replace /></RoleRoute>} />
+        <Route path="/payments"         element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#payments-section`} replace /></RoleRoute>} />
 
         {/* ── Feature routes — hamısı PageWrapper ilə ──────────── */}
         <Route path={APP_ROUTES.DAILY} element={<ProtectedRoute><DailyQuiz /></ProtectedRoute>} />

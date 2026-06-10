@@ -44,11 +44,11 @@ const teacherNav: NavItem[] = [
 
 const parentNav: NavItem[] = [
   { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.PARENT },
-  { icon: '👶', label: 'Övladım', path: '/child' },
-  { icon: '📊', label: 'İrəliləyiş', path: '/progress' },
-  { icon: '✅', label: 'Davamiyyət', path: '/attendance/child' },
+  { icon: '👶', label: 'Övladım', path: `${APP_ROUTES.DASHBOARD.PARENT}#child-section` },
+  { icon: '📊', label: 'İrəliləyiş', path: `${APP_ROUTES.DASHBOARD.PARENT}#progress-section` },
+  { icon: '✅', label: 'Davamiyyət', path: `${APP_ROUTES.DASHBOARD.PARENT}#attendance-section` },
   { icon: '💬', label: 'Müəllimlə', path: APP_ROUTES.CHAT },
-  { icon: '💳', label: 'Ödənişlər', path: '/payments' },
+  { icon: '💳', label: 'Ödənişlər', path: `${APP_ROUTES.DASHBOARD.PARENT}#payments-section` },
 ]
 
 const navByRole: Record<string, NavItem[]> = {
@@ -153,7 +153,9 @@ export default function Sidebar() {
   const { data: gp } = useQuery<GamificationProfile>({
     queryKey: ['gamification', 'me'],
     queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
-    enabled: !!user,
+    // /gamification/me yalnız student üçündür (parent/teacher-də Student profili yoxdur → 404).
+    // Yalnız student üçün çağırılır; digər rollar üçün gp undefined qalır və neytral default göstərilir.
+    enabled: user?.role === 'student',
     staleTime: 1000 * 60 * 2,
   })
 

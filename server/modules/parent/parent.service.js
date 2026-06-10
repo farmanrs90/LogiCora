@@ -7,6 +7,7 @@ const Attendance = require('../attendance/attendance.model');
 const Enrollment = require('../course/enrollment.model');
 const Course = require('../course/course.model'); // eslint-disable-line no-unused-vars -- populate üçün model qeydiyyatı
 const Teacher = require('../teacher/teacher.model');
+const Competition = require('../competition/competition.model');
 
 const LEAGUE_FALLBACK = 'bronze';
 
@@ -354,6 +355,123 @@ const getChildActivity = async (userId, studentId) => {
   return feed;
 };
 
+// ChildProgress.tsx-in gözlədiyi TAM "FullProgress" shape-ini qaytarır.
+// Bütün sahələr dolu olmalıdır — frontend render zamanı avgRank.toFixed() və
+// bir neçə .map() çağırır, ona görə partial 200 cavabı ağ ekran riski yaradır.
+const getChildProgress = async (userId, studentId) => {
+  const student = await assertOwnsChild(userId, studentId); // parent ownership + 403/404
+  const user = await User.findById(student.userId).select('name surname ageGroup');
+  const gamif = await Gamification.findOne({ studentId: student._id });
+
+  // ── Header ──
+  const child = {
+    id: String(student._id),
+    name: [user?.name, user?.surname].filter(Boolean).join(' ') || 'Şagird',
+    level: gamif?.level ?? 1,
+    league: gamif?.leagueTier ?? LEAGUE_FALLBACK,
+    ageGroup: user?.ageGroup || '',
+  };
+
+  // ── Davamiyyət (real) ──
+  const sessions = await Attendance.find({ 'records.studentId': student._id })
+    .sort({ date: -1 })
+    .limit(30);
+  sessions.reverse(); // köhnədən-yeniyə
+  const attendance = sessions.map((sess) => {
+    const rec = sess.records.find((r) => String(r.studentId) === String(student._id));
+    return { date: sess.date, status: rec ? (ATT_STATUS_MAP[rec.status] || 'none') : 'none' };
+  });
+  const attendanceStats = { present: 0, absent: 0, distant: 0 };
+  for (const a of attendance) {
+    if (a.status === 'present') attendanceStats.present += 1;
+    else if (a.status === 'absent') attendanceStats.absent += 1;
+    else if (a.status === 'distant') attendanceStats.distant += 1;
+  }
+  const monthly = await computeMonthlyAttendance(student._id);
+  const attendancePct = monthly.total > 0 ? Math.round((monthly.thisMonth / monthly.total) * 100) : 0;
+
+  // ── Kurslar / enrollment (real) → courseProgress metriki + fənn analizi ──
+  const enrollments = await Enrollment.find({ studentId: student._id })
+    .populate({ path: 'courseId', select: 'title category' });
+  let courseProgress = 0;
+  if (enrollments.length > 0) {
+    const sum = enrollments.reduce((acc, e) => acc + (e.progress || 0), 0);
+    courseProgress = Math.round(sum / enrollments.length);
+  }
+  // Fənn (subject) — kurs kateqoriyalarına görə qruplaşdırılır, irəliləyiş = səviyyə
+  const subjMap = new Map(); // category → { sum, count }
+  for (const e of enrollments) {
+    const cat = e.courseId?.category;
+    if (!cat) continue;
+    const cur = subjMap.get(cat) || { sum: 0, count: 0 };
+    cur.sum += e.progress || 0;
+    cur.count += 1;
+    subjMap.set(cat, cur);
+  }
+  const subjects = [...subjMap.entries()].map(([subject, v]) => {
+    const level = Math.round(v.sum / v.count);
+    return { subject, level, trend: 0, radarValue: level, isWeak: level < 40 };
+  });
+
+  // ── Yarış nəticələri (real) ──
+  const comps = await Competition.find({ 'participants.studentId': student._id })
+    .sort({ finishedAt: -1, createdAt: -1 })
+    .limit(10);
+  const competitions = [];
+  let rankSum = 0;
+  let rankCount = 0;
+  let best = null; // { rank, title }
+  let accSum = 0;
+  let accCount = 0;
+  for (const c of comps) {
+    const p = (c.participants || []).find((pt) => String(pt.studentId) === String(student._id));
+    if (!p) continue;
+    const rank = p.rank || 0;
+    competitions.push({
+      title: c.title || 'Yarış',
+      rank,
+      totalParticipants: (c.participants || []).length,
+      score: p.score || 0,
+      date: c.finishedAt || c.startedAt || c.createdAt,
+    });
+    if (rank > 0) {
+      rankSum += rank;
+      rankCount += 1;
+      if (!best || rank < best.rank) best = { rank, title: c.title || 'Yarış' };
+    }
+    if (p.totalAnswers > 0) {
+      accSum += (p.correctAnswers / p.totalAnswers) * 100;
+      accCount += 1;
+    }
+  }
+  const avgRank = rankCount > 0 ? Number((rankSum / rankCount).toFixed(1)) : 0;
+  const bestResult = best ? `${best.rank}-ci yer — ${best.title}` : 'Hələ yarış nəticəsi yoxdur';
+  const competitionRate = accCount > 0 ? Math.round(accSum / accCount) : 0;
+
+  // ── Metrics ──
+  const metrics = {
+    // Gündəlik quiz tamamlama mənbəyi bu modullarda yoxdur → təhlükəsiz default
+    quizCompletion: 0,
+    attendance: attendancePct,
+    competitionRate,
+    courseProgress,
+  };
+
+  return {
+    child,
+    metrics,
+    subjects,                 // real (kurs kateqoriyaları) və ya boş []
+    mood: [],                 // mood izləmə modeli yoxdur → boş []
+    moodAdvice: 'Əhval-ruhiyyə məlumatı hələ toplanmayıb.',
+    attendance,               // real
+    attendanceStats,          // real
+    competitions,             // real və ya boş []
+    avgRank,                  // həmişə number
+    bestResult,
+    careerSuggestions: [],    // AI analizi yazılmır → boş []
+  };
+};
+
 const getTimeCapsules = async () => {
   // TimeCapsule modeli yoxdur → boş array
   return [];
@@ -379,6 +497,7 @@ module.exports = {
   getChildTeachers,
   getPayments,
   getChildActivity,
+  getChildProgress,
   getTimeCapsules,
   createTimeCapsule,
 };

@@ -94,7 +94,9 @@ export default function Navbar() {
   const { data: gp } = useQuery<GamificationProfile>({
     queryKey: ['gamification', 'me'],
     queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
-    enabled: !!user,
+    // /gamification/me yalnız student üçündür (parent/teacher-də Student profili yoxdur → 404).
+    // Yalnız student üçün çağırılır; digər rollar üçün gp undefined qalır və neytral default göstərilir.
+    enabled: user?.role === 'student',
     staleTime: 1000 * 60 * 2,
   })
 

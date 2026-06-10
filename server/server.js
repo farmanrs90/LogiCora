@@ -51,6 +51,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/parents', parentRoutes);
+// Frontend bütün parent çağırışlarını tək formada (/api/parent/...) edir.
+// Mövcud plural mount saxlanılır, əlavə singular alias 404-ları bitirir (heç bir route silinmir).
+app.use('/api/parent', parentRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/gamification', gamificationRoutes);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api'
@@ -506,6 +506,19 @@ export default function ParentDashboard() {
     enabled: !!selectedChildId,
   })
 
+  // Sidebar/mobil tab parent linkləri #section hash ilə gəlir → uyğun bölməyə yumşaq scroll.
+  // Data async yükləndiyi üçün stats/attendance/payments dəyişəndə də yenidən cəhd edirik.
+  const location = useLocation()
+  useEffect(() => {
+    if (!location.hash) return
+    const id = location.hash.slice(1)
+    const t = setTimeout(() => {
+      const el = document.getElementById(id)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 120)
+    return () => clearTimeout(t)
+  }, [location.hash, stats, report, attendance, payments, children])
+
   // ── Empty state — no children ───────────────────────────────────────────────
   if (!childrenLoading && (!children || children.length === 0)) {
     return (
@@ -538,8 +551,8 @@ export default function ParentDashboard() {
     <div className="min-h-screen bg-[#0D0D0D] text-white">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-        {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* ── Header (Övladım bölməsi) ───────────────────────────────── */}
+        <div id="child-section" className="scroll-mt-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -670,8 +683,8 @@ export default function ParentDashboard() {
 
             {/* ── Weekly AI Report ────────────────────────────────────── */}
             {report && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-amber-950/50 to-orange-950/30 border border-amber-500/30 rounded-2xl p-5"
+              <motion.div id="progress-section" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                className="scroll-mt-24 bg-gradient-to-br from-amber-950/50 to-orange-950/30 border border-amber-500/30 rounded-2xl p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -704,7 +717,7 @@ export default function ParentDashboard() {
               <div className="lg:col-span-2 space-y-5">
                 {/* Attendance week grid */}
                 {attendance && (
-                  <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+                  <div id="attendance-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
                     <h2 className="font-bold text-sm mb-4">📋 Son Davamiyyət</h2>
                     <div className="flex gap-1.5 flex-wrap">
                       {attendance.slice(-14).map((day, i) => (
@@ -789,7 +802,7 @@ export default function ParentDashboard() {
 
                 {/* Payments */}
                 {payments && (
-                  <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+                  <div id="payments-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-sm">💳 Ödənişlər</h2>
                       <span className="text-xs bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">Tezliklə</span>
