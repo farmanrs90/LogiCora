@@ -139,32 +139,40 @@ const LEAGUE_EMOJI: Record<string, string> = {
 
 const ZONE_META: Record<string, { label: string; color: string; dot: string }> = {
   school: { label: 'Məktəbdədir', color: 'text-emerald-400', dot: '🟢' },
-  home:   { label: 'Evdədir',     color: 'text-blue-400',    dot: '🔵' },
-  other:  { label: 'Başqa yerdə', color: 'text-amber-400',   dot: '🟡' },
+  home: { label: 'Evdədir', color: 'text-blue-400', dot: '🔵' },
+  other: { label: 'Başqa yerdə', color: 'text-amber-400', dot: '🟡' },
 }
 
 const ATTEND_COLOR: Record<string, string> = {
   present: 'bg-emerald-500',
-  absent:  'bg-rose-500',
+  absent: 'bg-rose-500',
   distant: 'bg-blue-500',
-  none:    'bg-white/10',
+  none: 'bg-white/10',
 }
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('az-AZ', { day: 'numeric', month: 'long' })
 }
 
-// ── Link Child Modal ──────────────────────────────────────────────────────────
-
 function LinkChildModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
-  const [code, setCode] = useState('')
+  const [childId, setChildId] = useState('')
+  const [error, setError] = useState('')
 
   const linkMutation = useMutation({
-    mutationFn: (linkCode: string) => api.post('/parent/link-child', { code: linkCode }).then(r => r.data),
+    mutationFn: (id: string) => api.post('/parent/child', { childId: id }).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['children'] }); onClose() },
-    onError: () => { qc.invalidateQueries({ queryKey: ['children'] }); onClose() },
+    onError: () => {
+      setError('Uşaq əlavə edilmədi. Uşaq ID-sinin düzgün olduğunu yoxlayıb yenidən cəhd edin.')
+    },
   })
+
+  const handleSubmit = () => {
+    const id = childId.trim()
+    if (!id) return
+    setError('')
+    linkMutation.mutate(id)
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -177,16 +185,21 @@ function LinkChildModal({ onClose }: { onClose: () => void }) {
         <div className="text-center">
           <div className="text-5xl mb-3">👨‍👩‍👦</div>
           <h2 className="text-lg font-bold">Uşaq Əlavə Et</h2>
-          <p className="text-sm text-white/50 mt-1">Uşağın LogiCora hesabındakı ailəlik kodu ilə bağlayın</p>
+          <p className="text-sm text-white/50 mt-1">Övladınızın LogiCora hesabının Uşaq ID-sini daxil edin</p>
         </div>
-        <input
-          value={code} onChange={e => setCode(e.target.value)}
-          placeholder="məs. ANAR-2026-XK9"
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 text-center tracking-widest font-mono"
-        />
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-white/60">Uşaq ID-si</label>
+          <input
+            value={childId}
+            onChange={e => { setChildId(e.target.value); if (error) setError('') }}
+            placeholder="məs. 665f1c2a9b4e7d0012a3b4c5"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 text-center tracking-wide font-mono"
+          />
+          {error && <p className="text-xs text-rose-400 text-center">{error}</p>}
+        </div>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white transition-colors">Ləğv et</button>
-          <button onClick={() => code && linkMutation.mutate(code)} disabled={!code || linkMutation.isPending}
+          <button onClick={handleSubmit} disabled={!childId.trim() || linkMutation.isPending}
             className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {linkMutation.isPending ? 'Bağlanır...' : 'Bağla'}
@@ -196,7 +209,6 @@ function LinkChildModal({ onClose }: { onClose: () => void }) {
     </motion.div>
   )
 }
-
 // ── Map Modal ─────────────────────────────────────────────────────────────────
 
 function MapModal({ location, childName, onClose }: {
@@ -238,11 +250,10 @@ function MapModal({ location, childName, onClose }: {
               transition={{ duration: 2.5, repeat: Infinity }}
               className="relative"
             >
-              <div className={`w-20 h-20 rounded-full border-4 opacity-30 ${
-                location.zone === 'school' ? 'border-emerald-400 bg-emerald-400' :
-                location.zone === 'home' ? 'border-blue-400 bg-blue-400' :
-                'border-amber-400 bg-amber-400'
-              }`} />
+              <div className={`w-20 h-20 rounded-full border-4 opacity-30 ${location.zone === 'school' ? 'border-emerald-400 bg-emerald-400' :
+                  location.zone === 'home' ? 'border-blue-400 bg-blue-400' :
+                    'border-amber-400 bg-amber-400'
+                }`} />
               <div className="absolute inset-0 flex items-center justify-center text-3xl">
                 {location.zone === 'school' ? '🏫' : location.zone === 'home' ? '🏠' : '📍'}
               </div>
@@ -395,9 +406,8 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
       <div className="flex gap-2 flex-wrap">
         {[['yes', 'Bəli'], ['no', 'Xeyr'], ['prefer_not', 'Cavablamaq istəmirəm']].map(([val, label]) => (
           <button key={val} onClick={() => setAnswer(val as typeof answer)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-              answer === val ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${answer === val ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
+              }`}
           >
             {label}
           </button>
@@ -412,9 +422,8 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
             <div className="flex flex-wrap gap-2">
               {TYPES.map(t => (
                 <button key={t} onClick={() => setTypes(arr => arr.includes(t) ? arr.filter(x => x !== t) : [...arr, t])}
-                  className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${
-                    types.includes(t) ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${types.includes(t) ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
+                    }`}
                 >
                   {t}
                 </button>
@@ -553,11 +562,10 @@ export default function ParentDashboard() {
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
             {children.map(child => (
               <button key={child.id} onClick={() => setSelectedChildId(child.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shrink-0 ${
-                  selectedChildId === child.id
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shrink-0 ${selectedChildId === child.id
                     ? 'border-indigo-500 bg-indigo-500/20 text-indigo-200'
                     : 'border-white/10 bg-white/5 text-white/60 hover:text-white'
-                }`}
+                  }`}
               >
                 <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
                   {child.name[0]}
