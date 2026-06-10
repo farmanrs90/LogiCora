@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import api from '../../lib/axios'
 import { API_ROUTES } from '../../constants'
 import { useAuth } from '../../context/AuthContext'
@@ -248,11 +249,9 @@ function EditProfileModal({
       onClose()
     },
     onError: () => {
-      // Mock success
-      qc.setQueryData(['teacher', teacher.slug], (old: TeacherProfile | undefined) =>
-        old ? { ...old, ...form } : old
-      )
-      onClose()
+      // Backend xətası: lokal cache yenilənmir, modal AÇIQ qalır — fake success yoxdur.
+      // Müəllim düzəliş edib yenidən cəhd edə bilsin.
+      toast.error('Profil yenilənmədi. Zəhmət olmasa yenidən cəhd edin.')
     },
   })
 

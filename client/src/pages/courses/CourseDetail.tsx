@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import api from '../../lib/axios'
 import { API_ROUTES, APP_ROUTES } from '../../constants'
 
@@ -451,10 +452,8 @@ export default function CourseDetail() {
     mutationFn: () => api.post(API_ROUTES.COURSES.ENROLL, { courseId: id }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['course', id] }),
     onError: () => {
-      // Mock success for demo
-      qc.setQueryData(['course', id], (old: CourseDetailData | undefined) =>
-        old ? { ...old, isEnrolled: true, enrollmentProgress: 5 } : old
-      )
+      // Backend xətası: lokal "uğur" göstərmirik — real vəziyyət dəyişməz qalır.
+      toast.error('Kursa qeydiyyat alınmadı. Zəhmət olmasa yenidən cəhd edin.')
     },
   })
 
@@ -462,18 +461,9 @@ export default function CourseDetail() {
     mutationFn: (lessonId: string) =>
       api.post(API_ROUTES.COURSES.COMPLETE_LESSON(id!), { lessonId }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['course', id] }),
-    onError: (_err, lessonId) => {
-      // Mock: mark lesson completed locally
-      qc.setQueryData(['course', id], (old: CourseDetailData | undefined) => {
-        if (!old) return old
-        return {
-          ...old,
-          sections: old.sections.map(s => ({
-            ...s,
-            lessons: s.lessons.map(l => l.id === lessonId ? { ...l, isCompleted: true } : l),
-          })),
-        }
-      })
+    onError: () => {
+      // Backend xətası: dərs tamamlanmış kimi göstərmirik — lokal state dəyişməz qalır.
+      toast.error('Dərs tamamlanmadı. Bağlantını yoxlayıb yenidən cəhd edin.')
     },
   })
 

@@ -14,23 +14,6 @@ import type { Participant, Question, AgeGroup } from '../../types'
 import FormatA from '../../features/quiz/formats/FormatA'
 import FormatB from '../../features/quiz/formats/FormatB'
 
-// ── Mock questions for offline/demo mode ──────────────────────────────────
-
-const DEMO_QUESTIONS: Question[] = [
-  {
-    _id: 'cq1', text: 'Azərbaycanın milli simvolu hansıdır?', emoji: '🦅',
-    format: 'A',
-    options: [{ id: 'a', text: 'Qartal' }, { id: 'b', text: 'Şir' }, { id: 'c', text: 'At' }],
-    correctAnswer: 'a', subject: 'Tarix', ageGroups: ['9-11'], xpReward: 10, timeLimit: 20,
-  },
-  {
-    _id: 'cq2', text: '3² + 4² = ?', emoji: '🔢',
-    format: 'B',
-    options: [{ id: 'a', text: '25' }, { id: 'b', text: '49' }, { id: 'c', text: '12' }, { id: 'd', text: '7' }],
-    correctAnswer: 'a', subject: 'Riyaziyyat', ageGroups: ['9-11'], xpReward: 10, timeLimit: 15,
-  },
-]
-
 // ── Arena backgrounds ─────────────────────────────────────────────────────
 
 function CosmicBackground() {
@@ -365,21 +348,20 @@ export default function CompetitionRoom() {
 
   const startTimeRef = useRef<number>(Date.now())
 
-  // Demo mode: simulate first question if socket doesn't connect in 4s
+  // Socket qoşula bilmirsə real bağlantı xətası göstəririk — FAKE demo sual YOX.
+  const [connectionError, setConnectionError] = useState(false)
+  const [retryNonce, setRetryNonce] = useState(0)
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (!isConnected && phase === 'waiting') {
-        const q = DEMO_QUESTIONS[0]
-        setCurrentQuestion(q)
-        setQuestionNumber(1)
-        setTotalQuestions(DEMO_QUESTIONS.length)
-        setTimeLeft(q.timeLimit)
-        setPhase('question')
-        startTimeRef.current = Date.now()
-      }
-    }, 4000)
+    if (isConnected) { setConnectionError(false); return }
+    const t = setTimeout(() => setConnectionError(true), 8000)
     return () => clearTimeout(t)
-  }, [isConnected, phase])
+  }, [isConnected, retryNonce])
+
+  const handleReconnect = useCallback(() => {
+    setConnectionError(false)
+    setRetryNonce(n => n + 1)        // 8s aşkarlama taymerini yenidən başlat
+    socketRef.current?.connect()     // socket.io manual reconnect
+  }, [socketRef])
 
   // Socket event handlers
   const handleQuestion = useCallback((data: { question: Question; questionNumber: number; totalQuestions: number }) => {
@@ -498,28 +480,7 @@ export default function CompetitionRoom() {
       answer: answerId,
       responseTime,
     })
-    // Demo: simulate result locally
-    if (!isConnected) {
-      const correct = answerId === currentQuestion.correctAnswer
-      setCorrectAnswer(currentQuestion.correctAnswer)
-      setPhase('submitted')
-      setTimeout(() => {
-        const nextIdx = questionNumber
-        if (nextIdx < DEMO_QUESTIONS.length) {
-          const q = DEMO_QUESTIONS[nextIdx]
-          setCurrentQuestion(q)
-          setQuestionNumber(nextIdx + 1)
-          setTimeLeft(q.timeLimit)
-          setSelectedAnswer(null)
-          setIsAnswered(false)
-          setPhase('question')
-          startTimeRef.current = Date.now()
-        } else {
-          navigate(APP_ROUTES.COMPETITION.RESULT(id!))
-        }
-        if (correct) setMyScore(s => s + 10)
-      }, 2000)
-    }
+    // Real nəticə serverdən 'competition:answer_result' event-i ilə gəlir — lokal fake nəticə YOX.
   }
 
   function handleSendReaction(type: string) {
@@ -532,6 +493,43 @@ export default function CompetitionRoom() {
 
   const timerPct = currentQuestion ? timeLeft / (currentQuestion.timeLimit ?? 20) : 1
   const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
+
+  // ── Real bağlantı xətası — fake yarış əvəzinə (host/player hər ikisi üçün) ──
+  if (connectionError) {
+    return (
+      <div className="min-h-screen flex flex-col relative">
+        <Arena />
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-5 px-6 text-center">
+          <motion.span className="text-6xl" animate={{ y: [0, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>📡</motion.span>
+          <div className="space-y-2">
+            <h2 className="text-white font-bold text-xl">Yarış serverinə qoşulmaq mümkün olmadı</h2>
+            <p className="text-[#9CA3AF] text-sm max-w-xs mx-auto">Bağlantını yoxlayın və yenidən cəhd edin.</p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button
+              onClick={handleReconnect}
+              className="w-full py-3.5 rounded-2xl font-bold text-white text-sm"
+              style={{ background: 'linear-gradient(135deg, #9333EA, #3B82F6)', boxShadow: '0 4px 16px rgba(147,51,234,0.4)' }}
+            >
+              Yenidən qoşul
+            </button>
+            <button
+              onClick={() => navigate(id ? APP_ROUTES.COMPETITION.LOBBY(id) : APP_ROUTES.DASHBOARD.STUDENT)}
+              className="w-full py-3.5 rounded-2xl font-bold text-[#9CA3AF] text-sm border border-[rgba(255,255,255,0.12)]"
+            >
+              Lobby-ə qayıt
+            </button>
+            <button
+              onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+              className="text-[#9CA3AF] text-xs"
+            >
+              Dashboard-a qayıt
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (isHost) {
     return (
@@ -621,7 +619,7 @@ export default function CompetitionRoom() {
                 🤖
               </motion.span>
               <p className="text-white font-bold text-xl text-center">
-                {isConnected ? 'Sual gəlir...' : 'Demo rejiminə keçilir...'}
+                {isConnected ? 'Sual gəlir...' : 'Yarış serverinə qoşulur...'}
               </p>
               <div className="flex gap-1">
                 {[0, 1, 2].map(i => (
