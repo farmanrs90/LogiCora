@@ -77,50 +77,6 @@ interface FullProgress {
   careerSuggestions: CareerSuggestion[]
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK_PROGRESS: FullProgress = {
-  child: { id: 'c1', name: 'Anar Hüseynov', level: 28, league: 'gold', ageGroup: '12-14' },
-  metrics: { quizCompletion: 84, attendance: 88, competitionRate: 72, courseProgress: 65 },
-  subjects: [
-    { subject: 'Riyaziyyat', level: 84, trend: 12, radarValue: 84, isWeak: false },
-    { subject: 'İnformatika', level: 80, trend: 8, radarValue: 80, isWeak: false },
-    { subject: 'Fizika', level: 67, trend: 5, radarValue: 67, isWeak: false },
-    { subject: 'Biologiya', level: 52, trend: 2, radarValue: 52, isWeak: false },
-    { subject: 'Kimya', level: 31, trend: -8, radarValue: 31, isWeak: true },
-    { subject: 'Tarix', level: 48, trend: 3, radarValue: 48, isWeak: false },
-  ],
-  mood: [
-    { date: '2026-05-18', mood: 4, label: '😊' },
-    { date: '2026-05-19', mood: 3, label: '😐' },
-    { date: '2026-05-20', mood: 5, label: '🤩' },
-    { date: '2026-05-21', mood: 4, label: '😊' },
-    { date: '2026-05-22', mood: 2, label: '😔' },
-    { date: '2026-05-23', mood: 4, label: '😊' },
-    { date: '2026-05-24', mood: 5, label: '🤩' },
-  ],
-  moodAdvice: 'Uşağınız bu həftə əsasən müsbət əhvaldadır. 22 May narahatlıq bildirdi — müəllim ilə danışmağı tövsiyə edirik.',
-  attendance: Array.from({ length: 24 }, (_, i) => ({
-    date: `2026-05-${String(i + 1).padStart(2, '0')}`,
-    status: i === 4 || i === 14 ? 'absent' : i === 9 ? 'distant' : i >= 21 ? 'none' : 'present',
-  })) as AttendanceDay[],
-  attendanceStats: { present: 18, absent: 2, distant: 1 },
-  competitions: [
-    { title: 'Riyaziyyat Olimpiadası #4', rank: 1, totalParticipants: 840, score: 96, date: '2026-03-01' },
-    { title: 'İnformatika Sprint', rank: 2, totalParticipants: 520, score: 88, date: '2026-02-15' },
-    { title: 'Fizika Yarışması', rank: 5, totalParticipants: 380, score: 71, date: '2026-01-20' },
-    { title: 'Riyaziyyat Sprint #2', rank: 1, totalParticipants: 650, score: 94, date: '2025-12-10' },
-    { title: 'Kimya Sınağı', rank: 12, totalParticipants: 290, score: 55, date: '2025-11-20' },
-  ],
-  avgRank: 4.2,
-  bestResult: '1-ci yer — Riyaziyyat Olimpiadası',
-  careerSuggestions: [
-    { icon: '🤖', title: 'Süni İntellekt Mühəndisi', why: 'Riyaziyyat və İnformatikada üstün göstəricilər', steps: ['Alqoritm kitablarını oxu', 'Python layihəsi başlat', 'Riyaziyyat olimpiadasına hazırlaş'] },
-    { icon: '🔐', title: 'Kibertəhlükəsizlik', why: 'Analitik düşüncə + proqramlaşdırma sevgisi', steps: ['CTF yarışlarına qatıl', 'Linux öyrən', 'Şəbəkə əsaslarını mənimsə'] },
-    { icon: '📊', title: 'Data Scientist', why: 'Statistik düşüncə + riyaziyyat gücü', steps: ['Statistika kursunu tamamla', 'Pandas/NumPy öyrən', 'Kaggle-da layihə yarat'] },
-  ],
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const ATTEND_COLOR: Record<string, string> = {
@@ -165,6 +121,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+function ProgressState({ message, children }: { message: string; children?: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+      <div className="max-w-sm w-full bg-[#141414] border border-white/10 rounded-2xl p-6 text-center space-y-4">
+        <p className="text-sm text-white/70">{message}</p>
+        {children && <div className="flex flex-col gap-3">{children}</div>}
+      </div>
+    </div>
+  )
+}
+
+const safeNumber = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : 0
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function ChildProgress() {
@@ -177,12 +147,11 @@ export default function ChildProgress() {
   const [capsuleMsg, setCapsuleMsg] = useState('')
   const [capsuleDate, setCapsuleDate] = useState('')
 
-  const { data: progress, isLoading } = useQuery({
+  const { data: progress, isLoading, isError, refetch } = useQuery<FullProgress | null>({
     queryKey: ['child-progress', childId, period],
     queryFn: () =>
-      api.get<FullProgress>(`/parent/child/${childId}/progress?period=${period}`)
-        .then(r => r.data)
-        .catch(() => MOCK_PROGRESS),
+      api.get<FullProgress | null>(`/parent/child/${childId}/progress?period=${period}`)
+        .then(r => r.data),
     enabled: !!childId,
   })
 
@@ -193,14 +162,14 @@ export default function ChildProgress() {
   })
 
   const handlePdf = async () => {
-    if (!printRef.current) return
+    if (!printRef.current || !progress?.child) return
     const { default: html2canvas } = await import('html2canvas')
     const { default: jsPDF } = await import('jspdf')
     const canvas = await html2canvas(printRef.current, { backgroundColor: '#0D0D0D', scale: 1.2 })
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
     const w = pdf.internal.pageSize.getWidth()
     pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, w, (canvas.height * w) / canvas.width)
-    pdf.save(`${progress?.child.name ?? 'Uşaq'}_İrəliləyiş_Hesabatı.pdf`)
+    pdf.save(`${progress.child.name ?? 'Uşaq'}_İrəliləyiş_Hesabatı.pdf`)
   }
 
   if (isLoading) {
@@ -216,17 +185,66 @@ export default function ChildProgress() {
     )
   }
 
-  if (!progress) return null
+  if (isError) {
+    return (
+      <ProgressState message="İrəliləyiş məlumatları yüklənmədi.">
+        <button
+          onClick={() => refetch()}
+          className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors"
+        >
+          Yenidən yoxla
+        </button>
+        <Link
+          to="/dashboard/parent"
+          className="w-full px-4 py-2.5 border border-white/15 hover:border-white/30 rounded-xl text-sm text-white/70 hover:text-white transition-colors"
+        >
+          Valideyn panelinə qayıt
+        </Link>
+      </ProgressState>
+    )
+  }
 
-  const { child, metrics, subjects, mood, moodAdvice, attendance, attendanceStats, competitions, careerSuggestions } = progress
+  if (!progress?.child) {
+    return (
+      <ProgressState message="Bu uşaq üçün irəliləyiş məlumatı hələ formalaşmayıb.">
+        <Link
+          to="/dashboard/parent"
+          className="w-full px-4 py-2.5 border border-white/15 hover:border-white/30 rounded-xl text-sm text-white/70 hover:text-white transition-colors"
+        >
+          Valideyn panelinə qayıt
+        </Link>
+      </ProgressState>
+    )
+  }
 
-  const compChartData = [...competitions].reverse().map(c => ({ name: c.title.slice(0, 10) + '…', xal: c.score, yer: c.rank }))
+  const child = progress.child
+  const childName = typeof child.name === 'string' && child.name ? child.name : 'Uşaq'
+  const metrics = progress.metrics ?? { quizCompletion: 0, attendance: 0, competitionRate: 0, courseProgress: 0 }
+  const subjects = Array.isArray(progress.subjects) ? progress.subjects : []
+  const mood = Array.isArray(progress.mood) ? progress.mood : []
+  const moodAdvice = typeof progress.moodAdvice === 'string' ? progress.moodAdvice : ''
+  const attendance = Array.isArray(progress.attendance) ? progress.attendance : []
+  const rawAttendanceStats = progress.attendanceStats ?? { present: 0, absent: 0, distant: 0 }
+  const attendanceStats = {
+    present: safeNumber(rawAttendanceStats.present),
+    absent:  safeNumber(rawAttendanceStats.absent),
+    distant: safeNumber(rawAttendanceStats.distant),
+  }
+  const competitions = Array.isArray(progress.competitions) ? progress.competitions : []
+  const careerSuggestions = Array.isArray(progress.careerSuggestions) ? progress.careerSuggestions : []
+  const avgRank = safeNumber(progress.avgRank)
+  const bestResult = typeof progress.bestResult === 'string' ? progress.bestResult : 'Hələ yarış nəticəsi yoxdur'
+
+  const compChartData = [...competitions].reverse().map(c => {
+    const title = typeof c.title === 'string' ? c.title : ''
+    return { name: title.slice(0, 10) + '…', xal: safeNumber(c.score), yer: safeNumber(c.rank) }
+  })
 
   const radialData = [
-    { name: 'Quiz', value: metrics.quizCompletion, fill: '#6366F1' },
-    { name: 'Davamiyyət', value: metrics.attendance, fill: '#8B5CF6' },
-    { name: 'Yarış', value: metrics.competitionRate, fill: '#06B6D4' },
-    { name: 'Kurs', value: metrics.courseProgress, fill: '#10B981' },
+    { name: 'Quiz', value: safeNumber(metrics.quizCompletion), fill: '#6366F1' },
+    { name: 'Davamiyyət', value: safeNumber(metrics.attendance), fill: '#8B5CF6' },
+    { name: 'Yarış', value: safeNumber(metrics.competitionRate), fill: '#06B6D4' },
+    { name: 'Kurs', value: safeNumber(metrics.courseProgress), fill: '#10B981' },
   ]
 
   return (
@@ -242,14 +260,14 @@ export default function ChildProgress() {
               </svg>
             </Link>
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold border-2 border-white/10">
-              {child.avatar ? <img src={child.avatar} alt="" className="w-full h-full rounded-xl object-cover" /> : child.name[0]}
+              {child.avatar ? <img src={child.avatar} alt="" className="w-full h-full rounded-xl object-cover" /> : childName[0]}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">{child.name}</h1>
+                <h1 className="text-xl font-bold">{childName}</h1>
                 <span className="text-lg">{LEAGUE_EMOJI[child.league]}</span>
               </div>
-              <p className="text-sm text-white/50">Səviyyə {child.level} · Tam irəliləyiş hesabatı</p>
+              <p className="text-sm text-white/50">Səviyyə {safeNumber(child.level)} · Tam irəliləyiş hesabatı</p>
             </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -402,12 +420,12 @@ export default function ChildProgress() {
         <Section title="🏆 Yarış Nəticələri">
           <div className="flex items-center gap-6 text-sm mb-4 flex-wrap">
             <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-center">
-              <p className="text-lg font-bold text-indigo-300">{progress.avgRank.toFixed(1)}</p>
+              <p className="text-lg font-bold text-indigo-300">{avgRank.toFixed(1)}</p>
               <p className="text-xs text-white/40">Ort. yer</p>
             </div>
             <div className="flex-1">
               <p className="text-xs text-white/40 mb-1">Ən yaxşı nəticə</p>
-              <p className="font-semibold text-yellow-300">🥇 {progress.bestResult}</p>
+              <p className="font-semibold text-yellow-300">🥇 {bestResult}</p>
             </div>
           </div>
           <div className="h-44 w-full min-h-[11rem]">
@@ -427,20 +445,25 @@ export default function ChildProgress() {
             )}
           </div>
           <div className="space-y-2">
-            {competitions.slice(0, 5).map((comp, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 ${
-                  comp.rank === 1 ? 'bg-yellow-400/20' : comp.rank <= 3 ? 'bg-slate-400/20' : 'bg-white/8'
-                }`}>
-                  {comp.rank <= 3 ? ['🥇', '🥈', '🥉'][comp.rank - 1] : `#${comp.rank}`}
+            {competitions.slice(0, 5).map((comp, i) => {
+              const rank = safeNumber(comp.rank)
+              const title = typeof comp.title === 'string' ? comp.title : ''
+              const date = typeof comp.date === 'string' ? comp.date : ''
+              return (
+                <div key={i} className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 ${
+                    rank === 1 ? 'bg-yellow-400/20' : rank > 0 && rank <= 3 ? 'bg-slate-400/20' : 'bg-white/8'
+                  }`}>
+                    {rank > 0 && rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : `#${rank}`}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{title}</p>
+                    <p className="text-xs text-white/40">{safeNumber(comp.totalParticipants)} iştirakçı · {date ? fmtDate(date) : '—'}</p>
+                  </div>
+                  <span className="text-sm font-bold text-indigo-300 shrink-0">{safeNumber(comp.score)} xal</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{comp.title}</p>
-                  <p className="text-xs text-white/40">{comp.totalParticipants} iştirakçı · {fmtDate(comp.date)}</p>
-                </div>
-                <span className="text-sm font-bold text-indigo-300 shrink-0">{comp.score} xal</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </Section>
 
@@ -453,27 +476,30 @@ export default function ChildProgress() {
           </div>
           <p className="text-xs text-white/50">Övladınızın profilinə görə tövsiyə olunan sahələr:</p>
           <div className="space-y-4">
-            {careerSuggestions.map((career, i) => (
-              <motion.div key={career.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                className="bg-white/5 border border-white/10 rounded-2xl p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl shrink-0">{career.icon}</span>
-                  <div className="flex-1">
-                    <p className="font-semibold">{career.title}</p>
-                    <p className="text-xs text-white/50 mt-0.5 mb-3">{career.why}</p>
-                    <div className="space-y-1">
-                      {career.steps.map((step, j) => (
-                        <div key={j} className="flex items-start gap-2 text-xs text-white/60">
-                          <span className="text-indigo-400 shrink-0 mt-0.5">{j + 1}.</span>
-                          {step}
-                        </div>
-                      ))}
+            {careerSuggestions.map((career, i) => {
+              const steps = Array.isArray(career.steps) ? career.steps : []
+              return (
+                <motion.div key={career.title ?? i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl shrink-0">{career.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-semibold">{career.title}</p>
+                      <p className="text-xs text-white/50 mt-0.5 mb-3">{career.why}</p>
+                      <div className="space-y-1">
+                        {steps.map((step, j) => (
+                          <div key={j} className="flex items-start gap-2 text-xs text-white/60">
+                            <span className="text-indigo-400 shrink-0 mt-0.5">{j + 1}.</span>
+                            {step}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </div>
           <div className="flex items-start gap-2 text-xs text-white/40 italic">
             <span className="text-xl shrink-0">🌸</span>
@@ -488,7 +514,7 @@ export default function ChildProgress() {
             <h2 className="font-bold">Zaman Kapsulu</h2>
           </div>
           <textarea value={capsuleMsg} onChange={e => setCapsuleMsg(e.target.value)} rows={3}
-            placeholder={`Sevgili ${child.name}, bu günü xatırlayanda...`}
+            placeholder={`Sevgili ${childName}, bu günü xatırlayanda...`}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 resize-none"
           />
           <div className="flex gap-3">

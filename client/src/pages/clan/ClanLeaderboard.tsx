@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
@@ -29,25 +29,29 @@ interface LeaderboardEntry {
   prevRank:    number | null
 }
 
-// ── Mock data ──────────────────────────────────────────────────────────────
+interface LeaderboardApiEntry {
+  rank?:        number
+  _id?:         string
+  name?:        string
+  slug?:        string
+  schoolName?:  string
+  city?:        string
+  color?:       string
+  emoji?:       string
+  emblem?:      string | null
+  totalXP?:     number
+  weeklyXP?:    number
+  wins?:        number
+  losses?:      number
+  memberCount?: number
+  members?:     unknown[]
+  isMyClan?:    boolean
+  isMyClан?:    boolean
+  prevRank?:    number | null
+}
 
-const buildMock = (offset = 0): LeaderboardEntry[] => [
-  { rank: 1+offset, _id: 'c1', name: 'Aslanlar',   slug: 'aslanlar',   schoolName: 'Məktəb #12', city: 'Bakı',       color: '#EAB308', emoji: '🦁', totalXP: 51400, weeklyXP: 4200, wins: 22, losses: 3,  memberCount: 12, isMyClан: false, prevRank: 1+offset },
-  { rank: 2+offset, _id: 'c2', name: 'Kartallar',  slug: 'kartallar',  schoolName: 'Məktəb #17', city: 'Bakı',       color: '#F97316', emoji: '🦅', totalXP: 49800, weeklyXP: 3800, wins: 20, losses: 4,  memberCount: 10, isMyClан: false, prevRank: 3+offset },
-  { rank: 3+offset, _id: 'c3', name: 'Şimşəklər',  slug: 'simsekler',  schoolName: 'Məktəb #23', city: 'Bakı',       color: '#9333EA', emoji: '⚡', totalXP: 48200, weeklyXP: 3750, wins: 18, losses: 4,  memberCount: 8,  isMyClан: true,  prevRank: 4+offset },
-  { rank: 4+offset, _id: 'c4', name: 'Ulduzlar',   slug: 'ulduzlar',   schoolName: 'Məktəb #31', city: 'Gəncə',      color: '#3B82F6', emoji: '⭐', totalXP: 45100, weeklyXP: 3400, wins: 16, losses: 6,  memberCount: 11, isMyClан: false, prevRank: 2+offset },
-  { rank: 5+offset, _id: 'c5', name: 'Qurtlar',    slug: 'qurtlar',    schoolName: 'Məktəb #9',  city: 'Sumqayıt',   color: '#6B7280', emoji: '🐺', totalXP: 43600, weeklyXP: 3100, wins: 15, losses: 7,  memberCount: 9,  isMyClан: false, prevRank: 5+offset },
-  { rank: 6+offset, _id: 'c6', name: 'Timsahlar',  slug: 'timsahlar',  schoolName: 'Məktəb #5',  city: 'Lənkəran',   color: '#22C55E', emoji: '🐊', totalXP: 41200, weeklyXP: 2800, wins: 13, losses: 7,  memberCount: 10, isMyClан: false, prevRank: 6+offset },
-  { rank: 7+offset, _id: 'c7', name: 'Şahinlər',   slug: 'sahinler',   schoolName: 'Məktəb #44', city: 'Mingəçevir', color: '#EC4899', emoji: '🦅', totalXP: 39500, weeklyXP: 2600, wins: 12, losses: 9,  memberCount: 8,  isMyClан: false, prevRank: 8+offset },
-  { rank: 8+offset, _id: 'c8', name: 'Çaqqallar',  slug: 'caqqallar',  schoolName: 'Məktəb #2',  city: 'Naxçıvan',   color: '#06B6D4', emoji: '🦊', totalXP: 37100, weeklyXP: 2300, wins: 11, losses: 9,  memberCount: 12, isMyClан: false, prevRank: 7+offset },
-  { rank: 9+offset, _id: 'c9', name: 'Tigrler',    slug: 'tigrler',    schoolName: 'Məktəb #18', city: 'Gəncə',      color: '#8B5CF6', emoji: '🐯', totalXP: 35800, weeklyXP: 2100, wins: 10, losses: 10, memberCount: 9,  isMyClан: false, prevRank: 9+offset },
-  { rank: 10+offset, _id: 'c10',name: 'Alovlar',   slug: 'alovlar',    schoolName: 'Məktəb #33', city: 'Bakı',       color: '#F97316', emoji: '🔥', totalXP: 34200, weeklyXP: 1900, wins: 9,  losses: 11, memberCount: 7,  isMyClан: false, prevRank: 11+offset },
-]
-
-const MOCK_CLASS    = buildMock(0)
-const MOCK_SCHOOL   = buildMock(0)
-const MOCK_CITY     = buildMock(2)
-const MOCK_COUNTRY  = buildMock(5)
+const safeNumber = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : 0
 
 // ── Scope tabs ─────────────────────────────────────────────────────────────
 
@@ -60,11 +64,26 @@ const SCOPES: { key: Scope; label: string; emoji: string }[] = [
   { key: 'country', label: 'Ölkə',   emoji: '🇦🇿' },
 ]
 
-const MOCK_MAP: Record<Scope, LeaderboardEntry[]> = {
-  class:   MOCK_CLASS,
-  school:  MOCK_SCHOOL,
-  city:    MOCK_CITY,
-  country: MOCK_COUNTRY,
+const normalizeLeaderboard = (items: LeaderboardApiEntry[] | null | undefined): LeaderboardEntry[] => {
+  if (!Array.isArray(items)) return []
+
+  return items.map((entry, index) => ({
+    rank:        safeNumber(entry.rank) || index + 1,
+    _id:         entry._id ?? entry.slug ?? String(index),
+    name:        entry.name ?? '',
+    slug:        entry.slug ?? '',
+    schoolName:  entry.schoolName ?? '',
+    city:        entry.city ?? '',
+    color:       entry.color ?? '#6B7280',
+    emoji:       entry.emoji ?? entry.emblem ?? '🛡️',
+    totalXP:     safeNumber(entry.totalXP),
+    weeklyXP:    safeNumber(entry.weeklyXP),
+    wins:        safeNumber(entry.wins),
+    losses:      safeNumber(entry.losses),
+    memberCount: safeNumber(entry.memberCount) || entry.members?.length || 0,
+    isMyClан:    Boolean(entry.isMyClan ?? entry.isMyClан),
+    prevRank:    typeof entry.prevRank === 'number' ? entry.prevRank : null,
+  }))
 }
 
 // ── Rank change indicator ──────────────────────────────────────────────────
@@ -169,6 +188,16 @@ function TopThreePodium({ entries }: { entries: LeaderboardEntry[] }) {
   )
 }
 
+function LeaderboardState({ message, children }: { message: string; children?: ReactNode }) {
+  return (
+    <div className="rounded-2xl p-6 text-center space-y-4"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <p className="text-[#9CA3AF] text-sm">{message}</p>
+      {children && <div className="flex flex-col sm:flex-row justify-center gap-3">{children}</div>}
+    </div>
+  )
+}
+
 // ── Share clan card ────────────────────────────────────────────────────────
 
 function handleShare(entry: LeaderboardEntry, scope: Scope) {
@@ -198,6 +227,7 @@ function LeaderboardRow({
   scope:      Scope
 }) {
   const isMy = entry.isMyClан
+  const location = [entry.schoolName, entry.city].filter(Boolean).join(' · ')
 
   return (
     <motion.div
@@ -240,7 +270,7 @@ function LeaderboardRow({
             </span>
           )}
         </div>
-        <div className="text-[#9CA3AF] text-[11px] truncate">{entry.schoolName} · {entry.city}</div>
+        <div className="text-[#9CA3AF] text-[11px] truncate">{location || '—'}</div>
         <div className="text-[#9CA3AF] text-[11px]">{entry.memberCount} üzv · {entry.wins}G {entry.losses}M</div>
       </div>
 
@@ -269,16 +299,16 @@ export default function ClanLeaderboard() {
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
   const [scope, setScope] = useState<Scope>('country')
 
-  const { data: entries, isLoading } = useQuery<LeaderboardEntry[]>({
+  const { data: entries, isLoading, isError, refetch } = useQuery<LeaderboardEntry[]>({
     queryKey: ['clan-leaderboard', scope],
-    queryFn:  () => api.get<{ data: LeaderboardEntry[] }>(
+    queryFn:  () => api.get<{ data: LeaderboardApiEntry[] }>(
                       `${API_ROUTES.CLANS.LEADERBOARD}?type=${scope}`
-                    ).then(r => r.data.data).catch(() => MOCK_MAP[scope]),
+                    ).then(r => normalizeLeaderboard(r.data.data)),
     staleTime:       1000 * 60,
     refetchInterval: 1000 * 60,
   })
 
-  const list = entries ?? MOCK_MAP[scope]
+  const list = entries ?? []
   const myClan = list.find(e => e.isMyClан)
 
   return (
@@ -342,7 +372,7 @@ export default function ClanLeaderboard() {
         </div>
 
         {/* My clan always visible at top if not in top 10 */}
-        {myClan && myClan.rank > 10 && (
+        {!isError && myClan && myClan.rank > 10 && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -357,7 +387,7 @@ export default function ClanLeaderboard() {
         )}
 
         {/* Top 3 podium */}
-        {!isLoading && <TopThreePodium entries={list} />}
+        {!isLoading && !isError && list.length > 0 && <TopThreePodium entries={list} />}
 
         {/* Full list */}
         <AnimatePresence mode="wait">
@@ -369,21 +399,43 @@ export default function ClanLeaderboard() {
             transition={{ duration: 0.2 }}
             className="space-y-2 mt-4"
           >
-            {isLoading
-              ? Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
-                ))
-              : list.map((entry, i) => (
-                  <LeaderboardRow
-                    key={entry._id}
-                    entry={entry}
-                    index={i}
-                    color={avatarColor}
-                    onNavigate={slug => navigate(APP_ROUTES.CLAN(slug))}
-                    scope={scope}
-                  />
-                ))
-            }
+            {isLoading && Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
+            ))}
+
+            {!isLoading && isError && (
+              <LeaderboardState message="Klan liderliyi yüklənmədi.">
+                <button
+                  onClick={() => refetch()}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-white"
+                  style={{ background: `${avatarColor}CC` }}
+                >
+                  Yenidən yoxla
+                </button>
+                <button
+                  onClick={() => navigate(APP_ROUTES.CLAN('me'))}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-white"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  Klanıma qayıt
+                </button>
+              </LeaderboardState>
+            )}
+
+            {!isLoading && !isError && list.length === 0 && (
+              <LeaderboardState message="Hələ liderlik məlumatı yoxdur." />
+            )}
+
+            {!isLoading && !isError && list.map((entry, i) => (
+              <LeaderboardRow
+                key={entry._id}
+                entry={entry}
+                index={i}
+                color={avatarColor}
+                onNavigate={slug => navigate(APP_ROUTES.CLAN(slug))}
+                scope={scope}
+              />
+            ))}
           </motion.div>
         </AnimatePresence>
 
