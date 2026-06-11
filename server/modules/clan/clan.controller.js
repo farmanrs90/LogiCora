@@ -39,6 +39,11 @@ const getClanBySlug = async (req, res) => {
   res.status(200).json({ success: true, data: clan, message: 'Klan alındı.' });
 };
 
+const getMyClan = async (req, res) => {
+  const clan = await clanService.getMyClan(req.user._id);
+  res.status(200).json({ success: true, data: clan, message: clan ? 'Klan alındı.' : 'Klan yoxdur.' });
+};
+
 module.exports = {
   createClan,
   joinClan,
@@ -47,4 +52,5 @@ module.exports = {
   finishBattle,
   getLeaderboard,
   getClanBySlug,
+  getMyClan,
 };

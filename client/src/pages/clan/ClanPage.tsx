@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -86,16 +86,6 @@ interface ClanSearchResult {
 }
 
 // ── Mock data ──────────────────────────────────────────────────────────────
-
-const MOCK_CLAN: ClanData = {
-  _id: 'clan-1', name: 'Şimşəklər', slug: 'simsekler',
-  schoolName: 'Bakı Dövlət Məktəbi #47', city: 'Bakı',
-  emblem: null, color: '#9333EA',
-  totalXP: 48200, weeklyXP: 3750, wins: 18, losses: 4,
-  rank: 3, totalBattles: 23,
-  description: 'Biz birlikdə daha güclüyük! Hər gün öyrənir, hər yarışda qalib gəlirik.',
-  foundedAt: '2024-09-01',
-}
 
 const MOCK_MEMBERS: ClanMemberFull[] = [
   { studentId: 'u1', userId: 'u1', name: 'Aytən',  surname: 'M.', avatarColor: '#9333EA', level: 14, weeklyXP: 620, totalXP: 8400, streak: 22, role: 'leader', joinedAt: '2024-09-01' },
@@ -497,6 +487,38 @@ function EmptyState({ onCreate, onSearch }: {
   )
 }
 
+// ── Load error state ───────────────────────────────────────────────────────
+
+function ClanLoadError({ onRetry, onBack }: { onRetry: () => void; onBack: () => void }) {
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center p-6 text-center">
+      <div className="text-7xl mb-5">⚠️</div>
+      <h2 className="text-white font-black text-2xl mb-2">Klan yüklənmədi</h2>
+      <p className="text-[#9CA3AF] text-sm mb-8 max-w-xs">Zəhmət olmasa yenidən cəhd edin.</p>
+      <div className="flex flex-col gap-3 w-full max-w-xs">
+        <motion.button
+          onClick={onRetry}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl font-black text-white text-base"
+          style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)', boxShadow: '0 4px 20px rgba(147,51,234,0.4)' }}
+        >
+          🔄 Yenidən yoxla
+        </motion.button>
+        <motion.button
+          onClick={onBack}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl font-bold text-white text-base"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+        >
+          🏆 Klanlara bax
+        </motion.button>
+      </div>
+    </div>
+  )
+}
+
 // ── Tabs ───────────────────────────────────────────────────────────────────
 
 type TabKey = 'members' | 'battles' | 'stats' | 'challenge'
@@ -524,14 +546,22 @@ export default function ClanPage() {
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
-  const { data: clan, isLoading: clanLoading } = useQuery<ClanData>({
+  const isMeRoute = slug === 'me'
+
+  const { data: clan, isLoading: clanLoading, isError: clanError, refetch: refetchClan } = useQuery<ClanData | null>({
     queryKey: ['clan', slug],
-    queryFn:  () => api.get<{ data: ClanData }>(API_ROUTES.CLANS.BY_SLUG(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => (slug ? MOCK_CLAN : null as unknown as ClanData)),
+    queryFn:  () => api.get<{ data: ClanData | null }>(API_ROUTES.CLANS.BY_SLUG(slug!))
+                      .then(r => r.data.data),
     enabled:  !!slug,
     staleTime: 1000 * 60 * 2,
   })
+
+  // /clan/me → backend /clans/me real klanı qaytarır; varsa real slug-a yönləndir.
+  useEffect(() => {
+    if (isMeRoute && clan && clan.slug && clan.slug !== 'me') {
+      navigate(APP_ROUTES.CLAN(clan.slug), { replace: true })
+    }
+  }, [isMeRoute, clan, navigate])
 
   const { data: members, isLoading: membersLoading } = useQuery<ClanMemberFull[]>({
     queryKey: ['clan', slug, 'members'],
@@ -626,6 +656,17 @@ export default function ClanPage() {
     return <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center"><Spinner size="lg" /></div>
   }
 
+  // Backend xətası: fake klan göstərmirik — real xəta vəziyyəti.
+  if (clanError) {
+    return <ClanLoadError onRetry={() => refetchClan()} onBack={() => navigate(APP_ROUTES.CLAN_LEADERBOARD)} />
+  }
+
+  // /clan/me + real klan → yuxarıdakı effect real slug-a yönləndirir; bu an spinner.
+  if (isMeRoute && clan) {
+    return <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center"><Spinner size="lg" /></div>
+  }
+
+  // Klan yoxdur (öz klanın yoxdur və ya slug tapılmadı) → empty state, fake clan yox.
   if (!clan) {
     return <EmptyState onCreate={() => setShowCreate(true)} onSearch={() => setShowJoin(true)} />
   }

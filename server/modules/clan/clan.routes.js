@@ -19,6 +19,8 @@ const finishBattleSchema = Joi.object({
 
 // Public routes
 router.get('/leaderboard', clanController.getLeaderboard);
+// "my clan" — /:slug-dan ƏVVƏL olmalıdır ki, "me" slug kimi tutulmasın
+router.get('/me', authenticate, clanController.getMyClan);
 router.get('/:slug', clanController.getClanBySlug);
 
 // Student routes

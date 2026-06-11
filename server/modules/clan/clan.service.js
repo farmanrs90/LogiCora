@@ -250,6 +250,19 @@ const getClanBySlug = async (slug) => {
   return clan;
 };
 
+// İstifadəçinin öz klanı — membership Student._id ilə axtarılır.
+// Klan yoxdursa null qaytarılır (frontend üçün ən təhlükəsiz: 200 + null).
+const getMyClan = async (userId) => {
+  const student = await Student.findOne({ userId });
+  if (!student) return null;
+
+  const clan = await Clan.findOne({ 'members.studentId': student._id })
+    .populate('members.studentId', 'userId grade')
+    .populate('activeBattle');
+
+  return clan || null;
+};
+
 module.exports = {
   createClan,
   joinClan,
@@ -258,4 +271,5 @@ module.exports = {
   finishBattle,
   getLeaderboard,
   getClanBySlug,
+  getMyClan,
 };
