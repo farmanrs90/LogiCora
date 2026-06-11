@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../../app/store'
 import api from '../../lib/axios'
-import { API_ROUTES } from '../../constants'
+import { API_ROUTES, APP_ROUTES } from '../../constants'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -102,62 +103,6 @@ interface MyPortfolioData {
   isPublic: boolean
   careerSuggestions: CareerSuggestion[]
   aiBio: string
-}
-
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK: MyPortfolioData = {
-  user: {
-    id: 'u1', name: 'Anar Hüseynov', ageGroup: '15-17', city: 'Bakı',
-    school: 'Məktəb #6', bio: 'Proqramlaşdırma və riyaziyyat sevgisi.',
-    joinedAt: '2025-09-01', level: 28, league: 'gold', eloRating: 1640,
-  },
-  stats: { totalXP: 14840, currentStreak: 22, longestStreak: 45, totalQuestions: 1240, accuracy: 78, rank: 3 },
-  skills: [
-    { subject: 'Riyaziyyat', stars: 5, xp: 4200, level: 84, accuracy: 85, isWeak: false, isVerified: true, questionsAnswered: 380, worlds: { unlocked: 4, total: 5 } },
-    { subject: 'Fizika', stars: 4, xp: 2800, level: 67, accuracy: 79, isWeak: false, isVerified: false, questionsAnswered: 220, worlds: { unlocked: 3, total: 5 } },
-    { subject: 'İnformatika', stars: 5, xp: 3600, level: 80, accuracy: 88, isWeak: false, isVerified: true, questionsAnswered: 310, worlds: { unlocked: 4, total: 5 } },
-    { subject: 'Kimya', stars: 2, xp: 800, level: 31, accuracy: 51, isWeak: true, weakUntil: '2026-05-30', isVerified: false, questionsAnswered: 90, worlds: { unlocked: 1, total: 5 } },
-    { subject: 'Biologiya', stars: 3, xp: 1400, level: 52, accuracy: 63, isWeak: false, isVerified: false, questionsAnswered: 140, worlds: { unlocked: 2, total: 5 } },
-    { subject: 'Tarix', stars: 3, xp: 1200, level: 48, accuracy: 70, isWeak: false, isVerified: false, questionsAnswered: 100, worlds: { unlocked: 2, total: 5 } },
-  ],
-  badges: [
-    { id: 'b1', name: 'Qurucu Tələbə', emoji: '🥇', earnedAt: '2025-09-05', rarity: 'legendary', description: 'LogiCora-nın ilk 1000 tələbəsindən biri' },
-    { id: 'b2', name: '30 Günlük Streak', emoji: '🔥', earnedAt: '2025-11-01', rarity: 'rare', description: '30 gün ardıcıl dərslər keçildi' },
-    { id: 'b3', name: 'Riyaziyyat Çempionu', emoji: '🧮', earnedAt: '2025-12-15', rarity: 'epic', description: 'Riyaziyyat olimpiadasında 1-ci yer' },
-    { id: 'b4', name: 'Sürət Ustası', emoji: '⚡', earnedAt: '2026-01-10', rarity: 'rare', description: 'Yarışda ən sürətli cavabçı' },
-    { id: 'b5', name: 'Həftənin Sirri', emoji: '🔮', earnedAt: '2026-02-14', rarity: 'epic', description: 'Həftəlik sirr sualını cavablandırdı' },
-    { id: 'b6', name: 'İlk Qalibiyyət', emoji: '🏆', earnedAt: '2025-10-05', rarity: 'common', description: 'İlk yarışma qalibiyyəti' },
-  ],
-  timeline: [
-    { id: 't1', type: 'level', title: 'Level 28-ə çatdın!', subtitle: undefined, date: '2026-04-10', level: 28 },
-    { id: 't2', type: 'competition', title: 'Riyaziyyat Olimpiadası #4', subtitle: '840 iştirakçı arasında 1-ci oldun', date: '2026-03-01', rank: 1, meta: '96 xal' },
-    { id: 't3', type: 'course', title: 'Python ilə Proqramlaşdırma', subtitle: 'Rəşad Əliyev · Sertifikat qazanıldı', date: '2026-03-20', meta: 'Sertifikat' },
-    { id: 't4', type: 'badge', title: 'Həftənin Sirri nişanı qazanıldı', badgeEmoji: '🔮', date: '2026-02-14', isMystery: true },
-    { id: 't5', type: 'milestone', title: '30 dərs ardıcıl keçildi', subtitle: 'Streak milestonu!', date: '2025-11-01' },
-    { id: 't6', type: 'competition', title: 'İnformatika Sprint', subtitle: '520 iştirakçı arasında', date: '2026-02-15', rank: 2, meta: '88 xal' },
-    { id: 't7', type: 'course', title: 'Web Development Əsasları', subtitle: 'Günel Hüseyni', date: '2026-01-15', meta: 'Sertifikat' },
-    { id: 't8', type: 'badge', title: 'Sürət Ustası nişanı', badgeEmoji: '⚡', date: '2026-01-10' },
-  ],
-  certificates: [
-    { id: 'c1', courseName: 'Python ilə Proqramlaşdırma', teacherName: 'Rəşad Əliyev', issuedAt: '2026-03-20' },
-    { id: 'c2', courseName: 'Web Development Əsasları', teacherName: 'Günel Hüseyni', issuedAt: '2026-01-15' },
-  ],
-  competitions: [
-    { id: 'k1', title: 'Riyaziyyat Olimpiadası #4', rank: 1, score: 96, totalParticipants: 840, date: '2026-03-01', subject: 'Riyaziyyat' },
-    { id: 'k2', title: 'İnformatika Sprint', rank: 2, score: 88, totalParticipants: 520, date: '2026-02-15', subject: 'İnformatika' },
-    { id: 'k3', title: 'Fizika Yarışması', rank: 5, score: 71, totalParticipants: 380, date: '2026-01-20', subject: 'Fizika' },
-    { id: 'k4', title: 'Riyaziyyat Sprint #2', rank: 1, score: 94, totalParticipants: 650, date: '2025-12-10', subject: 'Riyaziyyat' },
-    { id: 'k5', title: 'Kimya Sınağı', rank: 12, score: 55, totalParticipants: 290, date: '2025-11-20', subject: 'Kimya' },
-  ],
-  shareLink: 'logicora.az/portfolio/anar-h',
-  isPublic: true,
-  careerSuggestions: [
-    { icon: '🤖', title: 'Süni İntellekt Mühəndisi', why: 'Riyaziyyat və İnformatikada üstün nəticələr', skills: ['Riyaziyyat', 'İnformatika', 'Fizika'] },
-    { icon: '🔐', title: 'Kibertəhlükəsizlik Mütəxəssisi', why: 'Analitik düşüncə + texnologiya bilgisi', skills: ['İnformatika', 'Riyaziyyat'] },
-    { icon: '📊', title: 'Data Scientist', why: 'Statistik düşüncə + proqramlaşdırma bacarığı', skills: ['Riyaziyyat', 'İnformatika', 'Fizika'] },
-  ],
-  aiBio: 'Anar 2025-dən bəri LogiCora-da riyaziyyat, fizika və informatika fənlərində güclü nəticələr göstərir. 47 yarışda iştirak etmiş, 12-sini qazanmışdır. Cari streak-i 22 gündür. Texnologiya sahəsindəki güclü bacarıqları gələcəkdə müvəffəqiyyətli bir karyera üçün möhkəm əsas yaradır.',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -955,6 +900,52 @@ function ShareCardModal({ portfolio, onClose }: { portfolio: MyPortfolioData; on
 // Main Export
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Backend xətası: fake portfolio göstərmirik — real error state.
+function PassportErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+      <div className="text-center max-w-sm">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h1 className="text-2xl font-bold mb-2">Təhsil pasportu yüklənmədi</h1>
+        <p className="text-white/50 text-sm mb-6">Zəhmət olmasa yenidən cəhd edin.</p>
+        <div className="flex items-center justify-center gap-3">
+          <Link to={APP_ROUTES.DASHBOARD.STUDENT}
+            className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors">
+            Dashboard-a qayıt
+          </Link>
+          <button onClick={onRetry}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all">
+            Yenidən yoxla
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Backend 200 amma məzmun yoxdursa — empty state (fake nailiyyət göstərilmir).
+function PassportEmptyState() {
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+      <div className="text-center max-w-sm">
+        <div className="text-7xl mb-4">📭</div>
+        <h1 className="text-2xl font-bold mb-2">Təhsil pasportun hələ formalaşmayıb</h1>
+        <p className="text-white/50 text-sm mb-6">Quiz həll et, kurslara qoşul — nailiyyətlərin burada toplanacaq.</p>
+        <div className="flex items-center justify-center gap-3">
+          <Link to={APP_ROUTES.DAILY}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all">
+            Quizə başla
+          </Link>
+          <Link to={APP_ROUTES.COURSES}
+            className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors">
+            Kurslara bax
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MyPortfolio() {
   const user = useSelector((s: RootState) => s.auth.user)
   const ageGroup = (user as { ageGroup?: string } | null)?.ageGroup ?? '15-17'
@@ -964,12 +955,11 @@ export default function MyPortfolio() {
   const [view, setView] = useState<ViewMode>(defaultView(ageGroup))
   const [showShare, setShowShare] = useState(false)
 
-  const { data: portfolio, isLoading } = useQuery({
+  const { data: portfolio, isLoading, isError, refetch } = useQuery({
     queryKey: ['my-portfolio'],
     queryFn: () =>
       api.get(API_ROUTES.PORTFOLIO.MY)
-        .then(r => r.data.data as MyPortfolioData)
-        .catch(() => MOCK),
+        .then(r => r.data.data as MyPortfolioData),
   })
 
   const visibilityMutation = useMutation({
@@ -984,7 +974,7 @@ export default function MyPortfolio() {
   })
 
   const handlePdf = async () => {
-    if (!printRef.current) return
+    if (!portfolio || !printRef.current) return
     const { default: html2canvas } = await import('html2canvas')
     const { default: jsPDF } = await import('jspdf')
     const canvas = await html2canvas(printRef.current, { backgroundColor: '#0D0D0D', scale: 1.5 })
@@ -1007,7 +997,26 @@ export default function MyPortfolio() {
     )
   }
 
-  if (!portfolio) return null
+  // Backend xətası → real error state (fake portfolio yox)
+  if (isError) {
+    return <PassportErrorState onRetry={() => refetch()} />
+  }
+
+  // Portfolio yoxdursa → empty state
+  if (!portfolio) {
+    return <PassportEmptyState />
+  }
+
+  // Backend 200 amma bütün məzmun boşdursa → empty state
+  const isEmptyPassport =
+    !portfolio.skills?.length &&
+    !portfolio.timeline?.length &&
+    !portfolio.badges?.length &&
+    !portfolio.certificates?.length &&
+    !portfolio.competitions?.length
+  if (isEmptyPassport) {
+    return <PassportEmptyState />
+  }
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">

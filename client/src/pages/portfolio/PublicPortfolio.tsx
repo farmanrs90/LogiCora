@@ -96,44 +96,6 @@ interface PublicPortfolioData {
   isConnected?: boolean
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK_PUBLIC: PublicPortfolioData = {
-  user: {
-    id: 'u2', name: 'Leyla Quliyeva', ageGroup: '12-14', city: 'Gəncə',
-    school: 'Məktəb #23', bio: 'Biologiya və kimya sevgisi.',
-    joinedAt: '2025-10-01', level: 18, league: 'silver',
-  },
-  stats: { totalXP: 8400, currentStreak: 14, longestStreak: 28, totalQuestions: 820, accuracy: 74, rank: 12 },
-  skills: [
-    { subject: 'Biologiya', stars: 5, xp: 3200, level: 78, accuracy: 82, isWeak: false, isVerified: true, questionsAnswered: 290, worlds: { unlocked: 4, total: 5 } },
-    { subject: 'Kimya', stars: 4, xp: 2400, level: 65, accuracy: 76, isWeak: false, isVerified: false, questionsAnswered: 210, worlds: { unlocked: 3, total: 5 } },
-    { subject: 'Riyaziyyat', stars: 3, xp: 1600, level: 50, accuracy: 68, isWeak: false, isVerified: false, questionsAnswered: 180, worlds: { unlocked: 2, total: 5 } },
-    { subject: 'Fizika', stars: 2, xp: 800, level: 32, accuracy: 58, isWeak: true, weakUntil: '2026-06-05', isVerified: false, questionsAnswered: 140, worlds: { unlocked: 1, total: 5 } },
-  ],
-  badges: [
-    { id: 'b1', name: 'Qurucu Tələbə', emoji: '🥇', earnedAt: '2025-10-05', rarity: 'legendary', description: 'İlk 1000 tələbədən biri' },
-    { id: 'b2', name: 'Biologiya Ustası', emoji: '🌿', earnedAt: '2026-01-20', rarity: 'epic', description: 'Biologiyada 5/5 ulduz' },
-    { id: 'b3', name: 'İlk Qalibiyyət', emoji: '🏆', earnedAt: '2025-12-01', rarity: 'common', description: 'İlk yarışma qalibiyyəti' },
-  ],
-  timeline: [
-    { id: 't1', type: 'competition', title: 'Biologiya Olimpiadası', subtitle: '480 iştirakçı arasında', date: '2026-04-05', rank: 1, meta: '91 xal' },
-    { id: 't2', type: 'badge', title: 'Biologiya Ustası nişanı', badgeEmoji: '🌿', date: '2026-01-20' },
-    { id: 't3', type: 'course', title: 'Kimya Əsasları', subtitle: 'Elçin Rəsulzadə', date: '2026-02-10', meta: 'Sertifikat' },
-    { id: 't4', type: 'milestone', title: '14 gün ardıcıl streak', date: '2026-04-10' },
-  ],
-  certificates: [
-    { id: 'c1', courseName: 'Kimya Əsasları', teacherName: 'Elçin Rəsulzadə', issuedAt: '2026-02-10' },
-  ],
-  competitions: [
-    { id: 'k1', title: 'Biologiya Olimpiadası', rank: 1, score: 91, totalParticipants: 480, date: '2026-04-05', subject: 'Biologiya' },
-    { id: 'k2', title: 'Kimya Sınağı', rank: 3, score: 84, totalParticipants: 320, date: '2026-02-20', subject: 'Kimya' },
-  ],
-  shareLink: 'logicora.az/portfolio/leyla-q',
-  isPublic: true,
-  isConnected: false,
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const LEAGUE_COLORS: Record<string, string> = {
@@ -566,13 +528,9 @@ export default function PublicPortfolio() {
     queryFn: () =>
       api.get(API_ROUTES.PORTFOLIO.BY_LINK(link!))
         .then(r => {
-          const data = r.data.data as PublicPortfolioData
-          setMetaTags(data)
+          const data = r.data.data as PublicPortfolioData | null
+          if (data) setMetaTags(data)
           return data
-        })
-        .catch(() => {
-          setMetaTags(MOCK_PUBLIC)
-          return MOCK_PUBLIC
         }),
     enabled: !!link,
   })
@@ -594,8 +552,8 @@ export default function PublicPortfolio() {
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-center px-4">
         <div className="space-y-4">
           <div className="text-7xl">🔍</div>
-          <h1 className="text-2xl font-bold text-white">Portfolio tapılmadı</h1>
-          <p className="text-white/50">Bu link mövcud deyil.</p>
+          <h1 className="text-2xl font-bold text-white">Portfolio mövcud deyil</h1>
+          <p className="text-white/50">Bu portfolio mövcud deyil və ya paylaşım aktiv deyil.</p>
           <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors">
             Ana səhifəyə qayıt
           </Link>
