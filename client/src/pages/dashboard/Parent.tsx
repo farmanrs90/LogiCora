@@ -363,15 +363,20 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
   const [answer, setAnswer] = useState<'yes' | 'no' | 'prefer_not' | null>(null)
   const [types, setTypes] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const TYPES = ['Görmə', 'Eşitmə', 'İdrak', 'Motor', 'Digər']
 
+  // Real save: uğur YALNIZ backend 200-dən sonra; xəta udulmur, fake success yox.
   const handleSave = async () => {
+    setSaveError('')
     try {
-      await api.put(`/accessibility/${childId}`, { hasSpecialNeeds: answer === 'yes', types: answer === 'yes' ? types : [] })
-    } catch { /* mock ok */ }
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+      await api.put(`/accessibility/child/${childId}`, { hasSpecialNeeds: answer === 'yes', types: answer === 'yes' ? types : [] })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      setSaveError('Ayarlar saxlanmadı. Yenidən cəhd edin.')
+    }
   }
 
   return (
@@ -417,6 +422,7 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
           {saved ? '✓ Saxlandı' : 'Yadda saxla'}
         </button>
       )}
+      {saveError && <p className="text-xs text-rose-400">{saveError}</p>}
     </div>
   )
 }
