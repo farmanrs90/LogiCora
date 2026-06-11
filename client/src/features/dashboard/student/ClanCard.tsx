@@ -14,14 +14,38 @@ interface MyClan {
   weeklyXP:   number
 }
 
+interface MyClanResponse {
+  name:        string
+  badge?:      string | null
+  emblem?:     string | null
+  rank?:       number
+  totalXP?:    number
+  memberCount?: number
+  members?:    unknown[]
+  weeklyXP?:   number
+}
+
+const normalizeClan = (clan: MyClanResponse | null): MyClan | null => {
+  if (!clan) return null
+
+  return {
+    name:        clan.name,
+    badge:       clan.badge ?? clan.emblem ?? '🛡️',
+    rank:        clan.rank ?? 0,
+    totalXP:     clan.totalXP ?? 0,
+    memberCount: clan.memberCount ?? clan.members?.length ?? 0,
+    weeklyXP:    clan.weeklyXP ?? 0,
+  }
+}
+
 export default function ClanCard() {
   const navigate    = useNavigate()
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
 
   const { data, isLoading } = useQuery<MyClan | null>({
-    queryKey: ['clans', 'my'],
+    queryKey: ['clans', 'me'],
     queryFn:  () =>
-      api.get<{ data: MyClan | null }>('/clans/my').then(r => r.data.data).catch(() => null),
+      api.get<{ data: MyClanResponse | null }>('/clans/me').then(r => normalizeClan(r.data.data)).catch(() => null),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -68,7 +92,7 @@ export default function ClanCard() {
   }
 
   const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32']
-  const rankColor  = data.rank <= 3 ? rankColors[data.rank - 1] : avatarColor
+  const rankColor  = data.rank > 0 && data.rank <= 3 ? rankColors[data.rank - 1] : avatarColor
 
   return (
     <motion.div
