@@ -34,12 +34,12 @@ const studentNav: NavItem[] = [
 const teacherNav: NavItem[] = [
   { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.TEACHER },
   { icon: '👥', label: 'Qruplarım', path: '/groups' },
-  { icon: '✅', label: 'Davamiyyət', path: '/groups' },
+  { icon: '✅', label: 'Davamiyyət', path: '/attendance' },
   { icon: '⚔️', label: 'Yarış yarat', path: '/competition/create' },
   { icon: '🎓', label: 'Kurslarım', path: '/courses' },
   { icon: '📊', label: 'Analitika', path: '/analytics' },
   { icon: '💬', label: 'Mesajlar', path: APP_ROUTES.CHAT },
-  { icon: '🏫', label: 'Sinif', path: '/groups' },
+  { icon: '🏫', label: 'Sinif', path: '/classroom' },
 ]
 
 const parentNav: NavItem[] = [

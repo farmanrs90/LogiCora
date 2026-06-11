@@ -40,6 +40,8 @@ import MyPortfolio from '../pages/portfolio/MyPortfolio'
 import PublicPortfolio from '../pages/portfolio/PublicPortfolio'
 import GroupManagement from '../pages/teacher/GroupManagement'
 import TeacherAnalytics from '../pages/teacher/TeacherAnalytics'
+import TeacherAttendance from '../pages/teacher/TeacherAttendance'
+import TeacherClassroomIndex from '../pages/teacher/TeacherClassroomIndex'
 import ChildProgress from '../pages/parent/ChildProgress'
 import Chat from '../pages/chat/Index'
 import Settings from '../pages/settings/Index'
@@ -166,10 +168,14 @@ export default function AppRouter() {
             /:id-dən ƏVVƏL kurslar səhifəsinə yönləndirilir. */}
         <Route path="/courses/create" element={<Navigate to={APP_ROUTES.COURSES} replace />} />
         <Route path="/courses/:id" element={<PW><CourseDetail /></PW>} />
+        {/* Müəllim sinif indeksi — /classroom/:id-dən ƏVVƏL (exact match) */}
+        <Route path="/classroom" element={<RoleRoute roles={['teacher']}><PageWrapper><TeacherClassroomIndex /></PageWrapper></RoleRoute>} />
         <Route path="/classroom/:id" element={<PW><ClassroomRoom /></PW>} />
         <Route path="/classroom/:id/qr" element={<ProtectedRoute><AttendanceQR /></ProtectedRoute>} />
         <Route path="/child/:childId/progress" element={<PW><ChildProgress /></PW>} />
         <Route path="/groups" element={<PW><GroupManagement /></PW>} />
+        {/* Müəllim davamiyyət baxışı */}
+        <Route path="/attendance" element={<RoleRoute roles={['teacher']}><PageWrapper><TeacherAttendance /></PageWrapper></RoleRoute>} />
         <Route path="/analytics" element={<PW><TeacherAnalytics /></PW>} />
         <Route path={APP_ROUTES.CHAT} element={<PW><Chat /></PW>} />
         <Route path={APP_ROUTES.SETTINGS} element={<PW><Settings /></PW>} />
