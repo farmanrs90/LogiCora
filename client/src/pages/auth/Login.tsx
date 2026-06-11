@@ -28,12 +28,16 @@ export default function Login() {
     mode: 'onTouched', // sahədən çıxanda (blur) yoxlayır — yazarkən deyil
   })
 
+  // Whitespace guard — email/şifrə input-larını canlı təmizləyir (uncontrolled RHF).
+  const emailReg = register('email')
+  const passwordReg = register('password')
+
   // Bura YALNIZ validation keçəndən sonra çatır → values təmiz və düzgündür
   async function onSubmit(values: LoginValues) {
     try {
       const authData = await login({
         email: values.email.trim().toLowerCase(),
-        password: values.password,
+        password: values.password.trim(),
       })
       dispatch(setCredentials({ user: authData.user, token: authData.accessToken }))
       toast.success(`Xoş gəldin, ${authData.user.name}! 👋`)
@@ -102,7 +106,8 @@ export default function Login() {
                 placeholder="məsələn: ad@mail.com"
                 className={`input focus:ring-2 ${errors.email ? 'border-[#EF4444] focus:ring-[#EF4444]' : 'focus:ring-[#06B6D4]'}`}
                 aria-invalid={!!errors.email}
-                {...register('email')}
+                {...emailReg}
+                onChange={(e) => { e.target.value = e.target.value.replace(/\s/g, '').toLowerCase(); emailReg.onChange(e) }}
               />
               {errors.email && (
                 <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
@@ -122,7 +127,8 @@ export default function Login() {
                   placeholder="Şifrəni yaz"
                   className={`input pr-12 focus:ring-2 ${errors.password ? 'border-[#EF4444] focus:ring-[#EF4444]' : 'focus:ring-[#06B6D4]'}`}
                   aria-invalid={!!errors.password}
-                  {...register('password')}
+                  {...passwordReg}
+                  onChange={(e) => { e.target.value = e.target.value.replace(/\s/g, ''); passwordReg.onChange(e) }}
                 />
                 <button
                   type="button"

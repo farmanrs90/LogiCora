@@ -8,6 +8,7 @@ const Enrollment = require('../course/enrollment.model');
 const Course = require('../course/course.model'); // eslint-disable-line no-unused-vars -- populate üçün model qeydiyyatı
 const Teacher = require('../teacher/teacher.model');
 const Competition = require('../competition/competition.model');
+const TimeCapsule = require('./timeCapsule.model');
 
 const LEAGUE_FALLBACK = 'bronze';
 
@@ -472,14 +473,54 @@ const getChildProgress = async (userId, studentId) => {
   };
 };
 
-const getTimeCapsules = async () => {
-  // TimeCapsule modeli yoxdur → boş array
-  return [];
+// TimeCapsule sənədini frontend-in gözlədiyi shape-ə salır.
+// "opened" minimal hesablanır: isOpened və ya openAt artıq keçibsə → açıq.
+const mapCapsule = (doc) => ({
+  id: String(doc._id),
+  message: doc.message,
+  openAt: doc.openAt,
+  opened: doc.isOpened || new Date(doc.openAt).getTime() <= Date.now(),
+});
+
+const getTimeCapsules = async (userId) => {
+  const parent = await getParentOrThrow(userId);
+  const capsules = await TimeCapsule.find({ parentId: parent._id }).sort({ createdAt: -1 });
+  return capsules.map(mapCapsule);
 };
 
-const createTimeCapsule = async () => {
-  // TimeCapsule modeli yoxdur — saxlanmır (no-op). Gələcəkdə real model lazımdır.
-  return { success: true };
+const createTimeCapsule = async (userId, payload) => {
+  const parent = await getParentOrThrow(userId);
+  const { childId, message, openAt } = payload || {};
+
+  const trimmed = typeof message === 'string' ? message.trim() : '';
+  if (!trimmed) {
+    const error = new Error('Mesaj boş ola bilməz.');
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!openAt || Number.isNaN(new Date(openAt).getTime())) {
+    const error = new Error('Açılma tarixi düzgün deyil.');
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!childId) {
+    const error = new Error('Uşaq seçilməyib.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Parent ownership: childId = Student._id; parent yalnız öz uşağı üçün yarada bilər (403/404 atır).
+  const student = await assertOwnsChild(userId, childId);
+
+  const capsule = await TimeCapsule.create({
+    parentId: parent._id,
+    childId: student._id,
+    message: trimmed,
+    openAt: new Date(openAt),
+    isOpened: false,
+  });
+
+  return mapCapsule(capsule);
 };
 
 

@@ -265,7 +265,7 @@ export default function ChildProgress() {
         {/* ── Bölmə 1 — Ümumi Metrics RadialBar ─────────────────────── */}
         <Section title="📊 Ümumi İrəliləyiş">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="w-48 h-48 shrink-0">
+            <div className="w-48 h-48 min-h-[12rem] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart innerRadius="25%" outerRadius="100%" data={radialData} startAngle={90} endAngle={-270} barSize={14}>
                   <RadialBar dataKey="value" cornerRadius={8} background={{ fill: 'rgba(255,255,255,0.04)' }} />
@@ -293,15 +293,21 @@ export default function ChildProgress() {
         {/* ── Bölmə 2 — Fənn Analiz RadarChart ──────────────────────── */}
         <Section title="🕸️ Fənn üzrə Analiz">
           <div className="flex flex-col sm:flex-row gap-6 items-start">
-            <div className="w-full sm:w-56 h-56 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={subjects}>
-                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} />
-                  <Radar name="Səviyyə" dataKey="radarValue" stroke="#6366F1" fill="#6366F1" fillOpacity={0.25} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }} />
-                </RadarChart>
-              </ResponsiveContainer>
+            <div className="w-full sm:w-56 h-56 min-h-[14rem] shrink-0">
+              {subjects.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={subjects}>
+                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} />
+                    <Radar name="Səviyyə" dataKey="radarValue" stroke="#6366F1" fill="#6366F1" fillOpacity={0.25} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs text-white/40 text-center">
+                  Hələ fənn məlumatı yoxdur
+                </div>
+              )}
             </div>
             <div className="flex-1 space-y-3">
               {subjects.map(s => (
@@ -331,18 +337,24 @@ export default function ChildProgress() {
 
         {/* ── Bölmə 3 — Emosiya Qrafiki ──────────────────────────────── */}
         <Section title="😊 Emosiya Qrafiki">
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mood} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-                <XAxis dataKey="label" tick={{ fontSize: 18 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[1, 5]} hide />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }}
-                  formatter={(val: unknown) => { const n = Number(val); return [`${['😡', '😔', '😐', '😊', '🤩'][n - 1] ?? ''} Əhval: ${n}/5`, ''] as [string, string] }}
-                />
-                <Line type="monotone" dataKey="mood" stroke="#8B5CF6" strokeWidth={2.5} dot={{ fill: '#8B5CF6', r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-40 w-full min-h-[10rem]">
+            {mood.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={mood} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+                  <XAxis dataKey="label" tick={{ fontSize: 18 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[1, 5]} hide />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }}
+                    formatter={(val: unknown) => { const n = Number(val); return [`${['😡', '😔', '😐', '😊', '🤩'][n - 1] ?? ''} Əhval: ${n}/5`, ''] as [string, string] }}
+                  />
+                  <Line type="monotone" dataKey="mood" stroke="#8B5CF6" strokeWidth={2.5} dot={{ fill: '#8B5CF6', r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-xs text-white/40">
+                Hələ emosiya məlumatı yoxdur
+              </div>
+            )}
           </div>
           <div className="flex items-start gap-3 p-3 bg-purple-950/40 border border-purple-500/20 rounded-xl">
             <span className="text-2xl shrink-0">🌸</span>
@@ -398,15 +410,21 @@ export default function ChildProgress() {
               <p className="font-semibold text-yellow-300">🥇 {progress.bestResult}</p>
             </div>
           </div>
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={compChartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
-                <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }} />
-                <Bar dataKey="xal" fill="#6366F1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-44 w-full min-h-[11rem]">
+            {compChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={compChartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
+                  <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }} />
+                  <Bar dataKey="xal" fill="#6366F1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-xs text-white/40">
+                Hələ yarış nəticəsi yoxdur
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             {competitions.slice(0, 5).map((comp, i) => (

@@ -285,6 +285,7 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
   const qc = useQueryClient()
   const [message, setMessage] = useState('')
   const [openAt, setOpenAt] = useState('')
+  const [sendError, setSendError] = useState('')
 
   const { data: capsules, isError: capsulesError } = useQuery({
     queryKey: ['time-capsules', childId],
@@ -293,8 +294,15 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
 
   const sendMutation = useMutation({
     mutationFn: () => api.post('/parent/time-capsule', { childId, message, openAt }).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['time-capsules', childId] }); setMessage(''); setOpenAt('') },
-    onError: () => { qc.invalidateQueries({ queryKey: ['time-capsules', childId] }); setMessage(''); setOpenAt('') },
+    // Uğur YALNIZ backend cavabından sonra: formu təmizlə + siyahını real yenilə.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['time-capsules', childId] })
+      setMessage('')
+      setOpenAt('')
+      setSendError('')
+    },
+    // Xəta: fake uğur göstərmirik — form qalır, istifadəçiyə xəta bildirilir.
+    onError: () => setSendError('Kapsul göndərilmədi. Yenidən cəhd edin.'),
   })
 
   return (
@@ -304,7 +312,7 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
         <h2 className="font-bold">Zaman Kapsulu</h2>
       </div>
       <p className="text-xs text-white/50">Uşağınıza gizli mesaj yazın — seçdiyiniz tarixdə açılacaq</p>
-      <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3}
+      <textarea value={message} onChange={e => { setMessage(e.target.value); if (sendError) setSendError('') }} rows={3}
         placeholder="Sevgili Anar, bu günü xatırlayanda..."
         className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 resize-none"
       />
@@ -319,6 +327,7 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
           {sendMutation.isPending ? '...' : 'Göndər'}
         </button>
       </div>
+      {sendError && <p className="text-xs text-rose-400">{sendError}</p>}
       {/* Capsule list */}
       {capsulesError ? (
         <p className="text-xs text-rose-300/70 pt-2 border-t border-white/10">Kapsullar yüklənmədi.</p>
