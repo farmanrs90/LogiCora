@@ -523,6 +523,30 @@ const createTimeCapsule = async (userId, payload) => {
   return mapCapsule(capsule);
 };
 
+// ── Bildiriş ayarları (Parent.notificationPreferences → { email, sms, instant }) ──
+// Köhnə sənədlərdə field undefined ola bilər → "!== false" ilə default true qaytarılır.
+const getNotificationPreferences = async (userId) => {
+  const parent = await getParentOrThrow(userId);
+  const prefs = parent.notificationPreferences || {};
+  return {
+    email: prefs.email !== false,
+    sms: prefs.sms !== false,
+    instant: prefs.instant !== false,
+  };
+};
+
+const updateNotificationPreferences = async (userId, data) => {
+  const parent = await getParentOrThrow(userId);
+  const current = parent.notificationPreferences || {};
+  const next = {
+    email: typeof data.email === 'boolean' ? data.email : current.email !== false,
+    sms: typeof data.sms === 'boolean' ? data.sms : current.sms !== false,
+    instant: typeof data.instant === 'boolean' ? data.instant : current.instant !== false,
+  };
+  parent.notificationPreferences = next;
+  await parent.save();
+  return next;
+};
 
 module.exports = {
   createParentProfile,
@@ -541,6 +565,8 @@ module.exports = {
   getChildProgress,
   getTimeCapsules,
   createTimeCapsule,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 };
 
 

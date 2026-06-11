@@ -132,6 +132,20 @@ const createTimeCapsule = async (req, res, next) => {
   } catch (error) { return next(error); }
 };
 
+const getNotificationPreferences = async (req, res, next) => {
+  try {
+    const data = await parentService.getNotificationPreferences(req.user.id);
+    return res.status(200).json(data);
+  } catch (error) { return next(error); }
+};
+
+const updateNotificationPreferences = async (req, res, next) => {
+  try {
+    const data = await parentService.updateNotificationPreferences(req.user.id, req.body);
+    return res.status(200).json(data);
+  } catch (error) { return next(error); }
+};
+
 
 
 module.exports = {
@@ -151,6 +165,8 @@ module.exports = {
   getChildProgress,
   getTimeCapsules,
   createTimeCapsule,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 };
 
 

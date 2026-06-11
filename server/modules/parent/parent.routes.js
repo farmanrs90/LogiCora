@@ -20,6 +20,8 @@ router.get('/weekly-report', auth, roleCheck(['parent']), parentController.getWe
 router.get('/payments', auth, roleCheck(['parent']), parentController.getPayments);
 router.get('/time-capsules', auth, roleCheck(['parent']), parentController.getTimeCapsules);
 router.post('/time-capsule', auth, roleCheck(['parent']), parentController.createTimeCapsule);
+router.get('/notification-preferences', auth, roleCheck(['parent']), parentController.getNotificationPreferences);
+router.put('/notification-preferences', auth, roleCheck(['parent']), parentController.updateNotificationPreferences);
 
 router.get('/child/:id/stats', auth, roleCheck(['parent']), parentController.getChildStats);
 router.get('/child/:id/attendance', auth, roleCheck(['parent']), parentController.getChildAttendance);

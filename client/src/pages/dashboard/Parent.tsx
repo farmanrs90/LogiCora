@@ -244,10 +244,41 @@ function MapModal({ location, childName, onClose }: {
 
 // ── Notification Settings ─────────────────────────────────────────────────────
 
+interface NotifPrefs { email: boolean; sms: boolean; instant: boolean }
+
 function NotifSettings() {
-  const [sms, setSms] = useState(true)
-  const [email, setEmail] = useState(false)
-  const [instant, setInstant] = useState(true)
+  const qc = useQueryClient()
+  const [prefError, setPrefError] = useState('')
+
+  // Backend-dən real ayarlar (Parent.notificationPreferences → { email, sms, instant }).
+  const { data: prefs } = useQuery<NotifPrefs>({
+    queryKey: ['notif-prefs'],
+    queryFn: () => api.get<NotifPrefs>('/parent/notification-preferences').then(r => r.data),
+  })
+
+  const sms = prefs?.sms ?? true
+  const email = prefs?.email ?? true
+  const instant = prefs?.instant ?? true
+
+  const prefMutation = useMutation({
+    mutationFn: (next: NotifPrefs) =>
+      api.put<NotifPrefs>('/parent/notification-preferences', next).then(r => r.data),
+    // Optimistik: toggle dərhal görünür, amma yalnız 200-dən sonra təsdiqlənir.
+    onMutate: async (next) => {
+      setPrefError('')
+      await qc.cancelQueries({ queryKey: ['notif-prefs'] })
+      const prev = qc.getQueryData<NotifPrefs>(['notif-prefs'])
+      qc.setQueryData(['notif-prefs'], next)
+      return { prev }
+    },
+    // Xəta: əvvəlki dəyərə rollback + xəta mesajı (fake success yox).
+    onError: (_err, _next, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['notif-prefs'], ctx.prev)
+      setPrefError('Bildiriş ayarları saxlanmadı. Yenidən cəhd edin.')
+    },
+    // Uğur YALNIZ backend cavabından sonra: serverin qaytardığı dəyəri yaz.
+    onSuccess: (data) => qc.setQueryData(['notif-prefs'], data),
+  })
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
     <button onClick={() => onChange(!value)}
@@ -263,18 +294,19 @@ function NotifSettings() {
     <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
       <h2 className="font-bold text-sm">🔔 Bildiriş Ayarları</h2>
       {[
-        { label: 'SMS bildiriş', sub: 'Telefon nömrənizə', value: sms, set: setSms },
-        { label: 'Email bildiriş', sub: 'E-poçtunuza', value: email, set: setEmail },
-        { label: 'Gəlmədikdə dərhal xəbər ver', sub: 'Davamiyyət bildirişi', value: instant, set: setInstant },
-      ].map(({ label, sub, value, set }) => (
+        { label: 'SMS bildiriş', sub: 'Telefon nömrənizə', value: sms, onChange: (v: boolean) => prefMutation.mutate({ email, sms: v, instant }) },
+        { label: 'Email bildiriş', sub: 'E-poçtunuza', value: email, onChange: (v: boolean) => prefMutation.mutate({ email: v, sms, instant }) },
+        { label: 'Gəlmədikdə dərhal xəbər ver', sub: 'Davamiyyət bildirişi', value: instant, onChange: (v: boolean) => prefMutation.mutate({ email, sms, instant: v }) },
+      ].map(({ label, sub, value, onChange }) => (
         <div key={label} className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">{label}</p>
             <p className="text-xs text-white/40">{sub}</p>
           </div>
-          <Toggle value={value} onChange={set} />
+          <Toggle value={value} onChange={onChange} />
         </div>
       ))}
+      {prefError && <p className="text-xs text-rose-400">{prefError}</p>}
     </div>
   )
 }
