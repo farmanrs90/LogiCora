@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
@@ -6,7 +7,7 @@ import toast from 'react-hot-toast'
 
 import { useInterval } from '../hooks/useInterval'
 import api             from '../lib/api'
-import { API_ROUTES }  from '../constants'
+import { API_ROUTES, APP_ROUTES }  from '../constants'
 import type { RootState } from '../app/store'
 import type {
   MysteryCurrentResponse,
@@ -15,45 +16,9 @@ import type {
   WeeklyStats,
 } from '../types'
 
-// ── Mock data ─────────────────────────────────────────────────────────────
+// ── Static display data (dekorativ) + neytral default ──────────────────────
 
-function nextMonday09(): string {
-  const d   = new Date()
-  const day = d.getDay()
-  const add = day === 0 ? 1 : day === 1 ? (d.getHours() < 9 ? 0 : 7) : 8 - day
-  d.setDate(d.getDate() + add)
-  d.setHours(9, 0, 0, 0)
-  return d.toISOString()
-}
-
-const MOCK_CURRENT: MysteryCurrentResponse = {
-  status:      'waiting',
-  nextRevealAt: nextMonday09(),
-}
-
-const MOCK_QUESTION: WeeklyMysteryQuestion = {
-  _id:          'wm-2025-21',
-  text:         'Avropada paytaxt olmayan, lakin ölkənin ən böyük şəhəri olan — ikinci dünya müharibəsindən sonra ölkə ikiyə bölündükdə paytaxt statusunu itirmiş şəhər hansıdır?',
-  difficulty:   'legendary',
-  weekNumber:   21,
-  revealedAt:   new Date().toISOString(),
-  attemptCount: 1247,
-  isSolved:     false,
-}
-
-const MOCK_WINNERS: WeeklyWinner[] = [
-  { userId: 'w1', name: 'Aytən M.',  city: 'Bakı',       avatarColor: '#9333EA', solvedInMinutes: 14, solvedAt: '', weekNumber: 20 },
-  { userId: 'w2', name: 'Kənan H.',  city: 'Gəncə',      avatarColor: '#3B82F6', solvedInMinutes: 22, solvedAt: '', weekNumber: 19 },
-  { userId: 'w3', name: 'Nigar Ə.',  city: 'Bakı',       avatarColor: '#06B6D4', solvedInMinutes: 8,  solvedAt: '', weekNumber: 18 },
-  { userId: 'w4', name: 'Rauf T.',   city: 'Sumqayıt',   avatarColor: '#F97316', solvedInMinutes: 31, solvedAt: '', weekNumber: 17 },
-]
-
-const MOCK_STATS: WeeklyStats = {
-  attemptCount:   1247,
-  solvedCount:    1,
-  fastestMinutes: 8,
-  fastestSeconds: 43,
-}
+const EMPTY_STATS: WeeklyStats = { attemptCount: 0, solvedCount: 0, fastestMinutes: 0, fastestSeconds: 0 }
 
 const CITY_STATS = [
   { city: 'Bakı',       attempts: 847 },
@@ -632,7 +597,7 @@ function FinalSection({ avatarColor }: { avatarColor: string }) {
         <motion.button
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
-          onClick={() => toast.success('Xatırlatma aktivləşdirildi!')}
+          onClick={() => toast('Bu funksiya hazır olduqda bildiriş ayarlarından idarə ediləcək.', { icon: '🔔' })}
           className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0"
           style={{
             background: `linear-gradient(135deg, ${avatarColor}, #9333EA)`,
@@ -659,11 +624,10 @@ export default function WeeklyMystery() {
   const [revealShown,       setRevealShown]         = useState(false)
 
   // Queries
-  const { data: current, isLoading: loadingCurrent } = useQuery<MysteryCurrentResponse>({
+  const { data: current, isLoading: loadingCurrent, isError, refetch } = useQuery<MysteryCurrentResponse>({
     queryKey:       ['mystery', 'current'],
     queryFn:        () => api.get<{ data: MysteryCurrentResponse }>(API_ROUTES.MYSTERY.CURRENT)
-                             .then(r => r.data.data)
-                             .catch(() => MOCK_CURRENT),
+                             .then(r => r.data.data),
     refetchInterval: 30_000,
     staleTime:       20_000,
   })
@@ -671,16 +635,14 @@ export default function WeeklyMystery() {
   const { data: winners = [] } = useQuery<WeeklyWinner[]>({
     queryKey: ['mystery', 'winners'],
     queryFn:  () => api.get<{ data: WeeklyWinner[] }>(API_ROUTES.MYSTERY.WINNERS)
-                       .then(r => r.data.data)
-                       .catch(() => MOCK_WINNERS),
+                       .then(r => r.data.data),
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: stats } = useQuery<WeeklyStats>({
     queryKey:        ['mystery', 'stats'],
     queryFn:         () => api.get<{ data: WeeklyStats }>(API_ROUTES.MYSTERY.STATS)
-                              .then(r => r.data.data)
-                              .catch(() => MOCK_STATS),
+                              .then(r => r.data.data),
     refetchInterval: 30_000,
   })
 
@@ -712,12 +674,6 @@ export default function WeeklyMystery() {
     setTimeout(() => setFloatingReactions(prev => prev.filter(r => r.id !== id)), 2200)
   }
 
-  // ── Derived state ─────────────────────────────────────────────────────
-
-  const status   = current?.status ?? 'waiting'
-  const question = current?.question ?? (status === 'active' ? MOCK_QUESTION : undefined)
-  const liveStats = stats ?? MOCK_STATS
-
   if (loadingCurrent) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
@@ -728,6 +684,51 @@ export default function WeeklyMystery() {
       </div>
     )
   }
+
+  // Backend xətası: fake sirr göstərmirik — real error state.
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold mb-2">Həftənin sirri yüklənmədi</h1>
+          <p className="text-white/50 text-sm mb-6">Zəhmət olmasa yenidən cəhd edin.</p>
+          <div className="flex items-center justify-center gap-3">
+            <Link to={APP_ROUTES.DASHBOARD.STUDENT}
+              className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors">
+              Dashboard-a qayıt
+            </Link>
+            <button onClick={() => refetch()}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all">
+              Yenidən yoxla
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Backend 200 amma sirr yoxdursa — empty state (fake sirr yox).
+  if (!current) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <div className="text-7xl mb-4">🔮</div>
+          <h1 className="text-2xl font-bold mb-2">Bu həftə üçün sirr hələ əlavə edilməyib</h1>
+          <p className="text-white/50 text-sm mb-6">Yeni sirr əlavə olunduqda burada görünəcək.</p>
+          <Link to={APP_ROUTES.DASHBOARD.STUDENT}
+            className="inline-block px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all">
+            Dashboard-a qayıt
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Derived state (current zəmanətlidir) ──────────────────────────────
+  const status    = current.status
+  const question  = current.question
+  const liveStats = stats ?? EMPTY_STATS
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden">
