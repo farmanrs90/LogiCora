@@ -87,43 +87,6 @@ interface ClanSearchResult {
 
 // ── Mock data ──────────────────────────────────────────────────────────────
 
-const MOCK_MEMBERS: ClanMemberFull[] = [
-  { studentId: 'u1', userId: 'u1', name: 'Aytən',  surname: 'M.', avatarColor: '#9333EA', level: 14, weeklyXP: 620, totalXP: 8400, streak: 22, role: 'leader', joinedAt: '2024-09-01' },
-  { studentId: 'u2', userId: 'u2', name: 'Kənan',  surname: 'H.', avatarColor: '#3B82F6', level: 12, weeklyXP: 540, totalXP: 7100, streak: 15, role: 'member', joinedAt: '2024-09-05' },
-  { studentId: 'u3', userId: 'u3', name: 'Nigar',  surname: 'Ə.', avatarColor: '#06B6D4', level: 11, weeklyXP: 510, totalXP: 6900, streak: 18, role: 'member', joinedAt: '2024-09-10' },
-  { studentId: 'u4', userId: 'u4', name: 'Orxan',  surname: 'T.', avatarColor: '#F97316', level: 10, weeklyXP: 480, totalXP: 6200, streak: 9,  role: 'member', joinedAt: '2024-09-12' },
-  { studentId: 'u5', userId: 'u5', name: 'Leyla',  surname: 'K.', avatarColor: '#EC4899', level: 10, weeklyXP: 450, totalXP: 5800, streak: 12, role: 'member', joinedAt: '2024-09-15' },
-  { studentId: 'u6', userId: 'u6', name: 'Rauf',   surname: 'N.', avatarColor: '#22C55E', level:  8, weeklyXP: 390, totalXP: 4900, streak: 6,  role: 'member', joinedAt: '2024-10-01' },
-  { studentId: 'u7', userId: 'u7', name: 'Günel',  surname: 'A.', avatarColor: '#EAB308', level:  7, weeklyXP: 360, totalXP: 4500, streak: 4,  role: 'member', joinedAt: '2024-10-10' },
-  { studentId: 'u8', userId: 'u8', name: 'Fərid',  surname: 'M.', avatarColor: '#8B5CF6', level:  6, weeklyXP: 400, totalXP: 3400, streak: 20, role: 'member', joinedAt: '2024-11-01' },
-]
-
-const MOCK_BATTLES: BattleHistoryItem[] = [
-  { _id: 'b1', opponentSlug: 'kartallar', opponentName: 'Kartallar', opponentColor: '#F97316', opponentEmoji: '🦅', ourScore: 850, theirScore: 720, result: 'win',  subject: 'Riyaziyyat', format: 'Sürət',  endedAt: '2024-12-10', startedAt: '2024-12-10' },
-  { _id: 'b2', opponentSlug: 'aslanlar',  opponentName: 'Aslanlar',  opponentColor: '#EAB308', opponentEmoji: '🦁', ourScore: 920, theirScore: 800, result: 'win',  subject: 'Fizika',     format: 'Qarışıq', endedAt: '2024-12-08', startedAt: '2024-12-08' },
-  { _id: 'b3', opponentSlug: 'qurtlar',   opponentName: 'Qurtlar',   opponentColor: '#9CA3AF', opponentEmoji: '🐺', ourScore: 640, theirScore: 780, result: 'loss', subject: 'Kimya',      format: 'Fənn',    endedAt: '2024-12-05', startedAt: '2024-12-05' },
-  { _id: 'b4', opponentSlug: 'ulduzlar',  opponentName: 'Ulduzlar',  opponentColor: '#3B82F6', opponentEmoji: '⭐', ourScore: 900, theirScore: 710, result: 'win',  subject: 'Tarix',      format: 'Sürət',   endedAt: '2024-12-02', startedAt: '2024-12-02' },
-  { _id: 'b5', opponentSlug: 'timsahlar', opponentName: 'Timsahlar', opponentColor: '#22C55E', opponentEmoji: '🐊', ourScore: 770, theirScore: 650, result: 'win',  subject: 'Riyaziyyat', format: 'Sürət',   endedAt: '2024-11-28', startedAt: '2024-11-28' },
-  { _id: 'b6', opponentSlug: 'sahinler',  opponentName: 'Şahinlər',  opponentColor: '#EC4899', opponentEmoji: '🦅', ourScore: 590, theirScore: 640, result: 'loss', subject: 'Fizika',     format: 'Qarışıq', endedAt: '2024-11-24', startedAt: '2024-11-24' },
-]
-
-const MOCK_STATS: ClanStats = {
-  weeklyXPHistory: [
-    { week: 'H1', xp: 2100 }, { week: 'H2', xp: 2600 }, { week: 'H3', xp: 2300 },
-    { week: 'H4', xp: 3100 }, { week: 'H5', xp: 3400 }, { week: 'H6', xp: 2900 },
-    { week: 'H7', xp: 3200 }, { week: 'H8', xp: 3750 },
-  ],
-  memberXPShare: [
-    { name: 'Aytən M.', xp: 8400 }, { name: 'Kənan H.', xp: 7100 },
-    { name: 'Nigar Ə.', xp: 6900 }, { name: 'Orxan T.', xp: 6200 },
-    { name: 'Digərləri', xp: 19600 },
-  ],
-  strongestSubject: 'Riyaziyyat',
-  strongestPct: 67,
-  mostActiveUser: { name: 'Aytən M.', avatarColor: '#9333EA' },
-  bestBattleScore: 920,
-}
-
 const MOCK_SEARCH: ClanSearchResult[] = [
   { _id: 'c2', name: 'Kartallar', slug: 'kartallar', schoolName: 'Məktəb #12', city: 'Bakı',    color: '#F97316', totalXP: 45000, rank: 5,  memberCount: 10 },
   { _id: 'c3', name: 'Aslanlar',  slug: 'aslanlar',  schoolName: 'Məktəb #17', city: 'Gəncə',  color: '#EAB308', totalXP: 51000, rank: 2,  memberCount: 12 },
@@ -563,30 +526,30 @@ export default function ClanPage() {
     }
   }, [isMeRoute, clan, navigate])
 
-  const { data: members, isLoading: membersLoading } = useQuery<ClanMemberFull[]>({
+  const { data: members, isLoading: membersLoading, refetch: refetchMembers } = useQuery<ClanMemberFull[]>({
     queryKey: ['clan', slug, 'members'],
     queryFn:  () => api.get<{ data: ClanMemberFull[] }>(API_ROUTES.CLANS.MEMBERS(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_MEMBERS),
-    enabled:  !!slug && tab === 'members',
+                      .then(r => r.data.data),
+    enabled:  !!slug && !isMeRoute && tab === 'members',
+    retry:    false,
     staleTime: 1000 * 60 * 2,
   })
 
-  const { data: battles, isLoading: battlesLoading } = useQuery<BattleHistoryItem[]>({
+  const { data: battles, isLoading: battlesLoading, refetch: refetchBattles } = useQuery<BattleHistoryItem[]>({
     queryKey: ['clan', slug, 'battles'],
     queryFn:  () => api.get<{ data: BattleHistoryItem[] }>(API_ROUTES.CLANS.BATTLES(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_BATTLES),
-    enabled:  !!slug && tab === 'battles',
+                      .then(r => r.data.data),
+    enabled:  !!slug && !isMeRoute && tab === 'battles',
+    retry:    false,
     staleTime: 1000 * 60,
   })
 
-  const { data: stats, isLoading: statsLoading } = useQuery<ClanStats>({
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<ClanStats>({
     queryKey: ['clan', slug, 'stats'],
     queryFn:  () => api.get<{ data: ClanStats }>(API_ROUTES.CLANS.STATS(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_STATS),
-    enabled:  !!slug && tab === 'stats',
+                      .then(r => r.data.data),
+    enabled:  !!slug && !isMeRoute && tab === 'stats',
+    retry:    false,
     staleTime: 1000 * 60 * 5,
   })
 
@@ -672,9 +635,9 @@ export default function ClanPage() {
   }
 
   const c          = clan
-  const memberList = members ?? MOCK_MEMBERS
-  const battleList = battles ?? MOCK_BATTLES
-  const clanStats  = stats   ?? MOCK_STATS
+  const memberList = members ?? []
+  const battleList = battles ?? []
+  const clanStats  = stats ?? null
 
   const sortedMembers = [...memberList].sort((a, b) => b.weeklyXP - a.weeklyXP)
   const isMember = memberList.some(m => m.userId === user?._id)
@@ -874,7 +837,7 @@ export default function ClanPage() {
                     <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
                   ))}
                 </div>
-              ) : (
+              ) : memberList.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {sortedMembers.map((m, i) => (
                     <MemberCard
@@ -884,6 +847,12 @@ export default function ClanPage() {
                       onChallenge={userId => navigate(`/competition/new?opponent=${userId}`)}
                     />
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">👥</div>
+                  <p className="text-[#9CA3AF] text-sm">Hələ üzv məlumatı yoxdur.</p>
+                  <button onClick={() => refetchMembers()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
                 </div>
               )
             )}
@@ -896,7 +865,7 @@ export default function ClanPage() {
                     <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
                   ))}
                 </div>
-              ) : (
+              ) : battleList.length > 0 ? (
                 <div>
                   {/* Bar chart */}
                   <div
@@ -970,6 +939,12 @@ export default function ClanPage() {
                     })}
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">⚔️</div>
+                  <p className="text-[#9CA3AF] text-sm">Hələ döyüş tarixçəsi yoxdur.</p>
+                  <button onClick={() => refetchBattles()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
+                </div>
               )
             )}
 
@@ -981,7 +956,7 @@ export default function ClanPage() {
                     <div key={i} className="h-48 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
                   ))}
                 </div>
-              ) : (
+              ) : clanStats ? (
                 <div className="space-y-4">
                   {/* Line chart */}
                   <div
@@ -1059,6 +1034,12 @@ export default function ClanPage() {
                       ))}
                     </div>
                   </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">📊</div>
+                  <p className="text-[#9CA3AF] text-sm">Hələ statistika yoxdur.</p>
+                  <button onClick={() => refetchStats()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
                 </div>
               )
             )}
