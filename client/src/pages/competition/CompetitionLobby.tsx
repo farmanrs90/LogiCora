@@ -13,23 +13,6 @@ import { APP_ROUTES, API_ROUTES } from '../../constants'
 import type { RootState } from '../../app/store'
 import type { CompetitionInfo, Participant } from '../../types'
 
-// ── Mock data ─────────────────────────────────────────────────────────────
-
-const MOCK: CompetitionInfo = {
-  _id: 'mock-comp-1',
-  title: 'Riyaziyyat Müsabiqəsi',
-  subject: 'Riyaziyyat',
-  pin: '4829',
-  status: 'waiting',
-  organizerId: 'teacher-1',
-  participants: [
-    { userId: 'u1', name: 'Aytən M.', avatarColor: '#9333EA', score: 0, rank: 1, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-    { userId: 'u2', name: 'Kənan H.', avatarColor: '#3B82F6', score: 0, rank: 2, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-    { userId: 'u3', name: 'Nigar Ə.', avatarColor: '#06B6D4', score: 0, rank: 3, correctCount: 0, wrongCount: 0, avgResponseTime: 0 },
-  ],
-  questionCount: 10,
-  isWeeklyMystery: false,
-}
 // ── Backend → frontend map (REST cavabını CompetitionInfo formatına çevir) ──
 interface RawParticipant {
   studentId?: { _id: string; userId?: { _id: string; name: string; surname?: string } }
@@ -159,21 +142,15 @@ export default function CompetitionLobby() {
   const user = authUser ?? ctxUser
 
   // Fetch competition info
-  const { data: comp, isLoading } = useQuery<CompetitionInfo>({
+  const { data: comp, isLoading, isError, refetch } = useQuery<CompetitionInfo>({
     queryKey: ['competition', id],
     queryFn: () => api.get<{ data: RawCompetition }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
-      .then(r => mapCompetition(r.data.data))
-      .catch(() => MOCK),
+      .then(r => mapCompetition(r.data.data)),
     enabled: !!id,
     staleTime: 1000 * 30,
   })
 
-  const competition = comp ?? MOCK
-  const isOrganizer = competition.organizerId === user?._id
-  const maxSlots = 20
-  const emptySlots = Math.max(0, maxSlots - competition.participants.length)
-
-  const [participants, setParticipants] = useState<Participant[]>(competition.participants)
+  const [participants, setParticipants] = useState<Participant[]>(comp?.participants ?? [])
   const [countdown, setCountdown] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -227,7 +204,8 @@ export default function CompetitionLobby() {
   }, [countdown, id, navigate])
 
   function handleCopyPin() {
-    navigator.clipboard.writeText(competition.pin).then(() => {
+    if (!comp) return
+    navigator.clipboard.writeText(comp.pin).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }).catch(() => toast.error('Kopyalanmadı'))
@@ -254,6 +232,39 @@ export default function CompetitionLobby() {
       </div>
     )
   }
+
+  // Backend/şəbəkə xətası: fake lobby göstərmirik — istifadəçiyə real xəta vəziyyəti bildirilir.
+  if (isError || !comp) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-white font-bold text-2xl mb-2">Yarış məlumatları yüklənmədi</h1>
+          <p className="text-[#9CA3AF] text-sm mb-6">Bağlantını yoxlayıb yenidən cəhd edin.</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => navigate('/competition')}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#9CA3AF] border border-[rgba(255,255,255,0.12)] hover:text-white transition-colors"
+            >
+              ← Yarışlara qayıt
+            </button>
+            <button
+              onClick={() => refetch()}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+              style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+            >
+              Yenidən yoxla
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const competition = comp
+  const isOrganizer = competition.organizerId === user?._id
+  const maxSlots = 20
+  const emptySlots = Math.max(0, maxSlots - competition.participants.length)
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col">

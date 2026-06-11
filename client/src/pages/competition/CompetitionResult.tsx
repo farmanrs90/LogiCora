@@ -9,22 +9,6 @@ import { APP_ROUTES, API_ROUTES } from '../../constants'
 import type { RootState }         from '../../app/store'
 import type { CompetitionResults, Participant } from '../../types'
 
-// ── Mock results ──────────────────────────────────────────────────────────
-
-const MOCK_RESULTS: CompetitionResults = {
-  competitionId: 'mock-comp-1',
-  title:         'Riyaziyyat Müsabiqəsi',
-  subject:       'Riyaziyyat',
-  participants: [
-    { userId: 'u1', name: 'Aytən M.',  avatarColor: '#9333EA', score: 850, rank: 1, correctCount: 9, wrongCount: 1, avgResponseTime: 3.2 },
-    { userId: 'u2', name: 'Kənan H.',  avatarColor: '#3B82F6', score: 720, rank: 2, correctCount: 8, wrongCount: 2, avgResponseTime: 4.1 },
-    { userId: 'u3', name: 'Nigar Ə.',  avatarColor: '#06B6D4', score: 650, rank: 3, correctCount: 7, wrongCount: 3, avgResponseTime: 5.0 },
-    { userId: 'u4', name: 'Siz',        avatarColor: '#58CC02', score: 580, rank: 4, correctCount: 6, wrongCount: 4, avgResponseTime: 5.5 },
-  ],
-  myResult: { rank: 4, score: 580, xpEarned: 120, correctCount: 6, wrongCount: 4, avgResponseTime: 5.5 },
-  isClanBattle: false,
-}
-
 // ── Confetti ──────────────────────────────────────────────────────────────
 
 function ConfettiPiece({ i }: { i: number }) {
@@ -152,16 +136,14 @@ export default function CompetitionResult() {
   const navigate   = useNavigate()
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
 
-  const { data, isLoading } = useQuery<CompetitionResults>({
+  const { data, isLoading, isError, refetch } = useQuery<CompetitionResults>({
     queryKey: ['competition', id, 'results'],
     queryFn:  () => api.get<{ data: CompetitionResults }>(API_ROUTES.COMPETITIONS.RESULTS(id!))
-                       .then(r => r.data.data)
-                       .catch(() => MOCK_RESULTS),
+                       .then(r => r.data.data),
     enabled:  !!id,
     staleTime: 1000 * 60 * 5,
   })
 
-  const results = data ?? MOCK_RESULTS
   const [showConfetti, setShowConfetti] = useState(true)
 
   useEffect(() => {
@@ -178,6 +160,56 @@ export default function CompetitionResult() {
           className="w-12 h-12 rounded-full border-4 border-t-transparent"
           style={{ borderColor: `${avatarColor} ${avatarColor}30 ${avatarColor}30 ${avatarColor}30` }}
         />
+      </div>
+    )
+  }
+
+  // Backend/şəbəkə xətası: fake nəticə göstərmirik — istifadəçiyə real xəta vəziyyəti bildirilir.
+  if (isError || !data) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-white font-bold text-2xl mb-2">Nəticələr yüklənmədi</h1>
+          <p className="text-[#9CA3AF] text-sm mb-6">Bağlantını yoxlayıb yenidən cəhd edin.</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#9CA3AF] border border-[rgba(255,255,255,0.08)] hover:text-white transition-colors"
+            >
+              Dashboard-a qayıt
+            </button>
+            <button
+              onClick={() => refetch()}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+              style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+            >
+              Yenidən yoxla
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const results = data
+
+  // Backend 200, amma iştirakçı/nəticə yoxdursa — empty state (fake nəticə yox).
+  if (!results.participants || results.participants.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">🏁</div>
+          <h1 className="text-white font-bold text-2xl mb-2">Hələ nəticə yoxdur</h1>
+          <p className="text-[#9CA3AF] text-sm mb-6">Bu yarış üçün nəticə tapılmadı.</p>
+          <button
+            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+          >
+            Dashboard-a qayıt
+          </button>
+        </div>
       </div>
     )
   }
