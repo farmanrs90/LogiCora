@@ -70,15 +70,6 @@ const MOCK_TEACHERS: FeaturedTeacher[] = [
   { _id: 't4', name: 'Nigar',  surname: 'Sultanova', slug: 'nigar-sultanova', avatarColor: '#F97316', specialty: 'Fizika',   rating: 4.6, totalStudents: 190, isVerified: true,  isFounding: false, isFeatured: false },
 ]
 
-const MOCK_COURSES: CourseCard[] = [
-  { _id: 'c1', title: 'Cəbr: Sıfırdan Ali Riyaziyyata', description: 'Cəbrin bütün bölmələrini addım-addım öyrənin. Olimpiad tapşırıqları ilə real praktika.', thumbnailUrl: null, teacherId: 't1', teacherName: 'Əli Həsənov', teacherAvatar: '#9333EA', teacherVerified: true, price: 0, discountPrice: null, category: 'Riyaziyyat', level: 'beginner', ageGroup: ['9-11', '12-14'], rating: 4.9, ratingCount: 124, totalEnrolled: 340, isFeatured: true, language: 'az', totalDuration: 3600, slug: 'cebr-sifirdan' },
-  { _id: 'c2', title: 'İngilis dili — A1-dən B2-yə', description: '6 aylıq intensiv kurs. IELTS hazırlığı daxildir.', thumbnailUrl: null, teacherId: 't2', teacherName: 'Günel Muradova', teacherAvatar: '#3B82F6', teacherVerified: true, price: 49, discountPrice: 29, category: 'İngilis dili', level: 'beginner', ageGroup: ['12-14', '15-17'], rating: 4.8, ratingCount: 89, totalEnrolled: 220, isFeatured: true, language: 'az', totalDuration: 7200, slug: 'ingilis-a1-b2' },
-  { _id: 'c3', title: 'Python ilə Proqramlaşdırma', description: 'Sıfırdan başlayaraq layihə inkişaf etdir. AI, web, data science.', thumbnailUrl: null, teacherId: 't3', teacherName: 'Rəşad Əliyev', teacherAvatar: '#22C55E', teacherVerified: true, price: 79, discountPrice: null, category: 'Proqramlaşdırma', level: 'beginner', ageGroup: ['15-17', '18-22'], rating: 4.7, ratingCount: 67, totalEnrolled: 180, isFeatured: false, language: 'az', totalDuration: 5400, slug: 'python-baslangic' },
-  { _id: 'c4', title: 'Kvant Fizikası — Əsaslar', description: 'Dalğa mexanikası, atomlar, nüvə fizikası. Olimpiad səviyyəsi.', thumbnailUrl: null, teacherId: 't4', teacherName: 'Nigar Sultanova', teacherAvatar: '#F97316', teacherVerified: true, price: 35, discountPrice: 25, category: 'Fizika', level: 'advanced', ageGroup: ['15-17', '18-22'], rating: 4.6, ratingCount: 41, totalEnrolled: 95, isFeatured: false, language: 'az', totalDuration: 4800, slug: 'kvant-fizika' },
-  { _id: 'c5', title: 'Uşaqlar üçün Şahmat', description: 'Şahmat dünyasına giriş. Taktika, strategiya, tur oyunları.', thumbnailUrl: null, teacherId: 't1', teacherName: 'Əli Həsənov', teacherAvatar: '#9333EA', teacherVerified: true, price: 0, discountPrice: null, category: 'Şahmat', level: 'beginner', ageGroup: ['6-8', '9-11'], rating: 4.9, ratingCount: 203, totalEnrolled: 510, isFeatured: true, language: 'az', totalDuration: 2700, slug: 'usaqlar-satranc' },
-  { _id: 'c6', title: 'Orqanik Kimya Başlanğıc', description: 'Karbon birləşmələri, reaksiya mexanizmləri, laboratoriya.', thumbnailUrl: null, teacherId: 't3', teacherName: 'Rəşad Əliyev', teacherAvatar: '#22C55E', teacherVerified: true, price: 45, discountPrice: null, category: 'Kimya', level: 'intermediate', ageGroup: ['15-17'], rating: 4.5, ratingCount: 28, totalEnrolled: 62, isFeatured: false, language: 'az', totalDuration: 3900, slug: 'organik-kimya' },
-]
-
 const CATEGORIES = [
   'Riyaziyyat', 'Fizika', 'Kimya', 'Biologiya', 'Tarix', 'Coğrafiya',
   'İngilis dili', 'Proqramlaşdırma', 'Şahmat', 'Musiqi', 'İncəsənət',
@@ -490,25 +481,14 @@ export default function CourseList() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ['courses', debouncedSearch, filters],
     queryFn: ({ pageParam }: { pageParam: number }) =>
       api.get<{ data: unknown }>(API_ROUTES.COURSES.LIST, {
         params: { page: pageParam, limit: 12, search: debouncedSearch, ...filters },
-      }).then(r => normalizeCoursePage(r.data.data))
-        .catch((): CoursePage => ({
-          courses: MOCK_COURSES.filter(c => {
-            if (debouncedSearch && !c.title.toLowerCase().includes(debouncedSearch.toLowerCase()) && !c.category.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
-            if (filters.category && c.category !== filters.category) return false
-            if (filters.level && c.level !== filters.level) return false
-            if (filters.price === 'free' && c.price !== 0) return false
-            if (filters.price === 'paid' && c.price === 0) return false
-            if (filters.rating && c.rating < Number(filters.rating)) return false
-            return true
-          }),
-          nextPage: null,
-          total: MOCK_COURSES.length,
-        })),
+      }).then(r => normalizeCoursePage(r.data.data)),
     initialPageParam: 1,
     getNextPageParam: (lastPage: CoursePage) => lastPage.nextPage ?? undefined,
   })
@@ -572,7 +552,7 @@ export default function CourseList() {
             🎓 Kurs Marketplace
           </motion.h1>
           <p className="text-[#9CA3AF] text-sm mb-6">
-            {data?.pages[0]?.total ?? MOCK_COURSES.length} kurs mövcuddur
+            {data?.pages[0]?.total ?? 0} kurs mövcuddur
           </p>
 
           {/* Search */}
@@ -671,18 +651,39 @@ export default function CourseList() {
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => <CourseCardSkeleton key={i} />)}
               </div>
-            ) : allCourses.length === 0 ? (
+            ) : isError ? (
               <div className="text-center py-20">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-white font-bold text-xl mb-2">Kurs tapılmadı</h3>
-                <p className="text-[#9CA3AF] text-sm">Axtarış sözünü dəyişin və ya filterləri sıfırlayın.</p>
+                <div className="text-6xl mb-4">⚠️</div>
+                <h3 className="text-white font-bold text-xl mb-2">Kurslar yüklənmədi</h3>
+                <p className="text-[#9CA3AF] text-sm">Zəhmət olmasa yenidən cəhd edin.</p>
                 <button
-                  onClick={() => { setSearch(''); setFilters(DEFAULT_FILTERS) }}
+                  onClick={() => refetch()}
                   className="mt-4 px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
                   style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
                 >
-                  Sıfırla
+                  Yenidən yoxla
                 </button>
+              </div>
+            ) : allCourses.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-white font-bold text-xl mb-2">
+                  {(debouncedSearch || activeFilterCount > 0) ? 'Kurs tapılmadı' : 'Hazırda uyğun kurs tapılmadı'}
+                </h3>
+                <p className="text-[#9CA3AF] text-sm">
+                  {(debouncedSearch || activeFilterCount > 0)
+                    ? 'Axtarış sözünü dəyişin və ya filterləri sıfırlayın.'
+                    : 'Yeni kurslar əlavə olunduqca burada görünəcək.'}
+                </p>
+                {(debouncedSearch || activeFilterCount > 0) && (
+                  <button
+                    onClick={() => { setSearch(''); setFilters(DEFAULT_FILTERS) }}
+                    className="mt-4 px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
+                    style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+                  >
+                    Sıfırla
+                  </button>
+                )}
               </div>
             ) : (
               <>

@@ -70,82 +70,6 @@ interface CourseDetailData {
   certificate?: { url: string; issuedAt: string }
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK_COURSE: CourseDetailData = {
-  id: '1',
-  title: 'Python ilə Tam Proqramlaşdırma Kursu',
-  description: 'Sıfırdan pro səviyyəyə Python öyrənin. Real layihələr, canlı tapşırıqlar.',
-  longDescription: 'Bu kurs sizə Python proqramlaşdırma dilinin əsaslarından başlayaraq irəliləmiş mövzulara qədər tam bilik verəcəkdir. Kurs boyunca 50-dən çox real layihə üzərində işləyəcəksiniz. Hər dərs video + interaktiv quiz ilə tamamlanır.',
-  thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800',
-  previewVideoUrl: undefined,
-  price: 120,
-  discountedPrice: 79,
-  isFree: false,
-  rating: 4.8,
-  reviewCount: 342,
-  studentCount: 2840,
-  duration: 2400,
-  level: 'başlanğıc',
-  language: 'Azərbaycan',
-  updatedAt: '2026-04-15',
-  tags: ['Python', 'Proqramlaşdırma', 'Data Science', 'Backend'],
-  whatYoullLearn: [
-    'Python sintaksisini tam mənimsəmək',
-    'OOP (Obyekt-yönümlü proqramlaşdırma)',
-    'Fayl əməliyyatları və API inteqrasiyası',
-    'Flask ilə web tətbiqləri qurmaq',
-    'Data analizi üçün Pandas / NumPy',
-    'Real dünya layihələri hazırlamaq',
-  ],
-  requirements: [
-    'Kompüter (Windows / Mac / Linux)',
-    'İnternet bağlantısı',
-    'Proqramlaşdırma biliyinə ehtiyac yoxdur',
-  ],
-  sections: [
-    {
-      id: 's1', title: 'Giriş və Quraşdırma', lessons: [
-        { id: 'l1', title: 'Kursa xoş gəldiniz', duration: 5, isFree: true, isCompleted: true, order: 1 },
-        { id: 'l2', title: 'Python-u quraşdırın', duration: 8, isFree: true, isCompleted: true, order: 2 },
-        { id: 'l3', title: 'İlk proqramınız: Hello World', duration: 12, isFree: false, isCompleted: false, order: 3 },
-      ]
-    },
-    {
-      id: 's2', title: 'Dəyişənlər və Tipləri', lessons: [
-        { id: 'l4', title: 'Dəyişənlər nədir?', duration: 15, isFree: false, isCompleted: false, order: 4 },
-        { id: 'l5', title: 'String, int, float, bool', duration: 18, isFree: false, isCompleted: false, order: 5 },
-        { id: 'l6', title: 'Tip çevirmə (type casting)', duration: 10, isFree: false, isCompleted: false, order: 6 },
-      ]
-    },
-    {
-      id: 's3', title: 'Şərt operatorları və Dövrlər', lessons: [
-        { id: 'l7', title: 'if / elif / else', duration: 20, isFree: false, isCompleted: false, order: 7 },
-        { id: 'l8', title: 'for dövrü', duration: 22, isFree: false, isCompleted: false, order: 8 },
-        { id: 'l9', title: 'while dövrü', duration: 18, isFree: false, isCompleted: false, order: 9 },
-      ]
-    },
-  ],
-  reviews: [
-    { id: 'r1', user: { name: 'Aynur M.', avatar: undefined }, rating: 5, comment: 'Möhtəşəm kurs! Hər şey çox aydın izah olunur.', createdAt: '2026-03-10' },
-    { id: 'r2', user: { name: 'Tural Q.', avatar: undefined }, rating: 5, comment: 'Python-u bu kursdan öyrəndim. İndi işləyirəm!', createdAt: '2026-02-28' },
-    { id: 'r3', user: { name: 'Leyla H.', avatar: undefined }, rating: 4, comment: 'Çox yaxşı kurs. Bəzi dərslər daha ətraflı ola bilərdi.', createdAt: '2026-02-15' },
-  ],
-  teacher: {
-    id: 't1',
-    name: 'Rəşad Əliyev',
-    slug: 'rashad-aliyev',
-    avatar: undefined,
-    isVerified: true,
-    totalStudents: 12400,
-    rating: 4.9,
-    bio: '10 il təcrübəli proqramçı. Google, Microsoft sertifikatları var. 5000+ tələbəyə Python öyrədib.',
-    courseCount: 8,
-  },
-  isEnrolled: false,
-  enrollmentProgress: 0,
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDuration(mins: number): string {
@@ -439,12 +363,11 @@ export default function CourseDetail() {
   }, [])
 
   // ── Data ───────────────────────────────────────────────────────────────────
-  const { data: course, isLoading } = useQuery({
+  const { data: course, isLoading, isError, refetch } = useQuery({
     queryKey: ['course', id],
     queryFn: () =>
       api.get<CourseDetailData>(API_ROUTES.COURSES.BY_ID(id!))
-        .then(r => r.data)
-        .catch(() => MOCK_COURSE),
+        .then(r => r.data),
     enabled: !!id,
   })
 
@@ -494,7 +417,35 @@ export default function CourseDetail() {
     )
   }
 
-  if (!course) return null
+  // ── Error / not-found state ──────────────────────────────────────────────────
+  // Backend 404 və ya xəta verdikdə fake kurs göstərmirik — istifadəçiyə real vəziyyəti bildiririk.
+  if (isError || !course) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">📕</div>
+          <h1 className="text-2xl font-bold mb-2">Kurs tapılmadı və ya yüklənmədi</h1>
+          <p className="text-white/50 text-sm mb-6">
+            Axtardığınız kurs mövcud deyil və ya hazırda yüklənə bilmədi.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              to={APP_ROUTES.COURSES}
+              className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors"
+            >
+              ← Kurslara qayıt
+            </Link>
+            <button
+              onClick={() => refetch()}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all"
+            >
+              Yenidən yoxla
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const visibleLearn = showAllLearn ? course.whatYoullLearn : course.whatYoullLearn.slice(0, 6)
   const totalLessons = course.sections.reduce((s, sec) => s + sec.lessons.length, 0)
