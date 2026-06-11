@@ -85,14 +85,6 @@ interface ClanSearchResult {
   memberCount: number
 }
 
-// ── Mock data ──────────────────────────────────────────────────────────────
-
-const MOCK_SEARCH: ClanSearchResult[] = [
-  { _id: 'c2', name: 'Kartallar', slug: 'kartallar', schoolName: 'Məktəb #12', city: 'Bakı',    color: '#F97316', totalXP: 45000, rank: 5,  memberCount: 10 },
-  { _id: 'c3', name: 'Aslanlar',  slug: 'aslanlar',  schoolName: 'Məktəb #17', city: 'Gəncə',  color: '#EAB308', totalXP: 51000, rank: 2,  memberCount: 12 },
-  { _id: 'c4', name: 'Qurtlar',   slug: 'qurtlar',   schoolName: 'Məktəb #9',  city: 'Sumqayıt', color: '#9CA3AF', totalXP: 39000, rank: 8, memberCount: 9  },
-]
-
 const PIE_COLORS = ['#9333EA', '#3B82F6', '#06B6D4', '#F97316', '#6B7280']
 
 // ── Animated particles (Framer Motion only) ────────────────────────────────
@@ -553,11 +545,26 @@ export default function ClanPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: searchResults, isFetching: searchLoading } = useQuery<ClanSearchResult[]>({
+  // Klan axtarışı — real leaderboard siyahısını çəkir, query ilə client-side filter edir (mock yox).
+  const { data: searchResults, isFetching: searchLoading, isError: searchError, refetch: refetchSearch } = useQuery<ClanSearchResult[]>({
     queryKey: ['clan-search', searchQuery],
-    queryFn:  () => api.get<{ data: ClanSearchResult[] }>(API_ROUTES.CLANS.SEARCH, { params: { search: searchQuery } })
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_SEARCH.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))),
+    queryFn:  () => api.get<{ data: Array<{ _id: string; name: string; slug: string; schoolName?: string; totalXP?: number; members?: unknown[] }> }>(API_ROUTES.CLANS.LEADERBOARD)
+                      .then(r => {
+                        const q = searchQuery.trim().toLowerCase()
+                        return (r.data.data ?? [])
+                          .map((cl, i): ClanSearchResult => ({
+                            _id:         cl._id,
+                            name:        cl.name,
+                            slug:        cl.slug,
+                            schoolName:  cl.schoolName ?? '',
+                            city:        '',
+                            color:       PIE_COLORS[i % PIE_COLORS.length],
+                            totalXP:     cl.totalXP ?? 0,
+                            rank:        i + 1,
+                            memberCount: Array.isArray(cl.members) ? cl.members.length : 0,
+                          }))
+                          .filter(cl => cl.name.toLowerCase().includes(q) && cl._id !== clan?._id)
+                      }),
     enabled:  tab === 'challenge' && searchQuery.trim().length >= 2,
     staleTime: 1000 * 30,
   })
@@ -1128,10 +1135,18 @@ export default function ClanPage() {
                   </div>
                 )}
 
-                {searchQuery.length >= 2 && !searchLoading && searchResults?.length === 0 && (
+                {searchQuery.length >= 2 && !searchLoading && searchError && (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-3">⚠️</div>
+                    <p className="text-[#9CA3AF] text-sm">Klan siyahısı yüklənmədi.</p>
+                    <button onClick={() => refetchSearch()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
+                  </div>
+                )}
+
+                {searchQuery.length >= 2 && !searchLoading && !searchError && searchResults?.length === 0 && (
                   <div className="text-center py-10">
                     <div className="text-4xl mb-3">🤷</div>
-                    <p className="text-[#9CA3AF] text-sm">Heç bir klan tapılmadı.</p>
+                    <p className="text-[#9CA3AF] text-sm">Uyğun klan tapılmadı.</p>
                   </div>
                 )}
 
