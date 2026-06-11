@@ -1,16 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
 
 import { useInterval } from '../../hooks/useInterval'
 import { questionService } from '../../services/questionService'
+import api from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import type { RootState } from '../../app/store'
-import type { Question, AgeGroup } from '../../types'
-import { APP_ROUTES } from '../../constants'
+import type { Question, AgeGroup, GamificationProfile } from '../../types'
+import { APP_ROUTES, API_ROUTES } from '../../constants'
 
 import FormatA from '../../features/quiz/formats/FormatA'
 import FormatB from '../../features/quiz/formats/FormatB'
@@ -135,7 +136,7 @@ function MascotPopup({ correct, xp }: { correct: boolean; xp: number }) {
 
 // ── No Hearts overlay ─────────────────────────────────────────────────────
 
-function NoHeartsScreen({ gems, onExit }: { gems: number; onExit: () => void }) {
+function NoHeartsScreen({ gems, onExit, onBuyFreeze, isBuying }: { gems: number; onExit: () => void; onBuyFreeze: () => void; isBuying: boolean }) {
   const navigate = useNavigate()
   return (
     <motion.div
@@ -159,11 +160,12 @@ function NoHeartsScreen({ gems, onExit }: { gems: number; onExit: () => void }) 
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {gems >= 50 && (
           <button
-            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm"
+            disabled={isBuying}
+            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', boxShadow: '0 4px 16px rgba(6,182,212,0.4)' }}
-            onClick={() => toast('Streak Freeze tezliklə!')}
+            onClick={onBuyFreeze}
           >
-            💎 50 gem ilə Streak Freeze al
+            {isBuying ? 'Alınır...' : '💎 50 gem ilə Streak Freeze al'}
           </button>
         )}
         <button
@@ -319,6 +321,25 @@ export default function DailyQuiz() {
   const mutation = useMutation({
     mutationFn: ({ questionId, answer, responseTime }: { questionId: string; answer: string; responseTime: number }) =>
       questionService.submitAnswer(questionId, answer, responseTime),
+  })
+
+  // Gamification (gems balansı — Streak Freeze alışı üçün)
+  const queryClient = useQueryClient()
+  const { data: gamification } = useQuery<GamificationProfile>({
+    queryKey: ['gamification', 'me'],
+    queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
+    enabled: user?.role === 'student',
+    staleTime: 1000 * 60,
+  })
+
+  // Streak Freeze — real backend alışı (50 gem). Uğur yalnız 200-dən sonra; balans yenilənir.
+  const freezeMutation = useMutation({
+    mutationFn: () => api.post<{ message?: string }>('/streak-freeze/buy').then(r => r.data),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Streak Freeze alındı.')
+      queryClient.invalidateQueries({ queryKey: ['gamification', 'me'] })
+    },
+    onError: () => toast.error('Streak Freeze alınmadı. Balansı və bağlantını yoxlayın.'),
   })
 
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -504,7 +525,9 @@ export default function DailyQuiz() {
   if (phase === 'no_hearts') {
     return (
       <NoHeartsScreen
-        gems={0}
+        gems={gamification?.gems ?? 0}
+        onBuyFreeze={() => freezeMutation.mutate()}
+        isBuying={freezeMutation.isPending}
         onExit={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
       />
     )
