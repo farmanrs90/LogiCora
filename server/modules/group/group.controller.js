@@ -2,7 +2,7 @@ const groupService = require('./group.service');
 
 const createGroup = async (req, res, next) => {
   try {
-    const data = await groupService.createGroup(req.body);
+    const data = await groupService.createGroup(req.user, req.body);
     return res.status(201).json(data);
   } catch (error) {
     return next(error);
@@ -11,7 +11,7 @@ const createGroup = async (req, res, next) => {
 
 const getAllGroups = async (req, res, next) => {
   try {
-    const data = await groupService.getAllGroups();
+    const data = await groupService.getAllGroups(req.user);
     return res.status(200).json(data);
   } catch (error) {
     return next(error);
@@ -21,7 +21,7 @@ const getAllGroups = async (req, res, next) => {
 const getGroupById = async (req, res, next) => {
   try {
     const { groupId } = req.params;
-    const data = await groupService.getGroupById(groupId);
+    const data = await groupService.getGroupById(req.user, groupId);
     return res.status(200).json(data);
   } catch (error) {
     return next(error);
@@ -52,7 +52,7 @@ const addStudent = async (req, res, next) => {
   try {
     const { groupId } = req.params;
     const { studentId } = req.body;
-    const data = await groupService.addStudentToGroup(groupId, studentId);
+    const data = await groupService.addStudentToGroup(req.user, groupId, studentId);
     return res.status(200).json(data);
   } catch (error) {
     return next(error);
@@ -62,7 +62,27 @@ const addStudent = async (req, res, next) => {
 const removeStudent = async (req, res, next) => {
   try {
     const { groupId, studentId } = req.params;
-    const data = await groupService.removeStudentFromGroup(groupId, studentId);
+    const data = await groupService.removeStudentFromGroup(req.user, groupId, studentId);
+    return res.status(200).json(data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const inviteStudent = async (req, res, next) => {
+  try {
+    const { groupId } = req.params;
+    const data = await groupService.inviteStudentByEmail(req.user, groupId, req.body.email);
+    return res.status(200).json(data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const saveAttendance = async (req, res, next) => {
+  try {
+    const { groupId } = req.params;
+    const data = await groupService.saveGroupAttendance(req.user, groupId, req.body);
     return res.status(200).json(data);
   } catch (error) {
     return next(error);
@@ -77,4 +97,6 @@ module.exports = {
   deleteGroup,
   addStudent,
   removeStudent,
+  inviteStudent,
+  saveAttendance,
 };
