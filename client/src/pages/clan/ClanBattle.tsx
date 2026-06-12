@@ -48,34 +48,6 @@ interface BattleMember {
   isActive:    boolean
 }
 
-// ── Mock ───────────────────────────────────────────────────────────────────
-
-const MOCK_BATTLE: ClanBattleData = {
-  _id: 'battle-1',
-  ourClan:   { _id: 'c1', name: 'Şimşəklər', slug: 'simsekler', color: '#9333EA', emoji: '⚡' },
-  theirClan: { _id: 'c2', name: 'Aslanlar',  slug: 'aslanlar',  color: '#EAB308', emoji: '🦁' },
-  ourScore:   740,
-  theirScore: 680,
-  status:    'ongoing',
-  subject:   'Riyaziyyat',
-  format:    'speed',
-  winner:    null,
-  ourMembers: [
-    { userId: 'u1', name: 'Aytən M.',  avatarColor: '#9333EA', score: 220, isActive: true  },
-    { userId: 'u2', name: 'Kənan H.',  avatarColor: '#3B82F6', score: 185, isActive: true  },
-    { userId: 'u3', name: 'Nigar Ə.',  avatarColor: '#06B6D4', score: 175, isActive: false },
-    { userId: 'u4', name: 'Orxan T.',  avatarColor: '#F97316', score: 160, isActive: true  },
-  ],
-  theirMembers: [
-    { userId: 'u5', name: 'Leyla K.',  avatarColor: '#EC4899', score: 200, isActive: true  },
-    { userId: 'u6', name: 'Rauf N.',   avatarColor: '#22C55E', score: 190, isActive: true  },
-    { userId: 'u7', name: 'Günel A.',  avatarColor: '#EAB308', score: 155, isActive: false },
-    { userId: 'u8', name: 'Fərid M.',  avatarColor: '#8B5CF6', score: 135, isActive: true  },
-  ],
-  startedAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-  endedAt:   null,
-}
-
 // ── Animated score ─────────────────────────────────────────────────────────
 
 function AnimatedScore({ value, color }: { value: number; color: string }) {
@@ -292,21 +264,20 @@ export default function ClanBattle() {
   const { socketRef, isConnected } = useSocket(battleId ?? null)
 
   // Fetch initial state
-  const { data: battle, isLoading } = useQuery<ClanBattleData>({
+  const { data: battle, isLoading, isError, refetch } = useQuery<ClanBattleData>({
     queryKey: ['clan-battle', battleId],
     queryFn:  () => api.get<{ data: ClanBattleData }>(API_ROUTES.CLANS.BATTLE(battleId!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_BATTLE),
+                      .then(r => r.data.data),
     enabled:  !!battleId,
     staleTime: 0,
   })
 
   useEffect(() => {
     if (!battle) return
-    setOurScore(battle.ourScore)
-    setTheirScore(battle.theirScore)
-    setOurMembers(battle.ourMembers)
-    setTheirMembers(battle.theirMembers)
+    setOurScore(battle.ourScore ?? 0)
+    setTheirScore(battle.theirScore ?? 0)
+    setOurMembers(battle.ourMembers ?? [])
+    setTheirMembers(battle.theirMembers ?? [])
     setStatus(battle.status)
     setWinner(battle.winner)
   }, [battle])
@@ -366,7 +337,50 @@ export default function ClanBattle() {
     )
   }
 
-  const b        = battle ?? MOCK_BATTLE
+  // ── Error state — backend xəta/404; mock data GÖSTƏRİLMİR ──────────────
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-6 text-center">
+        <div className="text-6xl">⚔️</div>
+        <p className="text-white font-bold text-lg">Klan döyüşü yüklənmədi.</p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-3 rounded-2xl font-bold text-white"
+            style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)' }}
+          >
+            Yenidən yoxla
+          </button>
+          <button
+            onClick={() => navigate(APP_ROUTES.CLAN(slug!))}
+            className="px-5 py-3 rounded-2xl font-bold text-white"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+          >
+            Klanıma qayıt
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Empty state — backend 200 amma real battle yoxdur ─────────────────
+  if (!battle || !battle.ourClan || !battle.theirClan) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-6 text-center">
+        <div className="text-6xl">🏳️</div>
+        <p className="text-white font-bold text-lg">Bu döyüş mövcud deyil və ya artıq bitib.</p>
+        <button
+          onClick={() => navigate(APP_ROUTES.CLAN(slug!))}
+          className="px-5 py-3 rounded-2xl font-bold text-white"
+          style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)' }}
+        >
+          Klanıma qayıt
+        </button>
+      </div>
+    )
+  }
+
+  const b        = battle
   const maxScore = Math.max(ourScore, theirScore, 1)
   const mins     = Math.floor(elapsed / 60)
   const secs     = elapsed % 60
