@@ -70,43 +70,20 @@ interface OnlineStudent {
   lastSeen:   string
 }
 
-// ── Mock data ──────────────────────────────────────────────────────────────
-
-const MOCK_CLASSROOM: ClassroomData = {
-  _id: 'cr-1', title: 'Riyaziyyat — Cəbr', subject: 'Riyaziyyat',
-  teacherId: 'teacher-1', teacherName: 'Əli müəllim', teacherAvatar: '#3B82F6',
-  classGroup: '9-A', startedAt: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
-  status: 'active', isRecording: false,
-  pin: '4821', qrToken: 'tok_abc123',
-  qrExpiresAt: new Date(Date.now() + 1000 * 60 * 5).toISOString(),
-}
-
-const MOCK_ATTENDANCE: AttendanceRecord[] = [
-  { studentId: 'u1', name: 'Aytən M.',  avatarColor: '#9333EA', status: 'present',  joinedAt: new Date(Date.now() - 1000*60*16).toISOString(), isDistant: false },
-  { studentId: 'u2', name: 'Kənan H.',  avatarColor: '#3B82F6', status: 'present',  joinedAt: new Date(Date.now() - 1000*60*15).toISOString(), isDistant: false },
-  { studentId: 'u3', name: 'Nigar Ə.',  avatarColor: '#06B6D4', status: 'distant',  joinedAt: new Date(Date.now() - 1000*60*14).toISOString(), isDistant: true  },
-  { studentId: 'u4', name: 'Orxan T.',  avatarColor: '#F97316', status: 'waiting',  joinedAt: null, isDistant: false },
-  { studentId: 'u5', name: 'Leyla K.',  avatarColor: '#EC4899', status: 'present',  joinedAt: new Date(Date.now() - 1000*60*12).toISOString(), isDistant: false },
-  { studentId: 'u6', name: 'Rauf N.',   avatarColor: '#22C55E', status: 'absent',   joinedAt: null, isDistant: false },
-  { studentId: 'u7', name: 'Günel A.',  avatarColor: '#EAB308', status: 'present',  joinedAt: new Date(Date.now() - 1000*60*10).toISOString(), isDistant: false },
-  { studentId: 'u8', name: 'Fərid M.',  avatarColor: '#8B5CF6', status: 'distant',  joinedAt: new Date(Date.now() - 1000*60*9).toISOString(),  isDistant: true  },
-]
-
-const MOCK_ONLINE: OnlineStudent[] = [
-  { studentId: 'u1', name: 'Aytən M.',  avatarColor: '#9333EA', handRaised: false, isDistant: false, lastSeen: new Date().toISOString() },
-  { studentId: 'u2', name: 'Kənan H.',  avatarColor: '#3B82F6', handRaised: true,  isDistant: false, lastSeen: new Date().toISOString() },
-  { studentId: 'u3', name: 'Nigar Ə.',  avatarColor: '#06B6D4', handRaised: false, isDistant: true,  lastSeen: new Date().toISOString() },
-  { studentId: 'u5', name: 'Leyla K.',  avatarColor: '#EC4899', handRaised: false, isDistant: false, lastSeen: new Date().toISOString() },
-  { studentId: 'u7', name: 'Günel A.',  avatarColor: '#EAB308', handRaised: true,  isDistant: false, lastSeen: new Date().toISOString() },
-  { studentId: 'u8', name: 'Fərid M.',  avatarColor: '#8B5CF6', handRaised: false, isDistant: true,  lastSeen: new Date().toISOString() },
-]
+// ── Constants ──────────────────────────────────────────────────────────────
 
 const QUIZ_COLORS = ['#9333EA', '#3B82F6', '#22C55E', '#F97316']
+
+// Real-time (socket) qatı hələ tam aktiv deyil — bu funksiyalar dürüst disabled state-də saxlanılır.
+const RT_INFO = 'Bu real-time funksiya aktivləşdiriləndə işləyəcək.'
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 
 function formatElapsed(startedAt: string): string {
-  const diff = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000)
+  if (!startedAt) return '0:00'
+  const t = new Date(startedAt).getTime()
+  if (Number.isNaN(t)) return '0:00'
+  const diff = Math.floor((Date.now() - t) / 1000)
   const m    = Math.floor(diff / 60)
   const s    = diff % 60
   return `${m}:${String(s).padStart(2, '0')}`
@@ -468,8 +445,8 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
   const [recording,  setRecording]  = useState(classroom.isRecording)
   const [liveQuiz,   setLiveQuiz]   = useState<LiveQuiz | null>(null)
   const [livePoll,   setLivePoll]   = useState<PollData | null>(null)
-  const [onlineList, setOnlineList] = useState<OnlineStudent[]>(MOCK_ONLINE)
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>(MOCK_ATTENDANCE)
+  const [onlineList, setOnlineList] = useState<OnlineStudent[]>([])
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [elapsed,    setElapsed]    = useState('')
   const [qrCountdown, setQrCountdown] = useState(0)
 
@@ -482,7 +459,8 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
   // QR countdown — updates every second
   useEffect(() => {
     const tick = () => {
-      const diff = Math.max(0, Math.floor((new Date(classroom.qrExpiresAt).getTime() - Date.now()) / 1000))
+      const exp = new Date(classroom.qrExpiresAt).getTime()
+      const diff = Number.isNaN(exp) ? 0 : Math.max(0, Math.floor((exp - Date.now()) / 1000))
       setQrCountdown(diff)
     }
     tick()
@@ -525,23 +503,35 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
     }
   }, [isConnected, socketRef])
 
+  // Real davamiyyət — mövcud GET /classroom/:id/attendance (yalnız oxu)
+  const { data: fetchedAttendance } = useQuery({
+    queryKey: ['classroom-attendance', classroomId],
+    queryFn: () => api.get<{ data: { studentId?: string; name?: string; joinedAt?: string | null; isPresent?: boolean }[] }>(
+      API_ROUTES.CLASSROOM.ATTENDANCE(classroomId),
+    ).then(r => r.data.data),
+    enabled: !!classroomId,
+  })
+
+  useEffect(() => {
+    if (!fetchedAttendance) return
+    setAttendance(
+      fetchedAttendance.map((p, i) => ({
+        studentId:   String(p.studentId ?? i),
+        name:        p.name ?? 'Tələbə',
+        avatarColor: QUIZ_COLORS[i % QUIZ_COLORS.length],
+        status:      (p.isPresent ? 'present' : 'absent') as AttendanceRecord['status'],
+        joinedAt:    p.joinedAt ?? null,
+        isDistant:   false,
+      })),
+    )
+  }, [fetchedAttendance])
+
   // Mutations
   const endMutation = useMutation({
     mutationFn: () => api.post(`/classroom/${classroomId}/end`),
     onSuccess:  () => { toast.success('Dərs bitdi.'); queryClient.invalidateQueries({ queryKey: ['classroom', classroomId] }) },
     onError:    () => toast.error('Xəta baş verdi.'),
   })
-
-  const attendanceMutation = useMutation({
-    mutationFn: () => api.post(API_ROUTES.ATTENDANCE.SAVE, { classroomId, records: attendance }),
-    onSuccess:  () => toast.success('Davamiyyət saxlandı! ✅'),
-    onError:    () => toast.error('Saxlanmadı.'),
-  })
-
-  const markAll = () => {
-    setAttendance(prev => prev.map(a => ({ ...a, status: 'present' as const })))
-    toast.success('Hamısı iştirakçı sayıldı.')
-  }
 
   const toggleStatus = (studentId: string) => {
     setAttendance(prev => prev.map(a => {
@@ -556,7 +546,6 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
     emit('classroom:quiz', quiz)
     setLiveQuiz(quiz)
     setShowQuiz(false)
-    toast.success('Sual göndərildi! 📡')
   }
 
   const sendPoll = (p: { question: string; options: string[]; isAnon: boolean }) => {
@@ -564,15 +553,6 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
     emit('classroom:poll', poll)
     setLivePoll(poll)
     setShowPoll(false)
-    toast.success('Sorğu göndərildi! 📊')
-  }
-
-  const splitGroups = (n: number) => {
-    const shuffled = [...onlineList].sort(() => Math.random() - 0.5)
-    const groups: OnlineStudent[][] = Array.from({ length: n }, () => [])
-    shuffled.forEach((s, i) => groups[i % n].push(s))
-    toast.success(`${n} qrupa bölündü! 🎯`, { duration: 4000 })
-    return groups
   }
 
   const presentCount  = attendance.filter(a => a.status === 'present' || a.status === 'distant').length
@@ -703,12 +683,21 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                     transition={{ duration: 2, repeat: Infinity }}
                     className="rounded-2xl overflow-hidden"
                   >
-                    <QRCodeVisual token={classroom.qrToken} size={180} />
+                    {classroom.qrToken
+                      ? <QRCodeVisual token={classroom.qrToken} size={180} />
+                      : (
+                        <div
+                          className="rounded-2xl bg-white/5 text-center text-[#9CA3AF] text-xs flex items-center justify-center p-6"
+                          style={{ width: 204, height: 204 }}
+                        >
+                          QR kod dərs başladıqda yaranacaq.
+                        </div>
+                      )}
                   </motion.div>
 
                   <div className="flex items-center gap-4 mt-4">
                     <div className="text-center">
-                      <p className="text-white font-black text-xl">{classroom.pin}</p>
+                      <p className="text-white font-black text-xl">{classroom.pin ?? '—'}</p>
                       <p className="text-[#9CA3AF] text-xs">PIN kod</p>
                     </div>
                     <div className="w-px h-10 bg-white/10" />
@@ -724,9 +713,10 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                   </div>
 
                   <button
-                    onClick={markAll}
-                    className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    disabled
+                    title={RT_INFO}
+                    className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-white/40 cursor-not-allowed"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                   >
                     Hamısını İştirakçı Say
                   </button>
@@ -748,6 +738,12 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                 </div>
 
                 {/* Student list */}
+                {attendance.length === 0 && (
+                  <div className="text-center py-10">
+                    <div className="text-5xl mb-4">📋</div>
+                    <p className="text-[#9CA3AF] text-sm">Hələ iştirakçı davamiyyəti yoxdur.</p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   {attendance.map(a => (
                     <div
@@ -776,31 +772,31 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                   ))}
                 </div>
 
-                <motion.button
-                  onClick={() => attendanceMutation.mutate()}
-                  disabled={attendanceMutation.isPending}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full py-3.5 rounded-2xl font-bold text-white text-sm mt-5 disabled:opacity-60"
-                  style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+                <button
+                  disabled
+                  className="w-full py-3.5 rounded-2xl font-bold text-white/40 text-sm mt-5 cursor-not-allowed"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  {attendanceMutation.isPending ? 'Saxlanılır...' : '💾 Hesabatı Saxla'}
-                </motion.button>
+                  💾 Hesabatı Saxla
+                </button>
+                <p className="text-center text-[#9CA3AF] text-xs mt-2">
+                  Davamiyyət dərsə qoşulma məlumatları ilə formalaşacaq.
+                </p>
               </div>
             )}
 
             {/* QUIZ TAB */}
             {tab === 'quiz' && (
               <div>
-                <motion.button
-                  onClick={() => setShowQuiz(true)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full py-4 rounded-2xl font-bold text-white text-sm mb-5"
-                  style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)', boxShadow: '0 4px 20px rgba(147,51,234,0.4)' }}
+                <button
+                  disabled
+                  title={RT_INFO}
+                  className="w-full py-4 rounded-2xl font-bold text-white/40 text-sm mb-2 cursor-not-allowed"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
                   ➕ Yeni Sual Göndər
-                </motion.button>
+                </button>
+                <p className="text-center text-[#9CA3AF] text-xs mb-5">{RT_INFO}</p>
 
                 {liveQuiz ? (
                   <div
@@ -863,15 +859,15 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
             {/* POLL TAB */}
             {tab === 'poll' && (
               <div>
-                <motion.button
-                  onClick={() => setShowPoll(true)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full py-4 rounded-2xl font-bold text-white text-sm mb-5"
-                  style={{ background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', boxShadow: '0 4px 20px rgba(6,182,212,0.3)' }}
+                <button
+                  disabled
+                  title={RT_INFO}
+                  className="w-full py-4 rounded-2xl font-bold text-white/40 text-sm mb-2 cursor-not-allowed"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
                   📊 Sorğu Göndər
-                </motion.button>
+                </button>
+                <p className="text-center text-[#9CA3AF] text-xs mb-5">{RT_INFO}</p>
 
                 {livePoll ? (
                   <div
@@ -918,9 +914,10 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                     {[2, 3, 4].map(n => (
                       <button
                         key={n}
-                        onClick={() => splitGroups(n)}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-white"
-                        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                        disabled
+                        title={RT_INFO}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-white/40 cursor-not-allowed"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                       >
                         {n} qrup
                       </button>
@@ -928,52 +925,9 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {onlineList.map(s => (
-                    <motion.div
-                      key={s.studentId}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex flex-col items-center gap-2 p-3 rounded-2xl"
-                      style={{
-                        background: s.handRaised ? 'rgba(234,179,8,0.1)' : 'rgba(255,255,255,0.04)',
-                        border:     `1px solid ${s.handRaised ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.07)'}`,
-                      }}
-                    >
-                      <div className="relative">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg"
-                          style={{ backgroundColor: s.avatarColor }}
-                        >
-                          {s.name?.charAt(0) ?? '?'}
-                        </div>
-                        {s.isDistant && (
-                          <span className="absolute -bottom-1 -right-1 text-xs bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center">💻</span>
-                        )}
-                        {s.handRaised && (
-                          <motion.span
-                            className="absolute -top-2 -right-2 text-base"
-                            animate={{ y: [0, -4, 0] }}
-                            transition={{ duration: 0.8, repeat: Infinity }}
-                          >
-                            🙋
-                          </motion.span>
-                        )}
-                      </div>
-                      <p className="text-white text-xs font-bold text-center">{s.name}</p>
-                      <button
-                        onClick={() => {
-                          emit('classroom:give_floor', { studentId: s.studentId })
-                          setOnlineList(prev => prev.map(o => o.studentId === s.studentId ? { ...o, handRaised: false } : o))
-                          toast.success(`${s.name}-ə söz verildi 🎤`)
-                        }}
-                        className="w-full py-1 rounded-lg text-[10px] font-bold"
-                        style={{ background: 'rgba(255,255,255,0.07)', color: '#9CA3AF' }}
-                      >
-                        Söz ver 🎤
-                      </button>
-                    </motion.div>
-                  ))}
+                <div className="text-center py-10">
+                  <div className="text-5xl mb-4">👥</div>
+                  <p className="text-[#9CA3AF] text-sm">Real-time iştirakçı siyahısı hazırda aktiv deyil.</p>
                 </div>
               </div>
             )}
@@ -1083,7 +1037,6 @@ function StudentView({ classroom, classroomId }: { classroom: ClassroomData; cla
     if (myAnswer !== null) return
     setMyAnswer(index)
     emit('classroom:quiz_answer', { classroomId, questionId: liveQuiz?._id, answerIndex: index })
-    toast.success('Cavabın qəbul edildi ✅', { duration: 2000 })
   }
 
   const submitPollAnswer = (index: number) => {
@@ -1305,25 +1258,17 @@ function StudentView({ classroom, classroomId }: { classroom: ClassroomData; cla
 
             <p className="text-white font-bold text-lg">{user?.name} {user?.surname}</p>
 
-            {/* Hand raise */}
-            <motion.button
+            {/* Hand raise — real-time qatı aktivləşənə qədər disabled */}
+            <button
               onClick={toggleHand}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.95 }}
-              animate={handRaised ? { scale: [1, 1.06, 1] } : {}}
-              transition={handRaised ? { duration: 1.2, repeat: Infinity } : {}}
-              className="w-full py-5 rounded-2xl font-black text-white text-xl"
-              style={{
-                background: handRaised
-                  ? 'linear-gradient(135deg, #EAB308, #F97316)'
-                  : `linear-gradient(135deg, ${avatarColor}, #9333EA)`,
-                boxShadow: handRaised
-                  ? '0 6px 28px rgba(234,179,8,0.5)'
-                  : `0 6px 28px ${avatarColor}50`,
-              }}
+              disabled
+              title={RT_INFO}
+              className="w-full py-5 rounded-2xl font-black text-white/40 text-xl cursor-not-allowed"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              {handRaised ? '🙋 Gözlənilir...' : '🙋 Söz Al'}
-            </motion.button>
+              🙋 Söz Al
+            </button>
+            <p className="text-center text-[#9CA3AF] text-xs">{RT_INFO}</p>
 
             <div
               className="w-full p-4 rounded-2xl text-center"
@@ -1345,11 +1290,10 @@ export default function ClassroomRoom() {
   const { id }  = useParams<{ id: string }>()
   const user    = useSelector((s: RootState) => s.auth.user)
 
-  const { data: classroom, isLoading } = useQuery<ClassroomData>({
+  const { data: classroom, isLoading, isError, refetch } = useQuery<ClassroomData>({
     queryKey: ['classroom', id],
     queryFn:  () => api.get<{ data: ClassroomData }>(API_ROUTES.CLASSROOM.BY_ID(id!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_CLASSROOM),
+                      .then(r => r.data.data),
     enabled:  !!id,
     staleTime: 1000 * 30,
   })
@@ -1362,7 +1306,33 @@ export default function ClassroomRoom() {
     )
   }
 
-  const c = classroom ?? MOCK_CLASSROOM
+  // Backend error/404 → saxta dərs GÖSTƏRİLMİR
+  if (isError || !classroom) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-6 text-center">
+        <div className="text-6xl">🏫</div>
+        <p className="text-white font-bold text-lg">Dərs tapılmadı və ya yüklənmədi.</p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-3 rounded-2xl font-bold text-white"
+            style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)' }}
+          >
+            Yenidən yoxla
+          </button>
+          <Link
+            to="/classroom"
+            className="px-5 py-3 rounded-2xl font-bold text-white"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+          >
+            Siniflərə qayıt
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const c = classroom
 
   if (user?.role === 'teacher') {
     return <TeacherView classroom={c} classroomId={id!} />
