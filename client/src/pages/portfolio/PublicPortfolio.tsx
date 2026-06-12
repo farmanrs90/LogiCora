@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { motion, useInView } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import api from '../../lib/axios'
@@ -162,16 +162,6 @@ function setMetaTags(portfolio: PublicPortfolioData) {
 function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
   const { user, isAuthenticated } = useAuth()
 
-  const connectMutation = useMutation({
-    mutationFn: () => api.post(`/connections`, { userId: portfolio.user.id }).then(r => r.data),
-    onError: () => { /* mock */ },
-  })
-
-  const inviteMutation = useMutation({
-    mutationFn: () => api.post(API_ROUTES.INVITES.SEND, { toUserId: portfolio.user.id }).then(r => r.data),
-    onError: () => { /* mock */ },
-  })
-
   if (!isAuthenticated) {
     return (
       <div className="flex gap-3">
@@ -182,26 +172,40 @@ function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
     )
   }
 
+  const isStudent = user?.role === 'student'
+  const isTeacher = user?.role === 'teacher'
+
+  // Bu səhifədə qoşulmuş statusu yalnız backend datasından gəlir — dürüst göstərilir.
+  if (isStudent && portfolio.isConnected) {
+    return (
+      <div className="flex gap-3 flex-wrap">
+        <span className="flex items-center gap-2 px-4 py-2 border border-indigo-500/40 bg-indigo-500/10 rounded-xl text-sm font-semibold text-indigo-300">
+          ✓ Qoşuldunuz
+        </span>
+      </div>
+    )
+  }
+
+  // Connect (student) və kurs dəvəti (teacher) üçün bu kontekstdə hazır,
+  // uğurla işləyə bilən backend axını yoxdur (connections endpoint mövcud deyil;
+  // kurs dəvəti kurs seçimi tələb edir). Saxta success göstərmək əvəzinə
+  // düymə disabled saxlanılır və dürüst neytral mesaj verilir.
+  if (!isStudent && !isTeacher) return null
+
+  const INFO_MSG = 'Bu funksiya aktivləşdirildikdə burada işləyəcək.'
+
   return (
-    <div className="flex gap-3 flex-wrap">
-      {user?.role === 'teacher' && (
-        <button
-          onClick={() => inviteMutation.mutate()}
-          disabled={inviteMutation.isPending || inviteMutation.isSuccess}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
-        >
-          {inviteMutation.isSuccess ? '✓ Dəvət göndərildi' : inviteMutation.isPending ? 'Göndərilir...' : '📨 Kurs dəvəti göndər'}
-        </button>
-      )}
-      {user?.role === 'student' && (
-        <button
-          onClick={() => connectMutation.mutate()}
-          disabled={connectMutation.isPending || portfolio.isConnected || connectMutation.isSuccess}
-          className="flex items-center gap-2 px-4 py-2 border border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl text-sm font-semibold text-indigo-300 transition-colors disabled:opacity-60"
-        >
-          {portfolio.isConnected || connectMutation.isSuccess ? '✓ Qoşuldunuz' : connectMutation.isPending ? 'Göndərilir...' : '🤝 Connect ol'}
-        </button>
-      )}
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        disabled
+        aria-disabled="true"
+        title={INFO_MSG}
+        className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-white/40 cursor-not-allowed w-fit"
+      >
+        {isTeacher ? '📨 Kurs dəvəti göndər' : '🤝 Connect ol'}
+      </button>
+      <p className="text-xs text-white/40">{INFO_MSG}</p>
     </div>
   )
 }
