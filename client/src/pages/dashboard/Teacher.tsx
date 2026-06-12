@@ -54,49 +54,6 @@ interface CoursePerf {
   weeklyData: { week: string; count: number }[]
 }
 
-// ── Fallback ────────────────────────────────────────────────────────────────────
-// Yalnız sorğu xətası (profil yoxdur / şəbəkə / 401) halında işə düşür.
-// Backend açıq və data varsa, REAL data göstərilir — bu fallback yox.
-// İstifadəçiyə "mock/demo/tezliklə" yazısı GÖSTƏRİLMİR; sadəcə dashboard boş/sınıq görünmür.
-
-const FALLBACK_STATS: TeacherStats = {
-  totalStudents: 128,
-  newStudentsThisMonth: 9,
-  studentTrend: [
-    { month: 'Yan', count: 84 }, { month: 'Fev', count: 92 }, { month: 'Mar', count: 101 },
-    { month: 'Apr', count: 110 }, { month: 'May', count: 119 }, { month: 'İyun', count: 128 },
-  ],
-  revenueThisMonth: 1840,
-  revenueTrend: [
-    { month: 'Yan', amount: 1100 }, { month: 'Fev', amount: 1320 }, { month: 'Mar', amount: 1450 },
-    { month: 'Apr', amount: 1600 }, { month: 'May', amount: 1720 }, { month: 'İyun', amount: 1840 },
-  ],
-  impactScore: 78,
-  rating: 4.8,
-  activeGroups: 6,
-  activeStudentsInGroups: 94,
-  lessonsThisWeek: 11,
-}
-
-const FALLBACK_SCHEDULE: ScheduleLesson[] = [
-  { id: 'fb-s1', title: 'Riyaziyyat — Cəbr əsasları', groupName: '9-A Qrupu', groupColor: '#6366F1', startTime: '10:00', endTime: '11:30' },
-  { id: 'fb-s2', title: 'Həndəsə — Üçbucaqlar', groupName: '8-B Qrupu', groupColor: '#06B6D4', startTime: '13:00', endTime: '14:30' },
-]
-
-const FALLBACK_STUDENTS: RecentStudent[] = [
-  { id: 'fb-st1', name: 'Aysu Məmmədova',  lastSeen: '2 saat əvvəl', xpChange: 120, isWeak: false },
-  { id: 'fb-st2', name: 'Tural Əliyev',    lastSeen: 'İndicə',       xpChange: 80,  isWeak: false },
-  { id: 'fb-st3', name: 'Nilufər Həsənli', lastSeen: 'Dünən',        xpChange: 45,  isWeak: false },
-  { id: 'fb-st4', name: 'Rəşad Quliyev',   lastSeen: '5 gün əvvəl',  xpChange: 0,   isWeak: true  },
-]
-
-const FALLBACK_COURSES: CoursePerf[] = [
-  { id: 'fb-c1', title: 'Riyaziyyat: Sıfırdan Olimpiadaya', thumbnail: '', enrollCount: 340, completionPct: 72,
-    weeklyData: [{ week: 'H1', count: 12 }, { week: 'H2', count: 18 }, { week: 'H3', count: 25 }, { week: 'H4', count: 31 }] },
-  { id: 'fb-c2', title: 'Həndəsə Əsasları', thumbnail: '', enrollCount: 180, completionPct: 54,
-    weeklyData: [{ week: 'H1', count: 8 }, { week: 'H2', count: 14 }, { week: 'H3', count: 19 }, { week: 'H4', count: 22 }] },
-]
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function todayStr(): string {
@@ -189,7 +146,7 @@ function TodaySchedule({ lessons }: { lessons: ScheduleLesson[] }) {
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
         <div className="text-5xl">📅</div>
-        <p className="text-white/50 text-sm">Bu gün dərs yoxdur</p>
+        <p className="text-white/50 text-sm">Bu gün dərs yoxdur.</p>
         <Link to="/groups" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
           Yeni dərs planla →
         </Link>
@@ -269,7 +226,7 @@ function RecentStudents({ students }: { students: RecentStudent[] }) {
         ))}
         {displayed.length === 0 && (
           <p className="text-center py-6 text-white/40 text-sm">
-            {tab === 'weak' ? '🎉 Bütün tələbələr aktivdir!' : 'Hələ tələbə yoxdur'}
+            {tab === 'weak' ? '🎉 Bütün tələbələr aktivdir!' : 'Hələ tələbə yoxdur.'}
           </p>
         )}
       </div>
@@ -337,24 +294,24 @@ export default function TeacherDashboard() {
   const { user } = useAuth()
   const isVerified = (user as { isVerified?: boolean } | null)?.isVerified ?? true
 
-  const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery({
+  const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['teacher-stats'],
-    queryFn: () => api.get('/teachers/me/stats').then(r => r.data.data as TeacherStats).catch(() => FALLBACK_STATS),
+    queryFn: () => api.get('/teachers/me/stats').then(r => r.data.data as TeacherStats),
   })
 
-  const { data: schedule } = useQuery({
+  const { data: schedule, isLoading: scheduleLoading, isError: scheduleError } = useQuery({
     queryKey: ['teacher-schedule-today'],
-    queryFn: () => api.get('/teachers/me/schedule/today').then(r => r.data.data as ScheduleLesson[]).catch(() => FALLBACK_SCHEDULE),
+    queryFn: () => api.get('/teachers/me/schedule/today').then(r => r.data.data as ScheduleLesson[]),
   })
 
-  const { data: recentStudents } = useQuery({
+  const { data: recentStudents, isLoading: studentsLoading, isError: studentsError } = useQuery({
     queryKey: ['teacher-recent-students'],
-    queryFn: () => api.get('/teachers/me/students').then(r => r.data.data as RecentStudent[]).catch(() => FALLBACK_STUDENTS),
+    queryFn: () => api.get('/teachers/me/students').then(r => r.data.data as RecentStudent[]),
   })
 
-  const { data: courses } = useQuery({
+  const { data: courses, isLoading: coursesLoading, isError: coursesError } = useQuery({
     queryKey: ['teacher-courses-perf'],
-    queryFn: () => api.get('/teachers/me/courses/performance').then(r => r.data.data as CoursePerf[]).catch(() => FALLBACK_COURSES),
+    queryFn: () => api.get('/teachers/me/courses/performance').then(r => r.data.data as CoursePerf[]),
   })
 
   useEffect(() => {
@@ -399,8 +356,19 @@ export default function TeacherDashboard() {
               <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-5 h-44 animate-pulse" />
             ))
           ) : statsError ? (
-            <div className="col-span-full text-center py-8 text-white/40 text-sm">
-              Statistika yüklənmədi. Yenidən cəhd edin.
+            <div className="col-span-full bg-[#141414] border border-white/10 rounded-2xl py-10 px-5 text-center space-y-4">
+              <div className="text-4xl">⚠️</div>
+              <p className="text-white/60 text-sm">Müəllim statistikası yüklənmədi.</p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button onClick={() => refetchStats()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-semibold transition-colors">
+                  Yenidən yoxla
+                </button>
+                <button onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-white/5 border border-white/10 hover:border-white/20 rounded-lg text-xs font-medium transition-colors">
+                  Dashboard-u yenilə
+                </button>
+              </div>
             </div>
           ) : stats ? (
             <>
@@ -427,7 +395,17 @@ export default function TeacherDashboard() {
                 <h2 className="font-bold">📅 Bugünkü Cədvəl</h2>
                 <Link to="/groups" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Bütün cədvəl →</Link>
               </div>
-              <TodaySchedule lessons={schedule ?? []} />
+              {scheduleLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="h-20 bg-white/5 border border-white/10 rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : scheduleError ? (
+                <p className="text-center py-8 text-white/40 text-sm">Bugünkü cədvəl yüklənmədi.</p>
+              ) : (
+                <TodaySchedule lessons={schedule ?? []} />
+              )}
             </div>
 
             {/* Course performance */}
@@ -440,13 +418,23 @@ export default function TeacherDashboard() {
                   + Yeni Kurs
                 </Link>
               </div>
-              {courseList.length > 0 ? (
+              {coursesLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="h-40 bg-white/5 border border-white/10 rounded-2xl animate-pulse" />
+                  ))}
+                </div>
+              ) : coursesError ? (
+                <div className="bg-[#141414] border border-white/10 rounded-2xl py-10 text-center text-white/40 text-sm">
+                  Kurs performansı yüklənmədi.
+                </div>
+              ) : courseList.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {courseList.map(c => <CoursePerformanceCard key={c.id} course={c} />)}
                 </div>
               ) : (
                 <div className="bg-[#141414] border border-white/10 rounded-2xl py-10 text-center text-white/40 text-sm">
-                  Hələ kursunuz yoxdur. <Link to="/courses" className="text-indigo-400 hover:text-indigo-300">İlk kursunuzu yaradın →</Link>
+                  Hələ kurs məlumatı yoxdur. <Link to="/courses" className="text-indigo-400 hover:text-indigo-300">İlk kursunuzu yaradın →</Link>
                 </div>
               )}
             </div>
@@ -459,7 +447,17 @@ export default function TeacherDashboard() {
                 <h2 className="font-bold">👥 Son Aktivlik</h2>
                 <Link to="/groups" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Hamısı →</Link>
               </div>
-              <RecentStudents students={recentStudents ?? []} />
+              {studentsLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-14 bg-white/5 border border-white/10 rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : studentsError ? (
+                <p className="text-center py-8 text-white/40 text-sm">Tələbə aktivliyi yüklənmədi.</p>
+              ) : (
+                <RecentStudents students={recentStudents ?? []} />
+              )}
             </div>
 
             {/* Quick links */}
