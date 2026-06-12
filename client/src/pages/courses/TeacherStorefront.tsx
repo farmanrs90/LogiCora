@@ -80,7 +80,9 @@ type TeacherApiProfile = Omit<Partial<TeacherProfile>, 'socialLinks'> & {
 }
 
 interface ApiEnvelope<T> {
+  success?: boolean
   data?: T | null
+  message?: string
 }
 
 interface EditProfileForm {
@@ -108,12 +110,22 @@ function safeNumber(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
-function unwrapTeacherResponse(response: TeacherApiProfile | ApiEnvelope<TeacherApiProfile> | null): TeacherApiProfile | null {
+function isApiEnvelope(response: TeacherApiProfile | ApiEnvelope<TeacherApiProfile>): response is ApiEnvelope<TeacherApiProfile> {
+  return typeof response === 'object' && (
+    'data' in response ||
+    'success' in response ||
+    'message' in response
+  )
+}
+
+function unwrapTeacherResponse(
+  response: TeacherApiProfile | ApiEnvelope<TeacherApiProfile> | null | undefined
+): TeacherApiProfile | null {
   if (!response) {
     return null
   }
 
-  if ('data' in response) {
+  if (isApiEnvelope(response)) {
     return response.data ?? null
   }
 

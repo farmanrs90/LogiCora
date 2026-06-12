@@ -53,6 +53,27 @@ interface FeaturedTeacher {
   isFeatured:  boolean
 }
 
+interface FeaturedTeacherApi {
+  _id?: string
+  id?: string
+  name?: string
+  surname?: string
+  displayName?: string
+  slug?: string
+  avatarColor?: string
+  specialty?: string
+  specialization?: string
+  rating?: number
+  totalStudents?: number
+  isVerified?: boolean
+  isFounding?: boolean
+  isFeatured?: boolean
+  userId?: string | {
+    name?: string
+    surname?: string
+  }
+}
+
 interface Filters {
   category:  string
   level:     string
@@ -60,15 +81,6 @@ interface Filters {
   price:     string
   rating:    string
 }
-
-// ── Mock data ──────────────────────────────────────────────────────────────
-
-const MOCK_TEACHERS: FeaturedTeacher[] = [
-  { _id: 't1', name: 'Əli',    surname: 'Həsənov', slug: 'ali-hasanov', avatarColor: '#9333EA', specialty: 'Riyaziyyat',      rating: 4.9, totalStudents: 340, isVerified: true,  isFounding: true,  isFeatured: true  },
-  { _id: 't2', name: 'Günel',  surname: 'Muradova', slug: 'gunel-muradova', avatarColor: '#3B82F6', specialty: 'İngilis dili', rating: 4.8, totalStudents: 510, isVerified: true,  isFounding: true,  isFeatured: true  },
-  { _id: 't3', name: 'Rəşad',  surname: 'Əliyev',  slug: 'rashad-aliyev',  avatarColor: '#22C55E', specialty: 'Proqramlaşdırma', rating: 4.7, totalStudents: 280, isVerified: true,  isFounding: false, isFeatured: true  },
-  { _id: 't4', name: 'Nigar',  surname: 'Sultanova', slug: 'nigar-sultanova', avatarColor: '#F97316', specialty: 'Fizika',   rating: 4.6, totalStudents: 190, isVerified: true,  isFounding: false, isFeatured: false },
-]
 
 const CATEGORIES = [
   'Riyaziyyat', 'Fizika', 'Kimya', 'Biologiya', 'Tarix', 'Coğrafiya',
@@ -113,6 +125,44 @@ function normalizeCoursePage(raw: unknown): CoursePage {
   }
   // Hal 3 — gözlənilməz / boş cavab
   return { courses: [], nextPage: null, total: 0 }
+}
+
+function normalizeFeaturedTeachers(raw: unknown): FeaturedTeacher[] {
+  if (!Array.isArray(raw)) {
+    return []
+  }
+
+  return raw
+    .map((item): FeaturedTeacher | null => {
+      if (!item || typeof item !== 'object') {
+        return null
+      }
+
+      const teacher = item as FeaturedTeacherApi
+      const user = teacher.userId && typeof teacher.userId === 'object' ? teacher.userId : null
+      const id = teacher._id ?? teacher.id
+      const name = teacher.name ?? teacher.displayName ?? user?.name
+      const surname = teacher.surname ?? user?.surname ?? ''
+
+      if (!id || !teacher.slug || !name) {
+        return null
+      }
+
+      return {
+        _id: id,
+        name,
+        surname,
+        slug: teacher.slug,
+        avatarColor: teacher.avatarColor ?? '#6366F1',
+        specialty: teacher.specialty ?? teacher.specialization ?? '',
+        rating: typeof teacher.rating === 'number' ? teacher.rating : 0,
+        totalStudents: typeof teacher.totalStudents === 'number' ? teacher.totalStudents : 0,
+        isVerified: teacher.isVerified === true,
+        isFounding: teacher.isFounding === true,
+        isFeatured: teacher.isFeatured === true,
+      }
+    })
+    .filter((teacher): teacher is FeaturedTeacher => teacher !== null)
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -467,11 +517,10 @@ export default function CourseList() {
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
-  const { data: featuredTeachers } = useQuery<FeaturedTeacher[]>({
+  const { data: featuredTeachers, isError: isFeaturedTeachersError } = useQuery<FeaturedTeacher[]>({
     queryKey: ['teachers', 'featured'],
-    queryFn:  () => api.get<{ data: FeaturedTeacher[] }>(API_ROUTES.TEACHERS.FEATURED)
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_TEACHERS),
+    queryFn:  () => api.get<{ data: unknown }>(API_ROUTES.TEACHERS.FEATURED)
+                      .then(r => normalizeFeaturedTeachers(r.data.data)),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -509,7 +558,8 @@ export default function CourseList() {
   }, [handleObserver])
 
   const allCourses = data?.pages.flatMap(p => p.courses) ?? []
-  const teachers   = featuredTeachers ?? MOCK_TEACHERS
+  const teachers   = featuredTeachers ?? []
+  const showFeaturedTeachers = !isFeaturedTeachersError && teachers.length > 0
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pb-24">
@@ -597,13 +647,14 @@ export default function CourseList() {
 
       <div className="max-w-5xl mx-auto px-4 mt-6">
 
-        {/* ── FEATURED TEACHERS ─────────────────────────────────────────── */}
-        <div className="mb-8">
-          <p className="text-white font-bold text-sm mb-3">🌟 Tövsiyə olunan müəllimlər</p>
-          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {teachers.map(t => <FeaturedTeacherCard key={t._id} t={t} />)}
+        {showFeaturedTeachers && (
+          <div className="mb-8">
+            <p className="text-white font-bold text-sm mb-3">🌟 Tövsiyə olunan müəllimlər</p>
+            <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+              {teachers.map(t => <FeaturedTeacherCard key={t._id} t={t} />)}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── MAIN LAYOUT ───────────────────────────────────────────────── */}
         <div className="flex gap-6">
