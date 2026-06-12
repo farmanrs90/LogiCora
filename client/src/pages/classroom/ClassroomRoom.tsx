@@ -28,9 +28,35 @@ interface ClassroomData {
   status:     'active' | 'ended'
   isRecording: boolean
   recordingUrl?: string
-  pin:        string
-  qrToken:    string
+  pin?:       string   // backend GET-də yoxdur → undefined qalır ki, UI '—' göstərsin
+  qrToken?:   string   // GET-də select:false → yoxdursa undefined → "QR dərs başladıqda yaranacaq"
   qrExpiresAt: string
+}
+
+// Backend GET /classroom/:id real, lakin natamam gələ bilər: teacherId/groupId populate
+// olunmuş obyektlərdir, bəzi sahələr (subject, pin, qrToken) ümumiyyətlə gəlməyə bilər.
+interface RawClassroom {
+  _id?:          string
+  id?:           string
+  title?:        string
+  name?:         string
+  subject?:      string
+  topic?:        string
+  lessonTitle?:  string
+  teacherId?:    string | { _id?: string; name?: string; surname?: string }
+  teacherName?:  string
+  teacherAvatar?: string
+  groupId?:      string | { _id?: string; name?: string }
+  classGroup?:   string
+  groupName?:    string
+  group?:        { name?: string }
+  startedAt?:    string | null
+  status?:       string
+  isRecording?:  boolean
+  recordingUrl?: string | null
+  pin?:          string | null
+  qrToken?:      string | null
+  qrExpiresAt?:  string | null
 }
 
 interface AttendanceRecord {
@@ -87,6 +113,46 @@ function formatElapsed(startedAt: string): string {
   const m    = Math.floor(diff / 60)
   const s    = diff % 60
   return `${m}:${String(s).padStart(2, '0')}`
+}
+
+// Backend GET /classroom/:id cavabını təhlükəsiz normalize edir.
+// ApiEnvelope ({ success, data }) unwrap edilir, populate olunmuş teacherId/groupId
+// obyektlərindən real adlar çıxarılır. Heç bir mock/fake dəyər yaradılmır:
+// olmayan sahələr undefined/boş qalır ki, UI öz "—" / fallback mətnlərini göstərsin.
+function normalizeClassroomResponse(payload: unknown): ClassroomData | null {
+  if (!payload || typeof payload !== 'object') return null
+
+  // ApiEnvelope varsa unwrap et, yoxdursa payload-un özü classroom-dur.
+  const maybe = payload as { data?: unknown }
+  const raw   = (maybe.data && typeof maybe.data === 'object' ? maybe.data : payload) as RawClassroom
+
+  const id = raw._id ?? raw.id
+  if (!id) return null
+
+  const teacher = typeof raw.teacherId === 'object' && raw.teacherId ? raw.teacherId : null
+  const teacherName = (raw.teacherName
+    ?? (teacher ? [teacher.name, teacher.surname].filter(Boolean).join(' ') : '')).trim()
+  const teacherId = teacher?._id ?? (typeof raw.teacherId === 'string' ? raw.teacherId : '')
+
+  const group = typeof raw.groupId === 'object' && raw.groupId ? raw.groupId : null
+  const classGroup = raw.classGroup ?? raw.groupName ?? group?.name ?? raw.group?.name ?? ''
+
+  return {
+    _id:           String(id),
+    title:         raw.title ?? raw.name ?? '',
+    subject:       raw.subject ?? raw.topic ?? raw.lessonTitle ?? '',
+    teacherId:     String(teacherId),
+    teacherName,
+    teacherAvatar: raw.teacherAvatar || '#374151', // yalnız avatar dairəsi üçün neytral rəng default-u
+    classGroup,
+    startedAt:     raw.startedAt ?? '',
+    status:        raw.status === 'ended' ? 'ended' : 'active',
+    isRecording:   Boolean(raw.isRecording),
+    recordingUrl:  raw.recordingUrl ?? undefined,
+    pin:           raw.pin ?? undefined,      // backend-də yoxdursa undefined → UI '—' göstərir
+    qrToken:       raw.qrToken ?? undefined,  // yoxdursa undefined → "QR dərs başladıqda yaranacaq"
+    qrExpiresAt:   raw.qrExpiresAt ?? '',
+  }
 }
 
 // ── Mock QR Code visual ────────────────────────────────────────────────────
@@ -1290,10 +1356,10 @@ export default function ClassroomRoom() {
   const { id }  = useParams<{ id: string }>()
   const user    = useSelector((s: RootState) => s.auth.user)
 
-  const { data: classroom, isLoading, isError, refetch } = useQuery<ClassroomData>({
+  const { data: classroom, isLoading, isError, refetch } = useQuery<ClassroomData | null>({
     queryKey: ['classroom', id],
-    queryFn:  () => api.get<{ data: ClassroomData }>(API_ROUTES.CLASSROOM.BY_ID(id!))
-                      .then(r => r.data.data),
+    queryFn:  () => api.get(API_ROUTES.CLASSROOM.BY_ID(id!))
+                      .then(r => normalizeClassroomResponse(r.data)),
     enabled:  !!id,
     staleTime: 1000 * 30,
   })
