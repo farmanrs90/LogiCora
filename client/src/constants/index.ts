@@ -86,7 +86,7 @@ export const API_ROUTES = {
   },
 
   ATTENDANCE: {
-    SCAN: '/attendance/scan',
+    SCAN: '/classroom/scan',
     SAVE: '/attendance',
   },
 

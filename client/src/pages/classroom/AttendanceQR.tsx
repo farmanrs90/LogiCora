@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useMutation } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
 import api from '../../lib/api'
-import { APP_ROUTES } from '../../constants'
+import { API_ROUTES, APP_ROUTES } from '../../constants'
 import type { RootState } from '../../app/store'
 
 // ── html5-qrcode global type declaration ───────────────────────────────────
@@ -46,6 +46,24 @@ interface ScanSuccess {
 
 interface ScanError {
   code: 'expired' | 'used' | 'invalid' | 'not_enrolled'
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function toString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function normalizeScanSuccess(payload: unknown, studentName: string): ScanSuccess {
+  const data = isRecord(payload) ? payload : {}
+
+  return {
+    studentName,
+    className: toString(data.className) || toString(data.title),
+    time: toString(data.time),
+  }
 }
 
 const ERROR_MESSAGES: Record<ScanError['code'], string> = {
@@ -217,10 +235,13 @@ export default function AttendanceQR() {
   // Scan mutation
   const scanMutation = useMutation({
     mutationFn: (token: string) =>
-      api.post<{ data: ScanSuccess }>('/attendance/scan', {
+      api.post<{ data: unknown }>(API_ROUTES.ATTENDANCE.SCAN, {
         classroomId: id,
         qrToken:     token,
-      }).then(r => r.data.data),
+      }).then(r => normalizeScanSuccess(
+        r.data.data,
+        [user?.name, user?.surname].filter(Boolean).join(' '),
+      )),
     onSuccess: (data: ScanSuccess) => {
       setSuccess(data)
       setState('success')
