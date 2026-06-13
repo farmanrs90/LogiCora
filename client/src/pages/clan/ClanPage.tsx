@@ -55,6 +55,11 @@ interface ClanStats {
   bestBattleScore: number
 }
 
+type CreateClanPayload = {
+  name: string
+  schoolName: string
+}
+
 interface ClanData {
   _id:       string
   name:      string
@@ -86,6 +91,16 @@ interface ClanSearchResult {
 }
 
 const PIE_COLORS = ['#9333EA', '#3B82F6', '#06B6D4', '#F97316', '#6B7280']
+
+function getClanCreateErrorMessage(error: unknown): string {
+  const fallback = 'Klan yaradıla bilmədi.'
+  const err = error as {
+    message?: string
+    response?: { data?: { message?: string; errors?: string[] } }
+  }
+
+  return err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? err.message ?? fallback
+}
 
 // ── Animated particles (Framer Motion only) ────────────────────────────────
 
@@ -281,7 +296,7 @@ const CLAN_EMOJIS = ['⚡', '🔥', '🦁', '🦅', '🐺', '🌊', '💎', '�
 
 function CreateClanModal({ onClose, onSubmit }: {
   onClose:  () => void
-  onSubmit: (data: { name: string; emoji: string; schoolName: string; city: string }) => void
+  onSubmit: (data: CreateClanPayload) => void
 }) {
   const [name,       setName]       = useState('')
   const [emoji,      setEmoji]      = useState('⚡')
@@ -289,7 +304,7 @@ function CreateClanModal({ onClose, onSubmit }: {
   const [city,       setCity]       = useState('')
   const cities = ['Bakı', 'Gəncə', 'Sumqayıt', 'Mingəçevir', 'Lənkəran', 'Şirvan', 'Naxçıvan']
 
-  const valid = name.trim().length >= 2 && schoolName.trim().length >= 2 && city
+  const valid = name.trim().length >= 2 && schoolName.trim().length >= 2
 
   return (
     <motion.div
@@ -380,7 +395,7 @@ function CreateClanModal({ onClose, onSubmit }: {
             Ləğv et
           </button>
           <motion.button
-            onClick={() => valid && onSubmit({ name, emoji, schoolName, city })}
+            onClick={() => valid && onSubmit({ name: name.trim(), schoolName: schoolName.trim() })}
             disabled={!valid}
             whileHover={valid ? { scale: 1.02 } : {}}
             whileTap={valid ? { scale: 0.97 } : {}}
@@ -584,14 +599,14 @@ export default function ClanPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; emoji: string; schoolName: string; city: string }) =>
-      api.post<{ data: ClanData }>(API_ROUTES.CLANS.CREATE, data).then(r => r.data.data),
-    onSuccess: (newClan: ClanData) => {
+    mutationFn: (data: CreateClanPayload) =>
+      api.post<{ data: ClanData | null }>(API_ROUTES.CLANS.CREATE, data).then(r => r.data.data ?? null),
+    onSuccess: (newClan: ClanData | null) => {
       toast.success('Klan yaradıldı! 🛡️')
       setShowCreate(false)
-      navigate(APP_ROUTES.CLAN(newClan.slug))
+      navigate(newClan?.slug ? APP_ROUTES.CLAN(newClan.slug) : APP_ROUTES.CLAN('me'))
     },
-    onError: () => toast.error('Klan yaradıla bilmədi.'),
+    onError: (err: unknown) => toast.error(getClanCreateErrorMessage(err)),
   })
 
   const challengeMutation = useMutation({
