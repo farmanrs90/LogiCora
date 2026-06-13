@@ -3,6 +3,10 @@ const User = require('../user/user.model');
 const Group = require('../group/group.model');
 const Student = require('../student/student.model');
 const Course = require('../course/course.model');
+const Enrollment = require('../course/enrollment.model');
+const Gamification = require('../gamification/gamification.model');
+const Attendance = require('../attendance/attendance.model');
+const Invite = require('../invite/invite.model');
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -231,6 +235,146 @@ const getMyCoursesPerformance = async (userId) => {
   }));
 };
 
+// ── Analitika səhifəsi üçün real data (TeacherAnalytics.tsx) ──
+// Cavab birbaşa frontend-in gözlədiyi AnalyticsData shape-idir; saxlanmayan
+// (vaxt seriyaları, trend, impact bölgüsü, AI mətni) sahələr boş/0 qaytarılır — fake yox.
+// `period` qəbul olunur, lakin real data dövrə görə segmentlənmədiyi üçün filtrləmir.
+const getMyAnalytics = async (userId, _period) => {
+  const teacher = await findTeacherByUser(userId);
+
+  const groups = await Group.find({ teacherId: teacher._id });
+  const activeGroups = groups.filter((g) => g.status === 'active');
+  const studentIds = [...new Set(groups.flatMap((g) => g.studentIds.map(String)))];
+  const courses = await Course.find({ teacherId: teacher._id });
+
+  // Storefront — Invite + Teacher sahələrindən real dəyərlər
+  const [invitesSent, invitesAccepted] = await Promise.all([
+    Invite.countDocuments({ teacherId: teacher._id }),
+    Invite.countDocuments({ teacherId: teacher._id, status: 'accepted' }),
+  ]);
+  const featuredUntil = teacher.featuredUntil ? new Date(teacher.featuredUntil) : null;
+  const featuredDaysLeft =
+    teacher.isFeatured && featuredUntil && featuredUntil > new Date()
+      ? Math.ceil((featuredUntil.getTime() - Date.now()) / 86400000)
+      : undefined;
+  const storefront = {
+    profileViews: 0,                  // profil baxışı izlənmir → 0
+    invitesSent,
+    invitesAccepted,
+    isFeatured: !!teacher.isFeatured,
+    ...(featuredDaysLeft ? { featuredDaysLeft } : {}),
+  };
+
+  // Nə tələbə, nə kurs varsa → tam boş shape (frontend empty state göstərir, fake yox)
+  if (studentIds.length === 0 && courses.length === 0) {
+    return {
+      metrics: [],
+      groupXP: [],
+      topStudents: [],
+      weakStudents: [],
+      courses: [],
+      storefront,
+      impactBreakdown: [],
+      aiAdvice: '',
+    };
+  }
+
+  // Real tələbə + gamification + davamiyyət
+  const students = await Student.find({ _id: { $in: studentIds } })
+    .populate('userId', 'name surname lastLoginDate');
+
+  const gamRecords = await Gamification.find({ studentId: { $in: studentIds } });
+  const gamMap = {};
+  gamRecords.forEach((g) => { gamMap[String(g.studentId)] = g; });
+
+  const attendance = await Attendance.find({ teacherId: teacher._id }).select('records');
+  const attMap = {};
+  attendance.forEach((a) => (a.records || []).forEach((r) => {
+    const sid = String(r.studentId);
+    if (!attMap[sid]) attMap[sid] = { attended: 0, total: 0 };
+    attMap[sid].total += 1;
+    if (r.status === 'present' || r.status === 'late') attMap[sid].attended += 1;
+  }));
+  const attendancePctOf = (sid) => {
+    const m = attMap[sid];
+    return m && m.total > 0 ? Math.round((m.attended / m.total) * 100) : 0;
+  };
+
+  const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+  const progress = students.map((s) => {
+    const u = s.userId || {};
+    const sid = String(s._id);
+    const g = gamMap[sid];
+    const lastTs = u.lastLoginDate ? new Date(u.lastLoginDate).getTime() : null;
+    return {
+      id: sid,
+      name: [u.name, u.surname].filter(Boolean).join(' ') || 'Tələbə',
+      xpGain: g ? (g.weeklyXP || 0) : 0,
+      xpGainPct: 0,                   // dövri baza saxlanmır → 0
+      lastSeen: formatRelative(u.lastLoginDate),
+      attendancePct: attendancePctOf(sid),
+      _totalXP: g ? (g.totalXP || 0) : 0,
+      _isWeak: !lastTs || Date.now() - lastTs > THREE_DAYS,
+    };
+  });
+
+  const strip = ({ _totalXP, _isWeak, ...rest }) => rest;
+  const topStudents = progress
+    .filter((p) => p.xpGain > 0)
+    .sort((a, b) => (b.xpGain - a.xpGain) || (b._totalXP - a._totalXP))
+    .slice(0, 5)
+    .map(strip);
+  const weakStudents = progress
+    .filter((p) => p._isWeak)
+    .slice(0, 5)
+    .map(strip);
+
+  // Real metriklər — dövri müqayisə saxlanmadığı üçün trend 0 (uydurma yox)
+  const metrics = [
+    { label: 'Tələbələr', value: String(studentIds.length), trend: 0, sub: 'cəmi' },
+    { label: 'Aktiv qruplar', value: String(activeGroups.length), trend: 0, sub: 'hazırda' },
+    { label: 'Kurslar', value: String(courses.length), trend: 0, sub: 'yaradılmış' },
+    { label: 'Reytinq', value: (teacher.rating || 0).toFixed(1), trend: 0, sub: `${teacher.reviewCount || 0} rəy` },
+  ];
+
+  // Real kurs analitikası — vaxt seriyaları saxlanmır → boş massivlər (fake trend yox)
+  const enrollments = await Enrollment.find({ courseId: { $in: courses.map((c) => c._id) } })
+    .select('courseId progress completedAt');
+  const enrByCourse = {};
+  enrollments.forEach((e) => {
+    const cid = String(e.courseId);
+    (enrByCourse[cid] = enrByCourse[cid] || []).push(e);
+  });
+  const courseAnalytics = courses.map((c) => {
+    const list = enrByCourse[String(c._id)] || [];
+    const completedCount = list.filter((e) => e.completedAt || e.progress >= 100).length;
+    const activeCount = list.filter((e) => !e.completedAt && e.progress > 0 && e.progress < 100).length;
+    return {
+      id: String(c._id),
+      title: c.title,
+      enrollCount: list.length || c.totalEnrolled || 0,
+      activeCount,
+      completedCount,
+      avgRating: c.rating || 0,
+      weeklyEnroll: [],               // həftəlik qeydiyyat saxlanmır → boş
+      mostWatchedLesson: '—',         // dərs baxış statistikası yoxdur
+      mostSkippedLesson: '—',         // dərs baxış statistikası yoxdur
+      ratingTrend: [],                // reytinq tarixçəsi saxlanmır → boş
+    };
+  });
+
+  return {
+    metrics,
+    groupXP: [],                      // qrup üzrə həftəlik XP tarixçəsi saxlanmır → boş
+    topStudents,
+    weakStudents,
+    courses: courseAnalytics,
+    storefront,
+    impactBreakdown: [],              // impact komponent bölgüsü saxlanmır → boş
+    aiAdvice: '',                     // AI mətni uydurulmur → boş
+  };
+};
+
 module.exports = {
   createTeacherProfile,
   getTeacherProfile,
@@ -243,4 +387,5 @@ module.exports = {
   getTodaySchedule,
   getMyStudents,
   getMyCoursesPerformance,
+  getMyAnalytics,
 };

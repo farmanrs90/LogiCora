@@ -112,6 +112,17 @@ const getMyCoursesPerformance = async (req, res, next) => {
   }
 };
 
+// TeacherAnalytics.tsx birbaşa `res.data`-nı AnalyticsData kimi oxuyur —
+// digərlərindən fərqli olaraq cavab { success, data } ilə sarılmır.
+const getMyAnalytics = async (req, res, next) => {
+  try {
+    const data = await teacherService.getMyAnalytics(req.user.id, req.query.period);
+    return res.status(200).json(data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createTeacher,
   getTeacher,
@@ -124,4 +135,5 @@ module.exports = {
   getTodaySchedule,
   getMyStudents,
   getMyCoursesPerformance,
+  getMyAnalytics,
 };

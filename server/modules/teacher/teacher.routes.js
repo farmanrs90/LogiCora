@@ -12,6 +12,7 @@ router.get('/me/stats', auth, roleCheck(['teacher']), teacherController.getMySta
 router.get('/me/schedule/today', auth, roleCheck(['teacher']), teacherController.getTodaySchedule);
 router.get('/me/students', auth, roleCheck(['teacher']), teacherController.getMyStudents);
 router.get('/me/courses/performance', auth, roleCheck(['teacher']), teacherController.getMyCoursesPerformance);
+router.get('/me/analytics', auth, roleCheck(['teacher']), teacherController.getMyAnalytics);
 
 // Protected routes (require authentication)
 router.post('/', auth, roleCheck(['teacher']), validate(createTeacherValidation), teacherController.createTeacher);
