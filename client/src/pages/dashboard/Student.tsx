@@ -171,6 +171,27 @@ function LoadingBlock({ lines = 3 }: { lines?: number }) {
   )
 }
 
+function QueryErrorState({
+  message,
+  onRetry,
+}: {
+  message: string
+  onRetry: () => void
+}) {
+  return (
+    <div className="rounded-card border border-danger/30 bg-danger/10 p-4">
+      <p className="text-sm font-bold text-white">{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="btn-outline mt-3"
+      >
+        Yenidən yoxla
+      </button>
+    </div>
+  )
+}
+
 function MetricPill({
   icon: Icon,
   label,
@@ -196,17 +217,34 @@ function MetricPill({
 function StatusHeader({
   profile,
   isLoading,
+  isError,
+  onRetry,
 }: {
   profile: GamificationProfile
   isLoading: boolean
+  isError: boolean
+  onRetry: () => void
 }) {
   const xp = getXpState(profile)
+  const headerClassName = 'sticky top-16 z-20 -mx-4 border-y border-border bg-bg-primary/90 px-4 py-3 backdrop-blur-xl lg:top-16 lg:mx-0 lg:rounded-card lg:border'
+
+  if (isError) {
+    return (
+      <motion.header
+        variants={panelMotion}
+        transition={motionTransition}
+        className={headerClassName}
+      >
+        <QueryErrorState message="Gamifikasiya məlumatları yüklənmədi." onRetry={onRetry} />
+      </motion.header>
+    )
+  }
 
   return (
     <motion.header
       variants={panelMotion}
       transition={motionTransition}
-      className="sticky top-16 z-20 -mx-4 border-y border-border bg-bg-primary/90 px-4 py-3 backdrop-blur-xl lg:top-16 lg:mx-0 lg:rounded-card lg:border"
+      className={headerClassName}
     >
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center justify-between gap-3">
@@ -278,17 +316,30 @@ function CompanionGreeting({
   avatarColor,
   profile,
   daily,
+  isGamificationError,
+  isDailyError,
 }: {
   firstName: string
   avatarColor: string
   profile: GamificationProfile
   daily: DailyStatusResponse
+  isGamificationError: boolean
+  isDailyError: boolean
 }) {
   const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
   const companionName = avatarColor.toLowerCase() === '#3b82f6' ? 'Logi' : 'Cora'
-  const companionTone = companionName === 'Logi'
-    ? `${remaining} tapşırıq qalır. ${profile.weeklyXP + 40} XP həftəlik temp üçün yaxşı hədəfdir.`
-    : `Bugünkü ritmin sabitdir. Gündəlik sualları tamamla, sonra portfolio və klan xəttini gücləndir.`
+  const companionTone = isDailyError
+    ? 'Gündəlik tapşırıq yüklənmədi. Aşağıdakı kartdan yenidən yoxla.'
+    : isGamificationError
+      ? 'Gamifikasiya məlumatları yüklənmədi. Yenidən yoxla ilə təkrar cəhd et.'
+      : companionName === 'Logi'
+        ? `${remaining} tapşırıq qalır. ${profile.weeklyXP + 40} XP həftəlik temp üçün yaxşı hədəfdir.`
+        : `Bugünkü ritmin sabitdir. Gündəlik sualları tamamla, sonra portfolio və klan xəttini gücləndir.`
+  const priorityText = isDailyError
+    ? 'Gündəlik tapşırıq yüklənmədi.'
+    : isGamificationError
+      ? 'Gamifikasiya məlumatları yüklənmədi.'
+      : daily.completed ? 'Seriya qorundu, indi mövqe irəliləyişinə bax.' : 'Gündəlik sualları bitir və XP xəttini qoru.'
 
   return (
     <motion.section
@@ -317,7 +368,7 @@ function CompanionGreeting({
         <div className="rounded-card border border-border bg-bg-card px-4 py-3">
           <p className="text-xs font-semibold uppercase text-text-secondary">Bugünkü prioritet</p>
           <p className="mt-1 text-sm font-bold text-white">
-            {daily.completed ? 'Seriya qorundu, indi mövqe irəliləyişinə bax.' : 'Gündəlik sualları bitir və XP xəttini qoru.'}
+            {priorityText}
           </p>
         </div>
       </div>
@@ -372,10 +423,14 @@ function TodaysFocus({
   daily,
   competition,
   mystery,
+  isDailyError,
+  onRetryDaily,
 }: {
   daily: DailyStatusResponse
   competition: ActiveCompetition | null
   mystery: MysteryCurrentResponse | undefined
+  isDailyError: boolean
+  onRetryDaily: () => void
 }) {
   const navigate = useNavigate()
   const answeredPercent = daily.totalCount > 0
@@ -387,41 +442,47 @@ function TodaysFocus({
       <div className="flex items-end justify-between gap-3">
         {sectionTitle('Bugünkü fokus', 'Nə etməliyəm?')}
         <span className="text-xs font-semibold text-text-secondary">
-          {daily.completed ? 'Gündəlik tapşırıq tamamlandı' : `${daily.totalCount - daily.answeredCount} sual qalır`}
+          {isDailyError
+            ? 'Gündəlik tapşırıq yüklənmədi'
+            : daily.completed ? 'Gündəlik tapşırıq tamamlandı' : `${daily.totalCount - daily.answeredCount} sual qalır`}
         </span>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-card border border-border bg-bg-card p-4">
-          <div className="flex items-center justify-between">
-            <div className="rounded-btn border border-accent-green/30 bg-accent-green/10 p-2 text-accent-green">
-              <Target className="h-5 w-5" aria-hidden="true" />
+        {isDailyError ? (
+          <QueryErrorState message="Gündəlik tapşırıq yüklənmədi." onRetry={onRetryDaily} />
+        ) : (
+          <div className="rounded-card border border-border bg-bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div className="rounded-btn border border-accent-green/30 bg-accent-green/10 p-2 text-accent-green">
+                <Target className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <span className="text-xs font-bold text-accent-green">+{daily.xpEarned} XP</span>
             </div>
-            <span className="text-xs font-bold text-accent-green">+{daily.xpEarned} XP</span>
+            <h3 className="mt-4 text-base font-bold text-white">Gündəlik suallar</h3>
+            <p className="mt-2 text-sm font-medium text-white/70">
+              {daily.completed
+                ? 'Bugünkü suallar tamamlandı. Seriya xətti qorundu.'
+                : `${daily.answeredCount}/${daily.totalCount} sual tamamlanıb. İndi davam etmək ən yaxşı hərəkətdir.`}
+            </p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+              <motion.div
+                className="h-full rounded-full bg-accent-green"
+                initial={{ width: 0 }}
+                animate={{ width: `${answeredPercent}%` }}
+                transition={{ duration: 0.65, ease: 'easeOut' }}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(APP_ROUTES.DAILY)}
+              className="btn-primary mt-4 w-full"
+            >
+              {daily.completed ? 'Nəticəyə bax' : 'Davam et'}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
-          <h3 className="mt-4 text-base font-bold text-white">Gündəlik suallar</h3>
-          <p className="mt-2 text-sm font-medium text-white/70">
-            {daily.completed
-              ? 'Bugünkü suallar tamamlandı. Seriya xətti qorundu.'
-              : `${daily.answeredCount}/${daily.totalCount} sual tamamlanıb. İndi davam etmək ən yaxşı hərəkətdir.`}
-          </p>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-            <motion.div
-              className="h-full rounded-full bg-accent-green"
-              initial={{ width: 0 }}
-              animate={{ width: `${answeredPercent}%` }}
-              transition={{ duration: 0.65, ease: 'easeOut' }}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(APP_ROUTES.DAILY)}
-            className="btn-primary mt-4 w-full"
-          >
-            {daily.completed ? 'Nəticəyə bax' : 'Davam et'}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
+        )}
 
         <FocusCard
           icon={Swords}
@@ -572,10 +633,14 @@ function ProgressPanel({
   profile,
   elo,
   leaderboardRank,
+  isGamificationError,
+  onRetryGamification,
 }: {
   profile: GamificationProfile
   elo: EloRating[]
   leaderboardRank: number | null
+  isGamificationError: boolean
+  onRetryGamification: () => void
 }) {
   const xp = getXpState(profile)
   const bestElo = elo.length > 0
@@ -586,28 +651,34 @@ function ProgressPanel({
     <motion.section variants={panelMotion} transition={motionTransition} className="card space-y-4">
       <div className="flex items-start justify-between gap-3">
         {sectionTitle('İrəliləyiş', 'Haradayam?')}
-        <TrendingBadge tier={profile.leagueTier} />
+        {!isGamificationError && <TrendingBadge tier={profile.leagueTier} />}
       </div>
 
-      <div>
-        <div className="flex items-end justify-between">
+      {isGamificationError ? (
+        <QueryErrorState message="Gamifikasiya məlumatları yüklənmədi." onRetry={onRetryGamification} />
+      ) : (
+        <>
           <div>
-            <p className="text-xs font-semibold uppercase text-text-secondary">Ümumi XP</p>
-            <p className="text-3xl font-black tabular-nums text-white">{formatNumber(profile.totalXP)}</p>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-secondary">Ümumi XP</p>
+                <p className="text-3xl font-black tabular-nums text-white">{formatNumber(profile.totalXP)}</p>
+              </div>
+              <p className="text-sm font-bold text-accent-green">{Math.round(xp.xpPercent)}%</p>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-accent-green" style={{ width: `${xp.xpPercent}%` }} />
+            </div>
           </div>
-          <p className="text-sm font-bold text-accent-green">{Math.round(xp.xpPercent)}%</p>
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-accent-green" style={{ width: `${xp.xpPercent}%` }} />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <DataTile label="ELO" value={bestElo ? String(bestElo.rating) : '1200'} detail={bestElo ? subjectLabel(bestElo.subject) : 'Ümumi'} />
-        <DataTile label="Liqadakı mövqe" value={leaderboardRank ? `#${leaderboardRank}` : 'İlk 100'} detail={leaderboardRank ? 'Milli sıralama' : 'Hədəf xətti'} />
-        <DataTile label="Həftəlik XP" value={formatNumber(profile.weeklyXP)} detail="Bu həftə" />
-        <DataTile label="Nişanlar" value={String(profile.badges.length)} detail="Açılmış" />
-      </div>
+          <div className="grid grid-cols-2 gap-3">
+            <DataTile label="ELO" value={bestElo ? String(bestElo.rating) : '1200'} detail={bestElo ? subjectLabel(bestElo.subject) : 'Ümumi'} />
+            <DataTile label="Liqadakı mövqe" value={leaderboardRank ? `#${leaderboardRank}` : 'İlk 100'} detail={leaderboardRank ? 'Milli sıralama' : 'Hədəf xətti'} />
+            <DataTile label="Həftəlik XP" value={formatNumber(profile.weeklyXP)} detail="Bu həftə" />
+            <DataTile label="Nişanlar" value={String(profile.badges.length)} detail="Açılmış" />
+          </div>
+        </>
+      )}
     </motion.section>
   )
 }
@@ -717,29 +788,46 @@ function SocialFeedPanel({
 function InsightStrip({
   profile,
   daily,
+  isGamificationError,
+  isDailyError,
+  onRetryGamification,
+  onRetryDaily,
 }: {
   profile: GamificationProfile
   daily: DailyStatusResponse
+  isGamificationError: boolean
+  isDailyError: boolean
+  onRetryGamification: () => void
+  onRetryDaily: () => void
 }) {
   const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
   const insights = [
     {
       icon: CheckCircle2,
       label: 'Bugünkü qərar',
-      text: remaining > 0 ? `${remaining} sual tamamla və seriyanı bağla.` : 'Gündəlik tapşırıq tamamlandı. Növbəti hədəf liqa tempidir.',
+      text: isDailyError
+        ? 'Gündəlik tapşırıq yüklənmədi.'
+        : remaining > 0 ? `${remaining} sual tamamla və seriyanı bağla.` : 'Gündəlik tapşırıq tamamlandı. Növbəti hədəf liqa tempidir.',
       tone: 'text-accent-green',
+      onRetry: isDailyError ? onRetryDaily : undefined,
     },
     {
       icon: Clock,
       label: 'Temp',
-      text: `${formatNumber(profile.weeklyXP)} XP həftəlik nəticə artıq yazılıb.`,
+      text: isGamificationError
+        ? 'Gamifikasiya məlumatları yüklənmədi.'
+        : `${formatNumber(profile.weeklyXP)} XP həftəlik nəticə artıq yazılıb.`,
       tone: 'text-accent-cyan',
+      onRetry: isGamificationError ? onRetryGamification : undefined,
     },
     {
       icon: Trophy,
       label: 'Rank',
-      text: `${leagueLabel[profile.leagueTier]} xəttində mövqeyini qoruyursan.`,
+      text: isGamificationError
+        ? 'Gamifikasiya məlumatları yüklənmədi.'
+        : `${leagueLabel[profile.leagueTier]} xəttində mövqeyini qoruyursan.`,
       tone: 'text-gold',
+      onRetry: isGamificationError ? onRetryGamification : undefined,
     },
   ]
 
@@ -752,6 +840,15 @@ function InsightStrip({
             <p className="text-xs font-semibold uppercase text-text-secondary">{insight.label}</p>
           </div>
           <p className="mt-3 text-sm font-bold leading-6 text-white">{insight.text}</p>
+          {insight.onRetry && (
+            <button
+              type="button"
+              onClick={insight.onRetry}
+              className="btn-outline mt-3"
+            >
+              Yenidən yoxla
+            </button>
+          )}
         </div>
       ))}
     </motion.section>
@@ -853,6 +950,10 @@ export default function StudentDashboard() {
     }
   }, [avatarColor])
 
+  const isGamificationError = queries.gamification.isError && !queries.gamification.data
+  const isDailyError = queries.daily.isError && !queries.daily.data
+  const retryGamification = () => { void queries.gamification.refetch() }
+  const retryDaily = () => { void queries.daily.refetch() }
   const profile = queries.gamification.data ?? fallbackGamification
   const daily = queries.daily.data ?? fallbackDaily
   const competition = queries.competitions.data ?? null
@@ -875,14 +976,28 @@ export default function StudentDashboard() {
         transition={{ staggerChildren: 0.06 }}
         className="mx-auto max-w-screen-2xl space-y-4 lg:space-y-6"
       >
-        <StatusHeader profile={profile} isLoading={queries.gamification.isLoading} />
+        <StatusHeader
+          profile={profile}
+          isLoading={queries.gamification.isLoading}
+          isError={isGamificationError}
+          onRetry={retryGamification}
+        />
         <CompanionGreeting
           firstName={firstName}
           avatarColor={avatarColor}
           profile={profile}
           daily={daily}
+          isGamificationError={isGamificationError}
+          isDailyError={isDailyError}
         />
-        <InsightStrip profile={profile} daily={daily} />
+        <InsightStrip
+          profile={profile}
+          daily={daily}
+          isGamificationError={isGamificationError}
+          isDailyError={isDailyError}
+          onRetryGamification={retryGamification}
+          onRetryDaily={retryDaily}
+        />
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <main className="space-y-4">
@@ -890,6 +1005,8 @@ export default function StudentDashboard() {
               daily={daily}
               competition={competition}
               mystery={queries.mystery.data}
+              isDailyError={isDailyError}
+              onRetryDaily={retryDaily}
             />
             <QuickActions />
             <CoursePreview course={course} />
@@ -900,6 +1017,8 @@ export default function StudentDashboard() {
               profile={profile}
               elo={elo}
               leaderboardRank={leaderboardRank}
+              isGamificationError={isGamificationError}
+              onRetryGamification={retryGamification}
             />
             <ClanLeaguePanel clans={clans} />
             <SocialFeedPanel
