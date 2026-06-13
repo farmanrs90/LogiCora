@@ -39,50 +39,6 @@ interface CoursePage {
   total:    number
 }
 
-interface ApiEnvelope<T> {
-  success: boolean
-  data: T
-  message?: string
-}
-
-interface BackendTeacher {
-  _id?: string
-  displayName?: string
-  name?: string
-  surname?: string
-  slug?: string
-  avatarColor?: string
-  isVerified?: boolean
-  specialization?: string
-}
-
-interface BackendCourse {
-  _id?: string
-  id?: string
-  title?: string
-  description?: string
-  thumbnail?: string | null
-  thumbnailUrl?: string | null
-  teacherId?: string | BackendTeacher
-  teacherName?: string
-  teacherAvatar?: string
-  teacherVerified?: boolean
-  price?: number
-  discountPrice?: number | null
-  category?: string
-  level?: 'beginner' | 'intermediate' | 'advanced'
-  ageGroup?: string[]
-  rating?: number
-  ratingCount?: number
-  totalEnrolled?: number
-  isFeatured?: boolean
-  language?: string
-  totalDuration?: number
-  slug?: string
-}
-
-type CourseListPayload = BackendCourse[] | CoursePage | { courses?: BackendCourse[]; nextPage?: number | null; total?: number }
-
 interface FeaturedTeacher {
   _id:         string
   name:        string
@@ -97,6 +53,27 @@ interface FeaturedTeacher {
   isFeatured:  boolean
 }
 
+interface FeaturedTeacherApi {
+  _id?: string
+  id?: string
+  name?: string
+  surname?: string
+  displayName?: string
+  slug?: string
+  avatarColor?: string
+  specialty?: string
+  specialization?: string
+  rating?: number
+  totalStudents?: number
+  isVerified?: boolean
+  isFounding?: boolean
+  isFeatured?: boolean
+  userId?: string | {
+    name?: string
+    surname?: string
+  }
+}
+
 interface Filters {
   category:  string
   level:     string
@@ -105,22 +82,12 @@ interface Filters {
   rating:    string
 }
 
-// ── Mock data ──────────────────────────────────────────────────────────────
-
-const MOCK_TEACHERS: FeaturedTeacher[] = [
-  { _id: 't1', name: 'Əli',    surname: 'Həsənov', slug: 'ali-hasanov', avatarColor: '#9333EA', specialty: 'Riyaziyyat',      rating: 4.9, totalStudents: 340, isVerified: true,  isFounding: true,  isFeatured: true  },
-  { _id: 't2', name: 'Günel',  surname: 'Muradova', slug: 'gunel-muradova', avatarColor: '#3B82F6', specialty: 'İngilis dili', rating: 4.8, totalStudents: 510, isVerified: true,  isFounding: true,  isFeatured: true  },
-  { _id: 't3', name: 'Rəşad',  surname: 'Əliyev',  slug: 'rashad-aliyev',  avatarColor: '#22C55E', specialty: 'Proqramlaşdırma', rating: 4.7, totalStudents: 280, isVerified: true,  isFounding: false, isFeatured: true  },
-  { _id: 't4', name: 'Nigar',  surname: 'Sultanova', slug: 'nigar-sultanova', avatarColor: '#F97316', specialty: 'Fizika',   rating: 4.6, totalStudents: 190, isVerified: true,  isFounding: false, isFeatured: false },
-]
-
 const CATEGORIES = [
   'Riyaziyyat', 'Fizika', 'Kimya', 'Biologiya', 'Tarix', 'Coğrafiya',
   'İngilis dili', 'Proqramlaşdırma', 'Şahmat', 'Musiqi', 'İncəsənət',
 ]
 
 const DEFAULT_FILTERS: Filters = { category: '', level: '', ageGroup: '', price: '', rating: '' }
-const COURSE_PAGE_SIZE = 12
 
 // ── Custom debounce hook ───────────────────────────────────────────────────
 
@@ -133,123 +100,80 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
+// ── Response adapter ───────────────────────────────────────────────────────
+// Backend `data` sahəsi həm massiv (Course[]), həm də { courses, nextPage, total }
+// formatında gələ bilər. Bu funksiya hər iki halı tək, etibarlı CoursePage formasına salır.
+// Beləcə şəkil uyğunsuzluğu zamanı app ağ ekrana düşmür.
+function normalizeCoursePage(raw: unknown): CoursePage {
+  // Hal 1 — backend birbaşa massiv qaytarır: data: Course[]
+  if (Array.isArray(raw)) {
+    return { courses: raw as CourseCard[], nextPage: null, total: raw.length }
+  }
+  // Hal 2 — backend obyekt qaytarır: { courses, nextPage, total } və ya { data: [...] }
+  if (raw && typeof raw === 'object') {
+    const obj = raw as Partial<CoursePage> & { data?: CourseCard[] }
+    const courses = Array.isArray(obj.courses)
+      ? obj.courses
+      : Array.isArray(obj.data)
+        ? obj.data
+        : []
+    return {
+      courses,
+      nextPage: typeof obj.nextPage === 'number' ? obj.nextPage : null,
+      total:    typeof obj.total === 'number' ? obj.total : courses.length,
+    }
+  }
+  // Hal 3 — gözlənilməz / boş cavab
+  return { courses: [], nextPage: null, total: 0 }
+}
+
+function normalizeFeaturedTeachers(raw: unknown): FeaturedTeacher[] {
+  if (!Array.isArray(raw)) {
+    return []
+  }
+
+  return raw
+    .map((item): FeaturedTeacher | null => {
+      if (!item || typeof item !== 'object') {
+        return null
+      }
+
+      const teacher = item as FeaturedTeacherApi
+      const user = teacher.userId && typeof teacher.userId === 'object' ? teacher.userId : null
+      const id = teacher._id ?? teacher.id
+      const name = teacher.name ?? teacher.displayName ?? user?.name
+      const surname = teacher.surname ?? user?.surname ?? ''
+
+      if (!id || !teacher.slug || !name) {
+        return null
+      }
+
+      return {
+        _id: id,
+        name,
+        surname,
+        slug: teacher.slug,
+        avatarColor: teacher.avatarColor ?? '#6366F1',
+        specialty: teacher.specialty ?? teacher.specialization ?? '',
+        rating: typeof teacher.rating === 'number' ? teacher.rating : 0,
+        totalStudents: typeof teacher.totalStudents === 'number' ? teacher.totalStudents : 0,
+        isVerified: teacher.isVerified === true,
+        isFounding: teacher.isFounding === true,
+        isFeatured: teacher.isFeatured === true,
+      }
+    })
+    .filter((teacher): teacher is FeaturedTeacher => teacher !== null)
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+
+
 
 function fmtDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   return h > 0 ? `${h} s ${m} d` : `${m} dəq`
-}
-
-function teacherNameFrom(course: BackendCourse): string {
-  if (course.teacherName) return course.teacherName
-  const teacher = typeof course.teacherId === 'object' ? course.teacherId : null
-  const fullName = [teacher?.name, teacher?.surname].filter(Boolean).join(' ')
-  if (teacher?.displayName) return teacher.displayName
-  if (fullName) return fullName
-  if (teacher?.specialization) return `${teacher.specialization} müəllimi`
-  return 'LogiCora müəllimi'
-}
-
-function normalizeCourse(raw: BackendCourse): CourseCard | null {
-  const id = raw._id ?? raw.id
-  if (!id) return null
-
-  const teacher = typeof raw.teacherId === 'object' ? raw.teacherId : null
-  const teacherId = typeof raw.teacherId === 'string' ? raw.teacherId : teacher?._id ?? ''
-
-  return {
-    _id: id,
-    title: raw.title ?? 'Adsız kurs',
-    description: raw.description ?? 'Bu kurs üçün açıqlama hələ əlavə edilməyib.',
-    thumbnailUrl: raw.thumbnailUrl ?? raw.thumbnail ?? null,
-    teacherId,
-    teacherName: teacherNameFrom(raw),
-    teacherAvatar: raw.teacherAvatar ?? teacher?.avatarColor ?? '#6366F1',
-    teacherVerified: raw.teacherVerified ?? teacher?.isVerified ?? false,
-    price: raw.price ?? 0,
-    discountPrice: raw.discountPrice ?? null,
-    category: raw.category ?? 'Ümumi',
-    level: raw.level ?? 'beginner',
-    ageGroup: raw.ageGroup ?? [],
-    rating: raw.rating ?? 0,
-    ratingCount: raw.ratingCount ?? 0,
-    totalEnrolled: raw.totalEnrolled ?? 0,
-    isFeatured: raw.isFeatured ?? false,
-    language: raw.language ?? 'az',
-    totalDuration: raw.totalDuration ?? 0,
-    slug: raw.slug ?? id,
-  }
-}
-
-function clientFilterCourses(courses: CourseCard[], search: string, filters: Filters): CourseCard[] {
-  const query = search.trim().toLowerCase()
-
-  return courses.filter((course) => {
-    if (query && !course.title.toLowerCase().includes(query) && !course.category.toLowerCase().includes(query)) return false
-    if (filters.category && course.category !== filters.category) return false
-    if (filters.level && course.level !== filters.level) return false
-    if (filters.ageGroup && !course.ageGroup.includes(filters.ageGroup)) return false
-    if (filters.price === 'free' && course.price !== 0) return false
-    if (filters.price === 'paid' && course.price === 0) return false
-    if (filters.rating && course.rating < Number(filters.rating)) return false
-    return true
-  })
-}
-
-function unwrapCoursePage(
-  envelope: ApiEnvelope<CourseListPayload>,
-  page: number,
-  search: string,
-  filters: Filters
-): CoursePage {
-  const payload = envelope.data
-  const rawCourses = Array.isArray(payload)
-    ? payload
-    : Array.isArray(payload.courses)
-      ? payload.courses
-      : []
-
-  const courses = clientFilterCourses(
-    rawCourses.map(normalizeCourse).filter((course): course is CourseCard => course !== null),
-    search,
-    filters
-  )
-
-  const nextPage = Array.isArray(payload)
-    ? null
-    : payload.nextPage ?? null
-
-  return {
-    courses,
-    nextPage: nextPage && nextPage > page ? nextPage : null,
-    total: courses.length,
-  }
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message
-    if (typeof message === 'string' && message.trim()) return message
-  }
-  return fallback
-}
-
-function CoursesErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-10 text-center">
-      <div className="mb-3 text-4xl">⚠️</div>
-      <h3 className="mb-2 text-xl font-bold text-white">Kurslar yüklənmədi</h3>
-      <p className="mx-auto max-w-md text-sm leading-6 text-[#FCA5A5]">{message}</p>
-      <button
-        onClick={onRetry}
-        className="mt-5 rounded-2xl px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
-        style={{ background: 'linear-gradient(135deg, #EF4444, #9333EA)' }}
-      >
-        Yenidən yoxla
-      </button>
-    </div>
-  )
 }
 
 function StarRating({ value, size = 12 }: { value: number; size?: number }) {
@@ -412,7 +336,7 @@ function CourseCardComponent({ course }: { course: CourseCard }) {
               className="w-5 h-5 rounded-full flex items-center justify-center text-white font-black"
               style={{ backgroundColor: course.teacherAvatar, fontSize: 9 }}
             >
-              {course.teacherName.charAt(0)}
+              {course.teacherName?.charAt(0) ?? '?'}
             </div>
             <span className="text-[#9CA3AF] text-[11px] truncate">{course.teacherName}</span>
             {course.teacherVerified && (
@@ -458,7 +382,7 @@ function FeaturedTeacherCard({ t }: { t: FeaturedTeacher }) {
             className="w-14 h-14 rounded-full flex items-center justify-center font-black text-white text-xl"
             style={{ backgroundColor: t.avatarColor }}
           >
-            {t.name.charAt(0)}
+            {t.name?.charAt(0) ?? '?'}
           </motion.div>
           {t.isVerified && (
             <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-[9px] font-black">✓</span>
@@ -593,11 +517,10 @@ export default function CourseList() {
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
-  const { data: featuredTeachers } = useQuery<FeaturedTeacher[]>({
+  const { data: featuredTeachers, isError: isFeaturedTeachersError } = useQuery<FeaturedTeacher[]>({
     queryKey: ['teachers', 'featured'],
-    queryFn:  () => api.get<{ data: FeaturedTeacher[] }>(API_ROUTES.TEACHERS.FEATURED)
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_TEACHERS),
+    queryFn:  () => api.get<{ data: unknown }>(API_ROUTES.TEACHERS.FEATURED)
+                      .then(r => normalizeFeaturedTeachers(r.data.data)),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -608,17 +531,13 @@ export default function CourseList() {
     isFetchingNextPage,
     isLoading,
     isError,
-    error,
     refetch,
   } = useInfiniteQuery({
     queryKey: ['courses', debouncedSearch, filters],
-    queryFn: async ({ pageParam }) => {
-      const page = Number(pageParam)
-      const response = await api.get<ApiEnvelope<CourseListPayload>>(API_ROUTES.COURSES.LIST, {
-        params: { page, limit: COURSE_PAGE_SIZE, search: debouncedSearch, ...filters },
-      })
-      return unwrapCoursePage(response.data, page, debouncedSearch, filters)
-    },
+    queryFn: ({ pageParam }: { pageParam: number }) =>
+      api.get<{ data: unknown }>(API_ROUTES.COURSES.LIST, {
+        params: { page: pageParam, limit: 12, search: debouncedSearch, ...filters },
+      }).then(r => normalizeCoursePage(r.data.data)),
     initialPageParam: 1,
     getNextPageParam: (lastPage: CoursePage) => lastPage.nextPage ?? undefined,
   })
@@ -639,8 +558,8 @@ export default function CourseList() {
   }, [handleObserver])
 
   const allCourses = data?.pages.flatMap(p => p.courses) ?? []
-  const teachers   = featuredTeachers ?? MOCK_TEACHERS
-  const totalCourses = data?.pages[0]?.total ?? 0
+  const teachers   = featuredTeachers ?? []
+  const showFeaturedTeachers = !isFeaturedTeachersError && teachers.length > 0
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pb-24">
@@ -680,10 +599,10 @@ export default function CourseList() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            🎓 Kurs bazarı
+            🎓 Kurs Marketplace
           </motion.h1>
           <p className="text-[#9CA3AF] text-sm mb-6">
-            {isLoading ? 'Kurslar yüklənir...' : `${totalCourses} kurs mövcuddur`}
+            {data?.pages[0]?.total ?? 0} kurs mövcuddur
           </p>
 
           {/* Search */}
@@ -728,13 +647,14 @@ export default function CourseList() {
 
       <div className="max-w-5xl mx-auto px-4 mt-6">
 
-        {/* ── FEATURED TEACHERS ─────────────────────────────────────────── */}
-        <div className="mb-8">
-          <p className="text-white font-bold text-sm mb-3">🌟 Tövsiyə olunan müəllimlər</p>
-          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {teachers.map(t => <FeaturedTeacherCard key={t._id} t={t} />)}
+        {showFeaturedTeachers && (
+          <div className="mb-8">
+            <p className="text-white font-bold text-sm mb-3">🌟 Tövsiyə olunan müəllimlər</p>
+            <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+              {teachers.map(t => <FeaturedTeacherCard key={t._id} t={t} />)}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── MAIN LAYOUT ───────────────────────────────────────────────── */}
         <div className="flex gap-6">
@@ -778,27 +698,43 @@ export default function CourseList() {
             )}
 
             {/* Grid */}
-            {isError ? (
-              <CoursesErrorState
-                message={errorMessage(error, 'Kurs siyahısı alınmadı. Zəhmət olmasa bir az sonra yenidən yoxlayın.')}
-                onRetry={() => void refetch()}
-              />
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => <CourseCardSkeleton key={i} />)}
+              </div>
+            ) : isError ? (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">⚠️</div>
+                <h3 className="text-white font-bold text-xl mb-2">Kurslar yüklənmədi</h3>
+                <p className="text-[#9CA3AF] text-sm">Zəhmət olmasa yenidən cəhd edin.</p>
+                <button
+                  onClick={() => refetch()}
+                  className="mt-4 px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
+                  style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+                >
+                  Yenidən yoxla
+                </button>
               </div>
             ) : allCourses.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-white font-bold text-xl mb-2">Kurs tapılmadı</h3>
-                <p className="text-[#9CA3AF] text-sm">Axtarış sözünü dəyişin və ya filterləri sıfırlayın.</p>
-                <button
-                  onClick={() => { setSearch(''); setFilters(DEFAULT_FILTERS) }}
-                  className="mt-4 px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
-                  style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
-                >
-                  Sıfırla
-                </button>
+                <h3 className="text-white font-bold text-xl mb-2">
+                  {(debouncedSearch || activeFilterCount > 0) ? 'Kurs tapılmadı' : 'Hazırda uyğun kurs tapılmadı'}
+                </h3>
+                <p className="text-[#9CA3AF] text-sm">
+                  {(debouncedSearch || activeFilterCount > 0)
+                    ? 'Axtarış sözünü dəyişin və ya filterləri sıfırlayın.'
+                    : 'Yeni kurslar əlavə olunduqca burada görünəcək.'}
+                </p>
+                {(debouncedSearch || activeFilterCount > 0) && (
+                  <button
+                    onClick={() => { setSearch(''); setFilters(DEFAULT_FILTERS) }}
+                    className="mt-4 px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
+                    style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+                  >
+                    Sıfırla
+                  </button>
+                )}
               </div>
             ) : (
               <>

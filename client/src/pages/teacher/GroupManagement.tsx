@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -6,7 +7,8 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import api from '../../lib/axios'
-import { API_ROUTES } from '../../constants'
+import toast from 'react-hot-toast'
+import { API_ROUTES, APP_ROUTES } from '../../constants'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -72,49 +74,6 @@ interface CreateGroupForm {
   maxMembers: number
 }
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
-
-const MOCK_GROUPS: Group[] = [
-  { id: 'g1', name: '9A Proqramlaşdırma', color: '#6366F1', subject: 'Python', memberCount: 18, maxMembers: 25, isActive: true, nextLesson: { date: '2026-05-25', time: '10:00' }, attendancePct: 88, schedule: [{ day: 'Bazar ertəsi', time: '10:00' }, { day: 'Çərşənbə', time: '10:00' }] },
-  { id: 'g2', name: '11B Veb Dizayn', color: '#8B5CF6', subject: 'Django', memberCount: 14, maxMembers: 20, isActive: true, nextLesson: { date: '2026-05-26', time: '14:00' }, attendancePct: 92, schedule: [{ day: 'Çərşənbə axşamı', time: '14:00' }, { day: 'Cümə', time: '14:00' }] },
-  { id: 'g3', name: 'Onlayn Data Science', color: '#06B6D4', subject: 'Data Science', memberCount: 22, maxMembers: 30, isActive: true, nextLesson: { date: '2026-05-27', time: '18:00' }, attendancePct: 78, schedule: [{ day: 'Cümə', time: '18:00' }] },
-  { id: 'g4', name: 'Yay Kursu 2025', color: '#F59E0B', subject: 'Python', memberCount: 31, maxMembers: 35, isActive: false, attendancePct: 95, schedule: [] },
-]
-
-const MOCK_MEMBERS: GroupMember[] = [
-  { id: 'm1', name: 'Anar Hüseynov', level: 28, attendancePct: 95, xpThisWeek: 640, portfolioLink: 'anar-h' },
-  { id: 'm2', name: 'Leyla Quliyeva', level: 18, attendancePct: 88, xpThisWeek: 420, portfolioLink: 'leyla-q' },
-  { id: 'm3', name: 'Tural Rəsulzadə', level: 22, attendancePct: 91, xpThisWeek: 520 },
-  { id: 'm4', name: 'Nigar Əliyeva', level: 12, attendancePct: 60, xpThisWeek: 80 },
-  { id: 'm5', name: 'Orxan Məmmədov', level: 15, attendancePct: 72, xpThisWeek: 180 },
-]
-
-const MOCK_DETAIL: GroupDetail = {
-  ...MOCK_GROUPS[0],
-  members: MOCK_MEMBERS,
-  attendanceDays: [
-    { date: '2026-05-20', records: MOCK_MEMBERS.map(m => ({ userId: m.id, status: m.attendancePct > 80 ? 'present' : 'absent' as const })) },
-    { date: '2026-05-22', records: MOCK_MEMBERS.map(m => ({ userId: m.id, status: 'present' as const })) },
-  ],
-  competitions: [
-    { id: 'k1', title: 'Python Sprint', date: '2026-05-10', participantCount: 18, avgScore: 76 },
-    { id: 'k2', title: 'Algorithm Battle', date: '2026-05-01', participantCount: 16, avgScore: 82 },
-  ],
-  analytics: {
-    xpTrend: [
-      { week: 'H1', avgXP: 280 }, { week: 'H2', avgXP: 350 }, { week: 'H3', avgXP: 310 }, { week: 'H4', avgXP: 420 },
-    ],
-    subjectBreakdown: [
-      { name: 'Python', value: 45 }, { name: 'Django', value: 25 }, { name: 'API', value: 20 }, { name: 'Digər', value: 10 },
-    ],
-    topStudent: MOCK_MEMBERS[0],
-    weakStudent: MOCK_MEMBERS[3],
-    monthlyAttendance: [
-      { month: 'Yan', pct: 82 }, { month: 'Fev', pct: 88 }, { month: 'Mar', pct: 85 }, { month: 'Apr', pct: 91 }, { month: 'May', pct: 88 },
-    ],
-  },
-}
-
 const DAYS_AZ = ['Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə']
 const SUBJECTS = ['Python', 'Django', 'JavaScript', 'Data Science', 'Web Dizayn', 'Riyaziyyat', 'Fizika', 'Kimya', 'Biologiya', 'Tarix']
 const PIE_COLORS = ['#6366F1', '#8B5CF6', '#06B6D4', '#F59E0B']
@@ -131,8 +90,10 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
 
   const createMutation = useMutation({
     mutationFn: (data: CreateGroupForm) => api.post(API_ROUTES.GROUPS.CREATE, data).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); onClose() },
-    onError: () => { qc.invalidateQueries({ queryKey: ['groups'] }); onClose() },
+    // Uğur YALNIZ backend cavabından sonra: bildiriş + siyahını yenilə + modalı bağla.
+    onSuccess: () => { toast.success('Qrup yaradıldı.'); qc.invalidateQueries({ queryKey: ['groups'] }); onClose() },
+    // Xəta: fake uğur yox — modal açıq qalır, istifadəçiyə xəta bildirilir.
+    onError: () => toast.error('Qrup yaradılmadı. Yenidən cəhd edin.'),
   })
 
   const toggleDay = (day: string) =>
@@ -217,13 +178,15 @@ function MembersTab({ group, detail }: { group: Group; detail: GroupDetail }) {
 
   const inviteMutation = useMutation({
     mutationFn: (email: string) => api.post(API_ROUTES.GROUPS.INVITE(group.id), { email }).then(r => r.data),
-    onSuccess: () => setInviteEmail(''),
-    onError: () => setInviteEmail(''),
+    // Uğur yalnız backend cavabından sonra: input təmizlə + üzv siyahısını yenilə.
+    onSuccess: () => { toast.success('Dəvət göndərildi.'); setInviteEmail(''); qc.invalidateQueries({ queryKey: ['group-detail', group.id] }) },
+    onError: () => toast.error('Tələbə dəvət olunmadı.'),
   })
 
   const removeMutation = useMutation({
     mutationFn: (userId: string) => api.delete(API_ROUTES.GROUPS.REMOVE(group.id, userId)).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['group-detail', group.id] }); setConfirmRemove(null) },
+    onSuccess: () => { toast.success('Tələbə çıxarıldı.'); qc.invalidateQueries({ queryKey: ['group-detail', group.id] }); setConfirmRemove(null) },
+    onError: () => { toast.error('Tələbə çıxarılmadı.'); setConfirmRemove(null) },
   })
 
   return (
@@ -300,6 +263,7 @@ function MembersTab({ group, detail }: { group: Group; detail: GroupDetail }) {
 }
 
 function AttendanceTab({ group, detail }: { group: Group; detail: GroupDetail }) {
+  const qc = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(detail.attendanceDays[0]?.date ?? '')
   const [records, setRecords] = useState<Record<string, AttendanceRecord['status']>>(() => {
     const day = detail.attendanceDays.find(d => d.date === selectedDate)
@@ -308,7 +272,9 @@ function AttendanceTab({ group, detail }: { group: Group; detail: GroupDetail })
 
   const saveMutation = useMutation({
     mutationFn: () => api.post(API_ROUTES.GROUPS.ATTENDANCE(group.id), { date: selectedDate, records: Object.entries(records).map(([userId, status]) => ({ userId, status })) }).then(r => r.data),
-    onError: () => { /* mock ok */ },
+    // Uğur yalnız backend cavabından sonra (düymə "✓ Saxlandı" isSuccess ilə işləyir).
+    onSuccess: () => { toast.success('Davamiyyət saxlanıldı.'); qc.invalidateQueries({ queryKey: ['group-detail', group.id] }) },
+    onError: () => toast.error('Davamiyyət saxlanmadı.'),
   })
 
   const STATUS_OPTS: { value: AttendanceRecord['status']; label: string; color: string }[] = [
@@ -470,9 +436,20 @@ function AnalyticsTab({ detail }: { detail: GroupDetail }) {
 function GroupDrawer({ group, onClose }: { group: Group; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<DrawerTab>('members')
 
-  const { data: detail, isLoading } = useQuery({
+  const { data: detail, isLoading, isError: detailError } = useQuery<GroupDetail>({
     queryKey: ['group-detail', group.id],
-    queryFn: () => api.get<GroupDetail>(API_ROUTES.GROUPS.BY_ID(group.id)).then(r => r.data).catch(() => MOCK_DETAIL),
+    // Real cavab GroupDetail-in bütün sahələrini verməyə bilər → təhlükəsiz default-larla normalize (fake yox, boş).
+    queryFn: () => api.get<Partial<GroupDetail>>(API_ROUTES.GROUPS.BY_ID(group.id)).then(r => {
+      const d: Partial<GroupDetail> = r.data ?? {}
+      return {
+        ...group,
+        ...d,
+        members:        Array.isArray(d.members) ? d.members : [],
+        attendanceDays: Array.isArray(d.attendanceDays) ? d.attendanceDays : [],
+        competitions:   Array.isArray(d.competitions) ? d.competitions : [],
+        analytics:      d.analytics ?? { xpTrend: [], subjectBreakdown: [], topStudent: null, weakStudent: null, monthlyAttendance: [] },
+      } as GroupDetail
+    }),
   })
 
   const TABS: { key: DrawerTab; label: string }[] = [
@@ -524,6 +501,11 @@ function GroupDrawer({ group, onClose }: { group: Group; onClose: () => void }) 
           {isLoading ? (
             <div className="space-y-3 animate-pulse">
               {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-14 bg-white/5 rounded-xl" />)}
+            </div>
+          ) : detailError ? (
+            <div className="text-center py-16">
+              <div className="text-5xl mb-3">⚠️</div>
+              <p className="text-white/60 text-sm">Qrup məlumatı yüklənmədi.</p>
             </div>
           ) : detail ? (
             <AnimatePresence mode="wait">
@@ -595,10 +577,11 @@ function GroupCard({ group, onClick }: { group: Group; onClick: () => void }) {
 export default function GroupManagement() {
   const [showCreate, setShowCreate] = useState(false)
   const [activeGroup, setActiveGroup] = useState<Group | null>(null)
+  const navigate = useNavigate()
 
-  const { data: groups, isLoading } = useQuery({
+  const { data: groups, isLoading, isError, refetch } = useQuery({
     queryKey: ['groups'],
-    queryFn: () => api.get<Group[]>(API_ROUTES.GROUPS.LIST).then(r => r.data).catch(() => MOCK_GROUPS),
+    queryFn: () => api.get<Group[]>(API_ROUTES.GROUPS.LIST).then(r => r.data),
   })
 
   return (
@@ -625,6 +608,16 @@ export default function GroupManagement() {
               <div key={i} className="bg-white/5 border border-white/10 rounded-2xl h-52 animate-pulse" />
             ))}
           </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+            <div className="text-6xl">⚠️</div>
+            <h2 className="text-xl font-bold">Qruplar yüklənmədi</h2>
+            <p className="text-white/50 text-sm max-w-xs">Zəhmət olmasa yenidən cəhd edin.</p>
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate(APP_ROUTES.DASHBOARD.TEACHER)} className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors">Dashboard-a qayıt</button>
+              <button onClick={() => refetch()} className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold transition-colors">Yenidən yoxla</button>
+            </div>
+          </div>
         ) : groups && groups.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {groups.map((group, i) => (
@@ -636,10 +629,10 @@ export default function GroupManagement() {
         ) : (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <div className="text-7xl">👥</div>
-            <h2 className="text-xl font-bold">Hələ ki qrup yoxdur</h2>
+            <h2 className="text-xl font-bold">Hələ qrup yaradılmayıb</h2>
             <p className="text-white/50 text-sm max-w-xs">Tələbələrinizi qruplara bölərək daha effektiv izləyin</p>
             <button onClick={() => setShowCreate(true)} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold transition-colors">
-              İlk qrupu yarat
+              Qrup yarat
             </button>
           </div>
         )}

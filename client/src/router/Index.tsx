@@ -40,6 +40,8 @@ import MyPortfolio from '../pages/portfolio/MyPortfolio'
 import PublicPortfolio from '../pages/portfolio/PublicPortfolio'
 import GroupManagement from '../pages/teacher/GroupManagement'
 import TeacherAnalytics from '../pages/teacher/TeacherAnalytics'
+import TeacherAttendance from '../pages/teacher/TeacherAttendance'
+import TeacherClassroomIndex from '../pages/teacher/TeacherClassroomIndex'
 import ChildProgress from '../pages/parent/ChildProgress'
 import Chat from '../pages/chat/Index'
 import Settings from '../pages/settings/Index'
@@ -142,6 +144,14 @@ export default function AppRouter() {
           }
         />
 
+        {/* ── Parent alias route-ları ───────────────────────────── */}
+        {/* Semantik URL-lər qalır, amma parent dashboard-a redirect olur.
+            RoleRoute parent olmayan/giriş etməmiş user-i öz yerinə yönləndirir. */}
+        <Route path="/child"            element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#child-section`} replace /></RoleRoute>} />
+        <Route path="/progress"         element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#progress-section`} replace /></RoleRoute>} />
+        <Route path="/attendance/child" element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#attendance-section`} replace /></RoleRoute>} />
+        <Route path="/payments"         element={<RoleRoute roles={['parent']}><Navigate to={`${APP_ROUTES.DASHBOARD.PARENT}#payments-section`} replace /></RoleRoute>} />
+
         {/* ── Feature routes — hamısı PageWrapper ilə ──────────── */}
         <Route path={APP_ROUTES.DAILY} element={<ProtectedRoute><DailyQuiz /></ProtectedRoute>} />
         <Route path="/competition" element={<PW><CompetitionJoin /></PW>} />
@@ -154,11 +164,18 @@ export default function AppRouter() {
         <Route path="/clan/:slug/battle/:battleId" element={<PW><ClanBattle /></PW>} />
         <Route path="/leaderboard/clans" element={<PW><ClanLeaderboard /></PW>} />
         <Route path={APP_ROUTES.COURSES} element={<PW><Courses /></PW>} />
+        {/* /courses/create səhifəsi yoxdur — "create" id kimi qəbul olunub CourseDetail mock açmasın deyə
+            /:id-dən ƏVVƏL kurslar səhifəsinə yönləndirilir. */}
+        <Route path="/courses/create" element={<Navigate to={APP_ROUTES.COURSES} replace />} />
         <Route path="/courses/:id" element={<PW><CourseDetail /></PW>} />
+        {/* Müəllim sinif indeksi — /classroom/:id-dən ƏVVƏL (exact match) */}
+        <Route path="/classroom" element={<RoleRoute roles={['teacher']}><PageWrapper><TeacherClassroomIndex /></PageWrapper></RoleRoute>} />
         <Route path="/classroom/:id" element={<PW><ClassroomRoom /></PW>} />
         <Route path="/classroom/:id/qr" element={<ProtectedRoute><AttendanceQR /></ProtectedRoute>} />
         <Route path="/child/:childId/progress" element={<PW><ChildProgress /></PW>} />
         <Route path="/groups" element={<PW><GroupManagement /></PW>} />
+        {/* Müəllim davamiyyət baxışı */}
+        <Route path="/attendance" element={<RoleRoute roles={['teacher']}><PageWrapper><TeacherAttendance /></PageWrapper></RoleRoute>} />
         <Route path="/analytics" element={<PW><TeacherAnalytics /></PW>} />
         <Route path={APP_ROUTES.CHAT} element={<PW><Chat /></PW>} />
         <Route path={APP_ROUTES.SETTINGS} element={<PW><Settings /></PW>} />

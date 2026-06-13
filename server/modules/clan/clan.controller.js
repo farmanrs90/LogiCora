@@ -39,6 +39,26 @@ const getClanBySlug = async (req, res) => {
   res.status(200).json({ success: true, data: clan, message: 'Klan alındı.' });
 };
 
+const getMyClan = async (req, res) => {
+  const clan = await clanService.getMyClan(req.user._id);
+  res.status(200).json({ success: true, data: clan, message: clan ? 'Klan alındı.' : 'Klan yoxdur.' });
+};
+
+const getClanMembers = async (req, res) => {
+  const members = await clanService.getClanMembers(req.params.slug);
+  res.status(200).json({ success: true, data: members, message: 'Üzvlər alındı.' });
+};
+
+const getClanBattles = async (req, res) => {
+  const battles = await clanService.getClanBattles(req.params.slug);
+  res.status(200).json({ success: true, data: battles, message: 'Döyüşlər alındı.' });
+};
+
+const getClanStats = async (req, res) => {
+  const stats = await clanService.getClanStats(req.params.slug);
+  res.status(200).json({ success: true, data: stats, message: 'Statistika alındı.' });
+};
+
 module.exports = {
   createClan,
   joinClan,
@@ -47,4 +67,8 @@ module.exports = {
   finishBattle,
   getLeaderboard,
   getClanBySlug,
+  getMyClan,
+  getClanMembers,
+  getClanBattles,
+  getClanStats,
 };

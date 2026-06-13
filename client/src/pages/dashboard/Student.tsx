@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Bell,
   BookOpen,
+  Brain,
   CheckCircle2,
   Clock,
   Flame,
@@ -14,10 +15,12 @@ import {
   Heart,
   Medal,
   MessageSquare,
+  Shield,
   Sparkles,
   Swords,
   Target,
   Trophy,
+  Users,
   Zap,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -29,6 +32,7 @@ import type {
   Course,
   DailyStatusResponse,
   GamificationProfile,
+  MysteryCurrentResponse,
   Notification as AppNotification,
 } from '../../types'
 
@@ -39,6 +43,16 @@ interface ActiveCompetition {
   title: string
   status: 'waiting' | 'active' | 'finished' | string
   playerCount: number
+}
+
+interface ClanLeaderboardRow {
+  _id: string
+  name: string
+  slug: string
+  schoolName?: string
+  totalXP: number
+  weeklyXP: number
+  members?: unknown[]
 }
 
 interface EloRating {
@@ -154,43 +168,6 @@ function LoadingBlock({ lines = 3 }: { lines?: number }) {
         />
       ))}
     </div>
-  )
-}
-
-function DataQualityBanner({
-  issues,
-}: {
-  issues: Array<{ label: string; onRetry: () => unknown }>
-}) {
-  if (issues.length === 0) return null
-
-  return (
-    <motion.section
-      variants={panelMotion}
-      transition={motionTransition}
-      className="rounded-card border border-accent-orange/30 bg-accent-orange/10 px-4 py-3"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-bold text-white">Bəzi məlumatlar yenilənmədi</p>
-          <p className="mt-1 text-xs font-medium leading-5 text-white/65">
-            {issues.map((issue) => issue.label).join(', ')} üzrə son server cavabı alınmadı. Səhifə etibarlı ehtiyat göstəricilərlə açıq qalır.
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {issues.map((issue) => (
-            <button
-              key={issue.label}
-              type="button"
-              onClick={() => void issue.onRetry()}
-              className="rounded-btn border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              {issue.label} yenilə
-            </button>
-          ))}
-        </div>
-      </div>
-    </motion.section>
   )
 }
 
@@ -311,7 +288,7 @@ function CompanionGreeting({
   const companionName = avatarColor.toLowerCase() === '#3b82f6' ? 'Logi' : 'Cora'
   const companionTone = companionName === 'Logi'
     ? `${remaining} tapşırıq qalır. ${profile.weeklyXP + 40} XP həftəlik temp üçün yaxşı hədəfdir.`
-    : `Bugünkü ritmin sabitdir. Gündəlik sualları tamamla, sonra portfolio xəttini gücləndir.`
+    : `Bugünkü ritmin sabitdir. Gündəlik sualları tamamla, sonra portfolio və klan xəttini gücləndir.`
 
   return (
     <motion.section
@@ -394,12 +371,13 @@ function FocusCard({
 function TodaysFocus({
   daily,
   competition,
+  mystery,
 }: {
   daily: DailyStatusResponse
   competition: ActiveCompetition | null
+  mystery: MysteryCurrentResponse | undefined
 }) {
   const navigate = useNavigate()
-  const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
   const answeredPercent = daily.totalCount > 0
     ? clampPercent((daily.answeredCount / daily.totalCount) * 100)
     : 0
@@ -409,11 +387,11 @@ function TodaysFocus({
       <div className="flex items-end justify-between gap-3">
         {sectionTitle('Bugünkü fokus', 'Nə etməliyəm?')}
         <span className="text-xs font-semibold text-text-secondary">
-          {daily.completed ? 'Gündəlik tapşırıq tamamlandı' : `${remaining} sual qalır`}
+          {daily.completed ? 'Gündəlik tapşırıq tamamlandı' : `${daily.totalCount - daily.answeredCount} sual qalır`}
         </span>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-card border border-border bg-bg-card p-4">
           <div className="flex items-center justify-between">
             <div className="rounded-btn border border-accent-green/30 bg-accent-green/10 p-2 text-accent-green">
@@ -457,6 +435,19 @@ function TodaysFocus({
           accentClass="text-accent-orange"
         />
 
+        <FocusCard
+          icon={Brain}
+          title="Həftənin sirri"
+          description={mystery?.status === 'active'
+            ? 'Yeni sirr aktivdir. Çətin tapşırıq üçün sakit fokus seç.'
+            : mystery?.status === 'solved'
+              ? 'Bu həftənin sirri artıq həll olunub. Nəticəni analiz et.'
+              : 'Növbəti sirr açılana qədər gündəlik sual və kurs xəttini gücləndir.'}
+          meta={mystery?.status === 'active' ? 'Aktiv' : 'Gözləmə'}
+          cta="Sirrə bax"
+          onClick={() => navigate(APP_ROUTES.WEEKLY_MYSTERY)}
+          accentClass="text-accent-purple"
+        />
       </div>
     </motion.section>
   )
@@ -492,12 +483,19 @@ function QuickActions() {
       path: APP_ROUTES.PORTFOLIO_ME,
       tone: 'text-accent-purple',
     },
+    {
+      title: 'Klan',
+      caption: 'Komanda sıralaması',
+      icon: Shield,
+      path: APP_ROUTES.CLAN_LEADERBOARD,
+      tone: 'text-accent-green',
+    },
   ]
 
   return (
     <motion.section variants={panelMotion} transition={motionTransition} className="space-y-3">
       {sectionTitle('Sürətli keçidlər', 'Növbəti addım')}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3">
         {actions.map((action) => (
           <motion.button
             key={action.title}
@@ -632,6 +630,46 @@ function DataTile({ label, value, detail }: { label: string; value: string; deta
   )
 }
 
+function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
+  const topClan = clans[0] ?? null
+
+  return (
+    <motion.section variants={panelMotion} transition={motionTransition} className="card space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        {sectionTitle('Klan və liqa', 'Rəqiblər nə edir?')}
+        <Users className="h-5 w-5 text-accent-purple" aria-hidden="true" />
+      </div>
+
+      {topClan ? (
+        <div className="rounded-card border border-border bg-bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-white">{topClan.name}</p>
+              <p className="mt-1 text-xs font-medium text-text-secondary">
+                {topClan.schoolName || 'Açıq sıralama'}
+              </p>
+            </div>
+            <span className="rounded-btn border border-gold/30 bg-gold/10 px-2 py-1 text-xs font-black text-gold">
+              #1
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <DataTile label="Toplam XP" value={formatNumber(topClan.totalXP)} detail="Klan gücü" />
+            <DataTile label="Həftəlik XP" value={formatNumber(topClan.weeklyXP)} detail="Temp" />
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-card border border-border bg-bg-card p-4">
+          <p className="text-sm font-bold text-white">Klan sıralaması boşdur</p>
+          <p className="mt-2 text-sm font-medium leading-6 text-text-secondary">
+            Klana qoşulmamısan. Komanda ilə XP qazanmaq üçün sıralamanı yoxla və uyğun klan seç.
+          </p>
+        </div>
+      )}
+    </motion.section>
+  )
+}
+
 function SocialFeedPanel({
   notifications,
   isLoading,
@@ -668,7 +706,7 @@ function SocialFeedPanel({
         <div className="rounded-card border border-border bg-bg-card p-4">
           <p className="text-sm font-bold text-white">Hələ yeni aktivlik yoxdur</p>
           <p className="mt-2 text-sm font-medium leading-6 text-text-secondary">
-            Gündəlik tapşırıq və yarış nəticələri burada kompakt şəkildə görünəcək.
+            Gündəlik tapşırıq, yarış və klan nəticələri burada kompakt şəkildə görünəcək.
           </p>
         </div>
       )}
@@ -754,6 +792,18 @@ function useDashboardQueries() {
     staleTime: 1000 * 30,
   })
 
+  const mystery = useQuery<MysteryCurrentResponse>({
+    queryKey: ['dashboard', 'weekly-mystery', 'current'],
+    queryFn: () => api.get<{ data: MysteryCurrentResponse }>(API_ROUTES.MYSTERY.CURRENT).then((r) => r.data.data),
+    staleTime: 1000 * 60,
+  })
+
+  const clans = useQuery<ClanLeaderboardRow[]>({
+    queryKey: ['dashboard', 'clans', 'leaderboard'],
+    queryFn: () => api.get<{ data: ClanLeaderboardRow[] }>(API_ROUTES.CLANS.LEADERBOARD).then((r) => r.data.data),
+    staleTime: 1000 * 60 * 3,
+  })
+
   const elo = useQuery<EloRating[]>({
     queryKey: ['dashboard', 'elo', 'me'],
     queryFn: () => api.get<{ data: EloRating[] }>(API_ROUTES.ELO.ME).then((r) => r.data.data),
@@ -786,7 +836,7 @@ function useDashboardQueries() {
     staleTime: 1000 * 60 * 2,
   })
 
-  return { gamification, daily, competitions, elo, notifications, courses, leaderboard }
+  return { gamification, daily, competitions, mystery, clans, elo, notifications, courses, leaderboard }
 }
 
 export default function StudentDashboard() {
@@ -806,16 +856,11 @@ export default function StudentDashboard() {
   const profile = queries.gamification.data ?? fallbackGamification
   const daily = queries.daily.data ?? fallbackDaily
   const competition = queries.competitions.data ?? null
+  const clans = queries.clans.data ?? []
   const elo = queries.elo.data ?? []
   const notifications = queries.notifications.data ?? []
   const course = queries.courses.data?.[0] ?? null
   const firstName = user?.name || 'Tələbə'
-  const dataIssues = [
-    { label: 'XP', isError: queries.gamification.isError, onRetry: queries.gamification.refetch },
-    { label: 'Gündəlik quiz', isError: queries.daily.isError, onRetry: queries.daily.refetch },
-    { label: 'Yarış', isError: queries.competitions.isError, onRetry: queries.competitions.refetch },
-    { label: 'Kurslar', isError: queries.courses.isError, onRetry: queries.courses.refetch },
-  ].filter((issue) => issue.isError)
 
   const rankIndex = user?._id
     ? (queries.leaderboard.data ?? []).findIndex((row) => row.studentId === user._id)
@@ -831,7 +876,6 @@ export default function StudentDashboard() {
         className="mx-auto max-w-screen-2xl space-y-4 lg:space-y-6"
       >
         <StatusHeader profile={profile} isLoading={queries.gamification.isLoading} />
-        <DataQualityBanner issues={dataIssues} />
         <CompanionGreeting
           firstName={firstName}
           avatarColor={avatarColor}
@@ -845,6 +889,7 @@ export default function StudentDashboard() {
             <TodaysFocus
               daily={daily}
               competition={competition}
+              mystery={queries.mystery.data}
             />
             <QuickActions />
             <CoursePreview course={course} />
@@ -856,6 +901,7 @@ export default function StudentDashboard() {
               elo={elo}
               leaderboardRank={leaderboardRank}
             />
+            <ClanLeaguePanel clans={clans} />
             <SocialFeedPanel
               notifications={notifications}
               isLoading={queries.notifications.isLoading}

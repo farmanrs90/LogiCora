@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -7,6 +8,8 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
 } from 'recharts'
 import api from '../../lib/axios'
+import { APP_ROUTES } from '../../constants'
+import toast from 'react-hot-toast'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -71,62 +74,6 @@ interface AnalyticsData {
   storefront: StorefrontPerf
   impactBreakdown: ImpactBreakdown[]
   aiAdvice: string
-}
-
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK: AnalyticsData = {
-  metrics: [
-    { label: 'Ümumi Tələbə', value: '248', trend: 14, sub: 'bu ay artım' },
-    { label: 'Ort. Davamiyyət', value: '87%', trend: 3, sub: 'keçən aya görə' },
-    { label: 'Ort. XP Artımı', value: '340 XP', trend: 8, sub: 'tələbə başına' },
-    { label: 'Kurs Tamamlanma', value: '62%', trend: -2, sub: 'keçən aya görə' },
-  ],
-  groupXP: [
-    { group: '9A', color: '#6366F1', data: [{ week: 'H1', avgXP: 280 }, { week: 'H2', avgXP: 340 }, { week: 'H3', avgXP: 310 }, { week: 'H4', avgXP: 420 }] },
-    { group: '11B', color: '#8B5CF6', data: [{ week: 'H1', avgXP: 320 }, { week: 'H2', avgXP: 360 }, { week: 'H3', avgXP: 390 }, { week: 'H4', avgXP: 440 }] },
-    { group: 'Onlayn', color: '#06B6D4', data: [{ week: 'H1', avgXP: 180 }, { week: 'H2', avgXP: 210 }, { week: 'H3', avgXP: 195 }, { week: 'H4', avgXP: 260 }] },
-  ],
-  topStudents: [
-    { id: 's1', name: 'Anar Hüseynov', xpGain: 640, xpGainPct: 28, lastSeen: '1 saat əvvəl', attendancePct: 95 },
-    { id: 's2', name: 'Tural Rəsulzadə', xpGain: 520, xpGainPct: 22, lastSeen: '3 saat əvvəl', attendancePct: 91 },
-    { id: 's3', name: 'Leyla Quliyeva', xpGain: 420, xpGainPct: 18, lastSeen: '45 dəq əvvəl', attendancePct: 88 },
-    { id: 's4', name: 'Günel Həsənova', xpGain: 380, xpGainPct: 16, lastSeen: '2 saat əvvəl', attendancePct: 92 },
-    { id: 's5', name: 'Rauf İsmayılov', xpGain: 340, xpGainPct: 14, lastSeen: '5 saat əvvəl', attendancePct: 85 },
-  ],
-  weakStudents: [
-    { id: 'w1', name: 'Nigar Əliyeva', xpGain: 80, xpGainPct: 3, lastSeen: '2 gün əvvəl', attendancePct: 60 },
-    { id: 'w2', name: 'Orxan Məmmədov', xpGain: 40, xpGainPct: 2, lastSeen: '5 gün əvvəl', attendancePct: 55 },
-    { id: 'w3', name: 'Samir Bağırov', xpGain: 120, xpGainPct: 5, lastSeen: '3 gün əvvəl', attendancePct: 68 },
-  ],
-  courses: [
-    {
-      id: 'c1', title: 'Python ilə Proqramlaşdırma',
-      enrollCount: 2840, activeCount: 1960, completedCount: 1760, avgRating: 4.8,
-      weeklyEnroll: [{ week: 'H1', count: 40 }, { week: 'H2', count: 55 }, { week: 'H3', count: 38 }, { week: 'H4', count: 62 }],
-      mostWatchedLesson: 'Dərs 3: Funksiyalar',
-      mostSkippedLesson: 'Dərs 14: Dekoratorlar',
-      ratingTrend: [{ month: 'Yan', avg: 4.6 }, { month: 'Fev', avg: 4.7 }, { month: 'Mar', avg: 4.8 }, { month: 'Apr', avg: 4.8 }],
-    },
-    {
-      id: 'c2', title: 'Django REST API',
-      enrollCount: 1640, activeCount: 980, completedCount: 790, avgRating: 4.9,
-      weeklyEnroll: [{ week: 'H1', count: 28 }, { week: 'H2', count: 32 }, { week: 'H3', count: 25 }, { week: 'H4', count: 41 }],
-      mostWatchedLesson: 'Dərs 5: Serializers',
-      mostSkippedLesson: 'Dərs 18: Celery',
-      ratingTrend: [{ month: 'Yan', avg: 4.7 }, { month: 'Fev', avg: 4.8 }, { month: 'Mar', avg: 4.9 }, { month: 'Apr', avg: 4.9 }],
-    },
-  ],
-  storefront: {
-    profileViews: 1240, invitesSent: 48, invitesAccepted: 31, isFeatured: false,
-  },
-  impactBreakdown: [
-    { name: 'Davamiyyət', value: 23, fill: '#6366F1' },
-    { name: 'XP Artımı', value: 31, fill: '#8B5CF6' },
-    { name: 'Kurs tamamlanma', value: 28, fill: '#06B6D4' },
-    { name: 'Yarış nəticəsi', value: 18, fill: '#F59E0B' },
-  ],
-  aiAdvice: 'Kurs tamamlanma faizini artırmaq üçün "Dekoratorlar" dərsinə əlavə video izahat əlavə etməyi tövsiyə edirik. Nigar və Orxan\'ın valideynlərinə vaxtında bildiriş göndərməyi düşünün.',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -384,14 +331,54 @@ function ImpactSection({ data, advice }: { data: ImpactBreakdown[]; advice: stri
 
 export default function TeacherAnalytics() {
   const [period, setPeriod] = useState<Period>('month')
+  const navigate = useNavigate()
 
-  const { data: analytics, isLoading } = useQuery({
+  const { data: analytics, isLoading, isError, refetch } = useQuery({
     queryKey: ['teacher-analytics', period],
-    queryFn: () => api.get<AnalyticsData>(`/teachers/me/analytics?period=${period}`).then(r => r.data).catch(() => MOCK),
+    queryFn: () => api.get<AnalyticsData>(`/teachers/me/analytics?period=${period}`).then(r => r.data),
   })
 
-  const data = analytics ?? MOCK
-  const mergedXP = mergeGroupXP(data.groupXP)
+  // Backend 200 amma məzmun yoxdursa — empty state (fake analitika göstərmirik).
+  const isEmptyAnalytics = !!analytics
+    && !analytics.metrics?.length
+    && !analytics.topStudents?.length
+    && !analytics.weakStudents?.length
+    && !analytics.courses?.length
+    && !analytics.groupXP?.length
+  const hasData = !!analytics && !isEmptyAnalytics
+  const mergedXP = mergeGroupXP(analytics?.groupXP ?? [])
+
+  // Mövcud analitika datasını sadə CSV kimi ixrac edir (yeni backend/endpoint tələb etmir)
+  const handleExport = () => {
+    if (!analytics) return   // yalnız real data varsa ixrac — saxta CSV yox
+    const esc = (v: string | number) => {
+      const s = String(v ?? '')
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    }
+    const lines: string[] = []
+    lines.push('LogiCora — Analitika')
+    lines.push(`Period,${period}`)
+    lines.push('')
+    lines.push(['Göstərici', 'Dəyər', 'Trend %', 'Qeyd'].join(','))
+    analytics.metrics.forEach((m) => lines.push([m.label, m.value, m.trend, m.sub].map(esc).join(',')))
+    lines.push('')
+    lines.push(['Ən aktiv tələbə', 'XP artımı', 'Davamiyyət %', 'Son görünmə'].join(','))
+    analytics.topStudents.forEach((s) => lines.push([s.name, s.xpGain, s.attendancePct, s.lastSeen].map(esc).join(',')))
+    lines.push('')
+    lines.push(['Dəstək tələb edən tələbə', 'XP artımı', 'Davamiyyət %', 'Son görünmə'].join(','))
+    analytics.weakStudents.forEach((s) => lines.push([s.name, s.xpGain, s.attendancePct, s.lastSeen].map(esc).join(',')))
+
+    const csv = '﻿' + lines.join('\n')   // BOM — Excel-də Azərbaycan hərfləri düzgün görünsün
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `logicora-analitika-${period}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success('Analitika CSV kimi yükləndi')
+  }
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
@@ -405,76 +392,95 @@ export default function TeacherAnalytics() {
           </div>
           <div className="flex items-center gap-3">
             <PeriodSelector value={period} onChange={setPeriod} />
-            <button className="px-4 py-2 border border-white/15 hover:border-white/30 rounded-xl text-sm text-white/60 hover:text-white transition-colors">
+            <button onClick={handleExport} disabled={!hasData}
+              className="px-4 py-2 border border-white/15 hover:border-white/30 rounded-xl text-sm text-white/60 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-white/15 disabled:hover:text-white/60">
               📄 Export
             </button>
           </div>
         </div>
 
-        {/* Metrics */}
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-white/5 rounded-2xl animate-pulse" />)}
           </div>
+        ) : isError ? (
+          <div className="text-center py-24">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold mb-2">Analitika yüklənmədi</h2>
+            <p className="text-white/50 text-sm mb-6">Zəhmət olmasa yenidən cəhd edin.</p>
+            <div className="flex items-center justify-center gap-3">
+              <button onClick={() => navigate(APP_ROUTES.DASHBOARD.TEACHER)} className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors">Dashboard-a qayıt</button>
+              <button onClick={() => refetch()} className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold transition-colors">Yenidən yoxla</button>
+            </div>
+          </div>
+        ) : !analytics || isEmptyAnalytics ? (
+          <div className="text-center py-24">
+            <div className="text-6xl mb-4">📊</div>
+            <h2 className="text-xl font-bold mb-2">Hələ analitika məlumatı yoxdur</h2>
+            <p className="text-white/50 text-sm">Tələbə və kurs aktivliyi toplandıqca burada görünəcək.</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {data.metrics.map((m, i) => <MetricCard key={m.label} metric={m} delay={i * 0.07} />)}
-          </div>
+          <>
+            {/* Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {analytics.metrics.map((m, i) => <MetricCard key={m.label} metric={m} delay={i * 0.07} />)}
+            </div>
+
+            {/* Group XP trend */}
+            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+              <h2 className="font-bold mb-5">📈 Qrup XP Dinamikası</h2>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={mergedXP} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+                    <XAxis dataKey="week" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }} />
+                    {analytics.groupXP.map(g => (
+                      <Line key={g.group} type="monotone" dataKey={g.group} stroke={g.color} strokeWidth={2} dot={{ fill: g.color, r: 3 }} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Students */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Top students */}
+              <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
+                <h2 className="font-bold">⭐ Ən Çox İnkişaf Edənlər</h2>
+                <div className="space-y-2">
+                  {analytics.topStudents.map((s, i) => <StudentRow key={s.id} student={s} rank={i + 1} />)}
+                </div>
+              </div>
+
+              {/* Weak students */}
+              <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
+                <h2 className="font-bold">⚠️ Diqqət Tələb Edənlər</h2>
+                <div className="space-y-2">
+                  {analytics.weakStudents.length > 0
+                    ? analytics.weakStudents.map(s => <StudentRow key={s.id} student={s} isWeak />)
+                    : <div className="text-center py-8 text-white/40">🎉 Hamı yaxşı gedir!</div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Course analytics */}
+            <div>
+              <h2 className="font-bold mb-4">📚 Kurs Analitikası</h2>
+              <div className="space-y-3">
+                {analytics.courses.map(c => <CourseAnalyticsCard key={c.id} course={c} />)}
+              </div>
+            </div>
+
+            {/* Storefront */}
+            <StorefrontSection data={analytics.storefront} />
+
+            {/* Impact */}
+            <ImpactSection data={analytics.impactBreakdown} advice={analytics.aiAdvice} />
+          </>
         )}
-
-        {/* Group XP trend */}
-        <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-          <h2 className="font-bold mb-5">📈 Qrup XP Dinamikası</h2>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mergedXP} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-                <XAxis dataKey="week" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
-                <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: 11 }} />
-                <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }} />
-                {data.groupXP.map(g => (
-                  <Line key={g.group} type="monotone" dataKey={g.group} stroke={g.color} strokeWidth={2} dot={{ fill: g.color, r: 3 }} />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Students */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top students */}
-          <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
-            <h2 className="font-bold">⭐ Ən Çox İnkişaf Edənlər</h2>
-            <div className="space-y-2">
-              {data.topStudents.map((s, i) => <StudentRow key={s.id} student={s} rank={i + 1} />)}
-            </div>
-          </div>
-
-          {/* Weak students */}
-          <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
-            <h2 className="font-bold">⚠️ Diqqət Tələb Edənlər</h2>
-            <div className="space-y-2">
-              {data.weakStudents.length > 0
-                ? data.weakStudents.map(s => <StudentRow key={s.id} student={s} isWeak />)
-                : <div className="text-center py-8 text-white/40">🎉 Hamı yaxşı gedir!</div>
-              }
-            </div>
-          </div>
-        </div>
-
-        {/* Course analytics */}
-        <div>
-          <h2 className="font-bold mb-4">📚 Kurs Analitikası</h2>
-          <div className="space-y-3">
-            {data.courses.map(c => <CourseAnalyticsCard key={c.id} course={c} />)}
-          </div>
-        </div>
-
-        {/* Storefront */}
-        <StorefrontSection data={data.storefront} />
-
-        {/* Impact */}
-        <ImpactSection data={data.impactBreakdown} advice={data.aiAdvice} />
       </div>
     </div>
   )

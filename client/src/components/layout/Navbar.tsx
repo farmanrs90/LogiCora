@@ -36,7 +36,7 @@ function xpToNext(totalXP: number, level: number): number {
 // ── Avatar circle ─────────────────────────────────────────────────────────
 
 function AvatarCircle({ name, color, size = 36 }: { name: string; color: string; size?: number }) {
-  const initial = name.charAt(0).toUpperCase()
+  const initial = (name?.charAt(0) ?? '?').toUpperCase()
   return (
     <div
       className="rounded-full flex items-center justify-center font-bold text-white shrink-0 cursor-pointer"
@@ -94,7 +94,9 @@ export default function Navbar() {
   const { data: gp } = useQuery<GamificationProfile>({
     queryKey: ['gamification', 'me'],
     queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
-    enabled: !!user,
+    // /gamification/me yalnız student üçündür (parent/teacher-də Student profili yoxdur → 404).
+    // Yalnız student üçün çağırılır; digər rollar üçün gp undefined qalır və neytral default göstərilir.
+    enabled: user?.role === 'student',
     staleTime: 1000 * 60 * 2,
   })
 

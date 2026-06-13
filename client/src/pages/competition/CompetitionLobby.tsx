@@ -12,6 +12,7 @@ import api from '../../lib/api'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
 import type { RootState } from '../../app/store'
 import type { CompetitionInfo, Participant } from '../../types'
+
 // ── Backend → frontend map (REST cavabını CompetitionInfo formatına çevir) ──
 interface RawParticipant {
   studentId?: { _id: string; userId?: { _id: string; name: string; surname?: string } }
@@ -58,55 +59,6 @@ function mapCompetition(raw: RawCompetition): CompetitionInfo {
   }
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message
-    if (typeof message === 'string' && message.trim()) return message
-  }
-  return fallback
-}
-
-function LobbyState({
-  icon,
-  title,
-  text,
-  onRetry,
-}: {
-  icon: string
-  title: string
-  text: string
-  onRetry?: () => void
-}) {
-  const navigate = useNavigate()
-
-  return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4 text-center">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-        <div className="text-6xl mb-4">{icon}</div>
-        <h1 className="text-white font-black text-2xl">{title}</h1>
-        <p className="mt-3 text-[#9CA3AF] text-sm leading-6">{text}</p>
-        <div className="mt-6 flex flex-col gap-3">
-          {onRetry && (
-            <button
-              onClick={onRetry}
-              className="w-full py-3 rounded-2xl font-bold text-white text-sm"
-              style={{ background: 'linear-gradient(135deg, #3B82F6, #9333EA)' }}
-            >
-              Yenidən yoxla
-            </button>
-          )}
-          <button
-            onClick={() => navigate('/competition')}
-            className="w-full py-3 rounded-2xl text-sm text-[#9CA3AF] font-medium border border-[rgba(255,255,255,0.08)] hover:text-white transition-colors"
-          >
-            Yarışa qoşulma ekranına qayıt
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 
 // ── Participant avatar card ────────────────────────────────────────────────
 
@@ -122,7 +74,7 @@ function ParticipantCard({ p, index }: { p: Participant; index: number }) {
         className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg shadow-lg"
         style={{ backgroundColor: p.avatarColor, boxShadow: `0 0 16px ${p.avatarColor}60` }}
       >
-        {p.name.charAt(0).toUpperCase()}
+        {(p.name?.charAt(0) ?? '?').toUpperCase()}
       </div>
       <span className="text-[#9CA3AF] text-[10px] text-center leading-tight max-w-[60px] truncate">{p.name}</span>
     </motion.div>
@@ -190,7 +142,7 @@ export default function CompetitionLobby() {
   const user = authUser ?? ctxUser
 
   // Fetch competition info
-  const { data: comp, isLoading, isError, error, refetch } = useQuery<CompetitionInfo>({
+  const { data: comp, isLoading, isError, refetch } = useQuery<CompetitionInfo>({
     queryKey: ['competition', id],
     queryFn: () => api.get<{ data: RawCompetition }>(API_ROUTES.COMPETITIONS.BY_ID(id!))
       .then(r => mapCompetition(r.data.data)),
@@ -198,14 +150,9 @@ export default function CompetitionLobby() {
     staleTime: 1000 * 30,
   })
 
-  const competition = comp
-  const isOrganizer = competition?.organizerId === user?._id
-  const maxSlots = 20
-
-  const [participants, setParticipants] = useState<Participant[]>([])
+  const [participants, setParticipants] = useState<Participant[]>(comp?.participants ?? [])
   const [countdown, setCountdown] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
-  const emptySlots = Math.max(0, maxSlots - participants.length)
 
   // Update participants when query data arrives
   useEffect(() => {
@@ -257,15 +204,14 @@ export default function CompetitionLobby() {
   }, [countdown, id, navigate])
 
   function handleCopyPin() {
-    if (!competition) return
-    navigator.clipboard.writeText(competition.pin).then(() => {
+    if (!comp) return
+    navigator.clipboard.writeText(comp.pin).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }).catch(() => toast.error('Kopyalanmadı'))
   }
 
   function handleStart() {
-    if (!competition) return
     if (participants.length < 2) {
       toast.error('Minimum 2 iştirakçı lazımdır!')
       return
@@ -287,26 +233,38 @@ export default function CompetitionLobby() {
     )
   }
 
-  if (isError) {
+  // Backend/şəbəkə xətası: fake lobby göstərmirik — istifadəçiyə real xəta vəziyyəti bildirilir.
+  if (isError || !comp) {
     return (
-      <LobbyState
-        icon="⚠️"
-        title="Yarış lobbisi yüklənmədi"
-        text={getErrorMessage(error, 'Bu yarışın məlumatlarını almaq mümkün olmadı. PIN və ya link səhv ola bilər.')}
-        onRetry={() => void refetch()}
-      />
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-white font-bold text-2xl mb-2">Yarış məlumatları yüklənmədi</h1>
+          <p className="text-[#9CA3AF] text-sm mb-6">Bağlantını yoxlayıb yenidən cəhd edin.</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => navigate('/competition')}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#9CA3AF] border border-[rgba(255,255,255,0.12)] hover:text-white transition-colors"
+            >
+              ← Yarışlara qayıt
+            </button>
+            <button
+              onClick={() => refetch()}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+              style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+            >
+              Yenidən yoxla
+            </button>
+          </div>
+        </div>
+      </div>
     )
   }
 
-  if (!competition) {
-    return (
-      <LobbyState
-        icon="🔍"
-        title="Yarış tapılmadı"
-        text="Bu link üçün yarış məlumatı yoxdur. PIN ilə yenidən qoşulmaq daha etibarlıdır."
-      />
-    )
-  }
+  const competition = comp
+  const isOrganizer = competition.organizerId === user?._id
+  const maxSlots = 20
+  const emptySlots = Math.max(0, maxSlots - competition.participants.length)
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col">
@@ -423,7 +381,7 @@ export default function CompetitionLobby() {
             {participants.map((p, i) => (
               <ParticipantCard key={p.userId} p={p} index={i} />
             ))}
-            {[...Array(Math.max(0, Math.min(emptySlots, 16 - participants.length)))].map((_, i) => (
+            {[...Array(Math.min(emptySlots, 16 - participants.length))].map((_, i) => (
               <EmptySlot key={`empty-${i}`} index={i} />
             ))}
           </div>

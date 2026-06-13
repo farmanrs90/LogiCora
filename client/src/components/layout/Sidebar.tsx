@@ -22,18 +22,33 @@ interface NavItem {
 const studentNav: NavItem[] = [
   { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.STUDENT },
   { icon: '📅', label: 'Günlük Quiz', path: APP_ROUTES.DAILY },
+  { icon: '🎈', label: 'Uşaq Klubu', path: APP_ROUTES.KIDS_HUB },
   { icon: '⚔️', label: 'Yarışlar', path: '/competition' },
+  { icon: '🛡️', label: 'Klanım', path: '/clan/me' },
   { icon: '🎓', label: 'Kurslar', path: APP_ROUTES.COURSES },
   { icon: '📊', label: 'Portfoliom', path: '/portfolio/me' },
+  { icon: '💬', label: 'Mesajlar', path: APP_ROUTES.CHAT },
+  { icon: '🔮', label: 'Həftənin Sirri', path: APP_ROUTES.WEEKLY_MYSTERY },
 ]
 
 const teacherNav: NavItem[] = [
   { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.TEACHER },
+  { icon: '👥', label: 'Qruplarım', path: '/groups' },
+  { icon: '✅', label: 'Davamiyyət', path: '/attendance' },
   { icon: '⚔️', label: 'Yarış yarat', path: '/competition/create' },
+  { icon: '🎓', label: 'Kurslarım', path: '/courses' },
+  { icon: '📊', label: 'Analitika', path: '/analytics' },
+  { icon: '💬', label: 'Mesajlar', path: APP_ROUTES.CHAT },
+  { icon: '🏫', label: 'Sinif', path: '/classroom' },
 ]
 
 const parentNav: NavItem[] = [
   { icon: '🏠', label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.PARENT },
+  { icon: '👶', label: 'Övladım', path: `${APP_ROUTES.DASHBOARD.PARENT}#child-section` },
+  { icon: '📊', label: 'İrəliləyiş', path: `${APP_ROUTES.DASHBOARD.PARENT}#progress-section` },
+  { icon: '✅', label: 'Davamiyyət', path: `${APP_ROUTES.DASHBOARD.PARENT}#attendance-section` },
+  { icon: '💬', label: 'Müəllimlə', path: APP_ROUTES.CHAT },
+  { icon: '💳', label: 'Ödənişlər', path: `${APP_ROUTES.DASHBOARD.PARENT}#payments-section` },
 ]
 
 const navByRole: Record<string, NavItem[]> = {
@@ -75,7 +90,7 @@ function AvatarCircle({ name, color, size = 52 }: { name: string; color: string;
         fontSize: size * 0.38,
       }}
     >
-      {name.charAt(0).toUpperCase()}
+      {(name?.charAt(0) ?? '?').toUpperCase()}
     </div>
   )
 }
@@ -138,7 +153,9 @@ export default function Sidebar() {
   const { data: gp } = useQuery<GamificationProfile>({
     queryKey: ['gamification', 'me'],
     queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
-    enabled: !!user,
+    // /gamification/me yalnız student üçündür (parent/teacher-də Student profili yoxdur → 404).
+    // Yalnız student üçün çağırılır; digər rollar üçün gp undefined qalır və neytral default göstərilir.
+    enabled: user?.role === 'student',
     staleTime: 1000 * 60 * 2,
   })
 
@@ -148,7 +165,12 @@ export default function Sidebar() {
     navigate(APP_ROUTES.LOGIN, { replace: true })
     toast.success('Sistemdən çıxdınız.')
   }
-  const navItems = navByRole[user?.role ?? 'student'] ?? studentNav
+  // Uşaq Klubu yalnız kiçik yaş tələbələrinə (3-8 yaş) göstərilir
+  const KID_AGES = ['3-5', '6-8']
+  let navItems = navByRole[user?.role ?? 'student'] ?? studentNav
+  if (user?.role === 'student' && !KID_AGES.includes(user.ageGroup)) {
+    navItems = navItems.filter((i) => i.path !== APP_ROUTES.KIDS_HUB)
+  }
 
   const xpPct = gp ? Math.min(((gp.totalXP % (gp.level * 200)) / (gp.level * 200)) * 100, 100) : 0
   const xpToNext = gp ? (gp.level * 200) - (gp.totalXP % (gp.level * 200)) : 200
@@ -204,7 +226,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-0.5" aria-label="Əsas naviqasiya">
         {navItems.map((item) => (
           <NavLink
-            key={item.path}
+            key={item.label}
             item={item}
             active={location.pathname === item.path || (item.path !== APP_ROUTES.DASHBOARD.STUDENT && location.pathname.startsWith(item.path) && item.path.length > 1)}
             color={avatarColor}

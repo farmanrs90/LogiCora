@@ -167,7 +167,7 @@ export const API_ROUTES = {
     UPDATE:  (id: string) => `/groups/${id}`,
     DELETE:  (id: string) => `/groups/${id}`,
     INVITE:  (id: string) => `/groups/${id}/invite`,
-    REMOVE:  (id: string, userId: string) => `/groups/${id}/members/${userId}`,
+    REMOVE:  (id: string, userId: string) => `/groups/${id}/student/${userId}`,
     ATTENDANCE: (id: string) => `/groups/${id}/attendance`,
   },
 

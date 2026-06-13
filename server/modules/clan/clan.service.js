@@ -2,6 +2,7 @@ const Clan = require('./clan.model');
 const ClanBattle = require('./clanBattle.model');
 const Student = require('../student/student.model');
 const Gamification = require('../gamification/gamification.model');
+require('../user/user.model'); // populate('userId') üçün User model qeydiyyatı
 
 const slugify = (text) =>
   text
@@ -250,6 +251,163 @@ const getClanBySlug = async (slug) => {
   return clan;
 };
 
+// İstifadəçinin öz klanı — membership Student._id ilə axtarılır.
+// Klan yoxdursa null qaytarılır (frontend üçün ən təhlükəsiz: 200 + null).
+const getMyClan = async (userId) => {
+  const student = await Student.findOne({ userId });
+  if (!student) return null;
+
+  const clan = await Clan.findOne({ 'members.studentId': student._id })
+    .populate('members.studentId', 'userId grade')
+    .populate('activeBattle');
+
+  return clan || null;
+};
+
+// ── Secondary clan data (members / battles / stats) ──────────────────────────
+// Yalnız real data oxunur; saxlanmayan sahələr boş/default qaytarılır — fake yox.
+
+const AVATAR_COLORS = ['#9333EA', '#3B82F6', '#06B6D4', '#F97316', '#EC4899', '#22C55E', '#EAB308', '#8B5CF6'];
+
+// Göstərmə rəngi (id-dən deterministik) — saxta avatar deyil, sabit display rəngi.
+const colorFor = (id) => {
+  const s = String(id || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+};
+
+const getClanOrThrow = async (slug) => {
+  const clan = await Clan.findOne({ slug });
+  if (!clan) {
+    const error = new Error('Klan tapılmadı.');
+    error.statusCode = 404;
+    throw error;
+  }
+  return clan;
+};
+
+// Clan üzvlərini real data ilə zənginləşdir (Student/User + Gamification). Yoxdursa [].
+const buildMemberList = async (clan) => {
+  const members = clan.members || [];
+  if (members.length === 0) return [];
+
+  const studentIds = members.map((m) => m.studentId).filter(Boolean);
+  const [students, gamifs] = await Promise.all([
+    Student.find({ _id: { $in: studentIds } }).populate('userId', 'name surname'),
+    Gamification.find({ studentId: { $in: studentIds } }),
+  ]);
+  const studentMap = new Map(students.map((s) => [String(s._id), s]));
+  const gamifMap = new Map(gamifs.map((g) => [String(g.studentId), g]));
+
+  return members.map((m) => {
+    const sid = String(m.studentId);
+    const student = studentMap.get(sid);
+    const u = student?.userId || {};
+    const g = gamifMap.get(sid);
+    return {
+      studentId: sid,
+      userId: u._id ? String(u._id) : '',
+      name: u.name || 'Üzv',
+      surname: u.surname || '',
+      avatarColor: colorFor(sid),
+      level: g?.level ?? 1,
+      weeklyXP: g?.weeklyXP ?? 0,
+      totalXP: g?.totalXP ?? 0,
+      streak: g?.streak ?? 0,
+      role: m.role || 'member',
+      joinedAt: m.joinedAt,
+    };
+  });
+};
+
+const getClanMembers = async (slug) => {
+  const clan = await getClanOrThrow(slug);
+  return buildMemberList(clan);
+};
+
+const getClanBattles = async (slug) => {
+  const clan = await getClanOrThrow(slug);
+
+  const battles = await ClanBattle.find({
+    $or: [{ challengerId: clan._id }, { challengedId: clan._id }],
+  })
+    .sort({ finishedAt: -1, createdAt: -1 })
+    .limit(20)
+    .populate('challengerId', 'name slug emblem')
+    .populate('challengedId', 'name slug emblem');
+
+  return battles.map((b) => {
+    const challengerId = b.challengerId?._id ?? b.challengerId;
+    const isChallenger = String(challengerId) === String(clan._id);
+    const opponent = isChallenger ? b.challengedId : b.challengerId;
+    const ourScore = isChallenger ? b.challengerScore : b.challengedScore;
+    const theirScore = isChallenger ? b.challengedScore : b.challengerScore;
+
+    let result = 'ongoing';
+    if (b.status === 'finished') {
+      if (b.winner && String(b.winner) === String(clan._id)) result = 'win';
+      else if (b.winner) result = 'loss';
+      else result = 'draw';
+    }
+
+    return {
+      _id: String(b._id),
+      opponentSlug: opponent?.slug || '',
+      opponentName: opponent?.name || 'Rəqib',
+      opponentColor: colorFor(opponent?._id || b._id),
+      opponentEmoji: opponent?.emblem || '⚔️',
+      ourScore: ourScore ?? 0,
+      theirScore: theirScore ?? 0,
+      result,
+      subject: '',   // ClanBattle modelində saxlanmır
+      format: '',    // ClanBattle modelində saxlanmır
+      endedAt: b.finishedAt,
+      startedAt: b.startedAt || b.createdAt,
+    };
+  });
+};
+
+const getClanStats = async (slug) => {
+  const clan = await getClanOrThrow(slug);
+  const memberList = await buildMemberList(clan);
+
+  // memberXPShare — real üzv totalXP-ləri (top 4 + Digərləri)
+  const byTotal = [...memberList].sort((a, b) => b.totalXP - a.totalXP);
+  const top = byTotal.slice(0, 4);
+  const rest = byTotal.slice(4);
+  const memberXPShare = top.map((m) => ({ name: `${m.name} ${m.surname}`.trim(), xp: m.totalXP }));
+  if (rest.length > 0) {
+    memberXPShare.push({ name: 'Digərləri', xp: rest.reduce((s, m) => s + m.totalXP, 0) });
+  }
+
+  // mostActiveUser — bu həftə ən çox XP toplayan real üzv
+  const mostActive = [...memberList].sort((a, b) => b.weeklyXP - a.weeklyXP)[0];
+  const mostActiveUser = mostActive
+    ? { name: `${mostActive.name} ${mostActive.surname}`.trim(), avatarColor: mostActive.avatarColor }
+    : { name: '', avatarColor: AVATAR_COLORS[0] };
+
+  // bestBattleScore — real bitmiş döyüşlərdə ən yüksək öz xalımız
+  const finished = await ClanBattle.find({
+    $or: [{ challengerId: clan._id }, { challengedId: clan._id }],
+    status: 'finished',
+  });
+  let bestBattleScore = 0;
+  for (const b of finished) {
+    const our = String(b.challengerId) === String(clan._id) ? b.challengerScore : b.challengedScore;
+    if ((our ?? 0) > bestBattleScore) bestBattleScore = our ?? 0;
+  }
+
+  return {
+    weeklyXPHistory: [],   // həftəlik tarixi məlumat saxlanmır → boş (fake yox)
+    memberXPShare,         // real
+    strongestSubject: '',  // fənn analizi saxlanmır → default
+    strongestPct: 0,
+    mostActiveUser,        // real
+    bestBattleScore,       // real
+  };
+};
+
 module.exports = {
   createClan,
   joinClan,
@@ -258,4 +416,8 @@ module.exports = {
   finishBattle,
   getLeaderboard,
   getClanBySlug,
+  getMyClan,
+  getClanMembers,
+  getClanBattles,
+  getClanStats,
 };

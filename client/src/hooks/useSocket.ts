@@ -14,7 +14,15 @@ export function useSocket(roomId: string | null) {
   useEffect(() => {
     if (!roomId) return
 
-    const token  = localStorage.getItem('accessToken')
+    // Valid token yoxdursa ümumiyyətlə qoşulma — server auth middleware onsuz da rədd edər.
+    const token = localStorage.getItem('accessToken')
+    if (!token) return
+
+    // Bu effekt instansiyası hələ aktivdirmi? StrictMode (dev) effekti iki dəfə
+    // mount/unmount edir; bu bayraq köhnə bağlantının state yeniləməsinin/erkən
+    // bağlanmasının qarşısını alır.
+    let active = true
+
     const socket = io(SOCKET_URL, {
       auth:                 { token },
       transports:           ['websocket', 'polling'],
@@ -27,19 +35,35 @@ export function useSocket(roomId: string | null) {
     dispatch(setRoomId(roomId))
 
     socket.on('connect', () => {
+      // Effekt artıq təmizlənibsə (StrictMode throwaway mount): indi bağlantı AÇIQ
+      // olduğu üçün təmiz bağlayırıq — mid-handshake close olmadığından brauzer
+      // "WebSocket is closed before the connection is established" warning-i verməz.
+      if (!active) {
+        socket.disconnect()
+        return
+      }
       setIsConnectedState(true)
       dispatch(setConnected(true))
       socket.emit('room:join', { roomId })
     })
 
     socket.on('disconnect', () => {
+      if (!active) return
       setIsConnectedState(false)
       dispatch(setConnected(false))
     })
 
+    // Qoşulma xətası console-u spam etməsin — reconnection məntiqi onsuz da idarə edir.
+    socket.on('connect_error', () => { /* səssiz */ })
+
     return () => {
-      socket.emit('room:leave', { roomId })
-      socket.disconnect()
+      active = false
+      // Yalnız tam qoşulmuş socket dərhal bağlanır (təmiz). Hələ CONNECTING-dirsə
+      // bağlamırıq — yuxarıdakı 'connect' handler açıldıqdan sonra təmiz bağlayacaq.
+      if (socket.connected) {
+        socket.emit('room:leave', { roomId })
+        socket.disconnect()
+      }
       socketRef.current = null
       setIsConnectedState(false)
       dispatch(resetSocket())

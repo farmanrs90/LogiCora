@@ -1,16 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
 
 import { useInterval } from '../../hooks/useInterval'
 import { questionService } from '../../services/questionService'
+import api from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import type { RootState } from '../../app/store'
-import type { Question, AgeGroup } from '../../types'
-import { APP_ROUTES } from '../../constants'
+import type { Question, AgeGroup, GamificationProfile } from '../../types'
+import { APP_ROUTES, API_ROUTES } from '../../constants'
 
 import FormatA from '../../features/quiz/formats/FormatA'
 import FormatB from '../../features/quiz/formats/FormatB'
@@ -26,22 +27,6 @@ type Phase = 'question' | 'feedback' | 'result' | 'no_hearts' | 'completed'
 
 function isChildAge(ag?: AgeGroup) {
   return ag === '3-5' || ag === '6-8'
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message
-    if (typeof message === 'string' && message.trim()) return message
-  }
-  return fallback
-}
-
-function getErrorStatus(error: unknown) {
-  if (typeof error === 'object' && error && 'status' in error) {
-    const status = (error as { status?: unknown }).status
-    if (typeof status === 'number') return status
-  }
-  return undefined
 }
 
 // ── Confetti piece ────────────────────────────────────────────────────────
@@ -151,7 +136,7 @@ function MascotPopup({ correct, xp }: { correct: boolean; xp: number }) {
 
 // ── No Hearts overlay ─────────────────────────────────────────────────────
 
-function NoHeartsScreen({ gems, onExit }: { gems: number; onExit: () => void }) {
+function NoHeartsScreen({ gems, onExit, onBuyFreeze, isBuying }: { gems: number; onExit: () => void; onBuyFreeze: () => void; isBuying: boolean }) {
   const navigate = useNavigate()
   return (
     <motion.div
@@ -174,9 +159,14 @@ function NoHeartsScreen({ gems, onExit }: { gems: number; onExit: () => void }) 
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {gems >= 50 && (
-          <p className="rounded-2xl border border-[rgba(255,255,255,0.1)] px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">
-            Kristalların saxlanılır. Ürəklər yenilənəndə davam edə biləcəksən.
-          </p>
+          <button
+            disabled={isBuying}
+            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', boxShadow: '0 4px 16px rgba(6,182,212,0.4)' }}
+            onClick={onBuyFreeze}
+          >
+            {isBuying ? 'Alınır...' : '💎 50 gem ilə Streak Freeze al'}
+          </button>
         )}
         <button
           onClick={onExit}
@@ -188,55 +178,10 @@ function NoHeartsScreen({ gems, onExit }: { gems: number; onExit: () => void }) 
           onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
           className="text-[#9CA3AF] text-xs text-center"
         >
-          Tələbə panelinə qayıt
+          Dashboarda qayıt
         </button>
       </div>
     </motion.div>
-  )
-}
-
-function QuizState({
-  icon,
-  title,
-  text,
-  primaryLabel,
-  onPrimary,
-  secondaryLabel,
-  onSecondary,
-}: {
-  icon: string
-  title: string
-  text: string
-  primaryLabel: string
-  onPrimary: () => void
-  secondaryLabel?: string
-  onSecondary?: () => void
-}) {
-  return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4 text-center">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-        <div className="text-6xl mb-4">{icon}</div>
-        <h1 className="text-white font-black text-2xl">{title}</h1>
-        <p className="mt-3 text-[#9CA3AF] text-sm leading-6">{text}</p>
-        <div className="mt-6 flex flex-col gap-3">
-          <button
-            onClick={onPrimary}
-            className="w-full py-3 rounded-2xl font-bold text-white text-sm"
-            style={{ background: 'linear-gradient(135deg, #9333EA, #3B82F6)' }}
-          >
-            {primaryLabel}
-          </button>
-          {secondaryLabel && onSecondary && (
-            <button
-              onClick={onSecondary}
-              className="w-full py-3 rounded-2xl text-sm text-[#9CA3AF] font-medium border border-[rgba(255,255,255,0.08)] hover:text-white transition-colors"
-            >
-              {secondaryLabel}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -315,7 +260,7 @@ function ResultScreen({
         <div className="w-px h-8 bg-[rgba(255,255,255,0.1)]" />
         <div className="flex flex-col items-center">
           <span className="text-xl font-black" style={{ color: '#F97316' }}>🔥 {streak}</span>
-          <span className="text-[#9CA3AF] text-xs">gün seriya</span>
+          <span className="text-[#9CA3AF] text-xs">gün sıra</span>
         </div>
       </div>
 
@@ -331,7 +276,7 @@ function ResultScreen({
           >
             <span className="text-4xl">{badge.emoji}</span>
             <span className="text-white font-bold text-sm">{badge.name}</span>
-            <span className="text-[#9CA3AF] text-xs">Yeni nişan!</span>
+            <span className="text-[#9CA3AF] text-xs">Yeni badge!</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -346,7 +291,7 @@ function ResultScreen({
         className="w-full max-w-xs py-4 rounded-2xl font-black text-white text-base"
         style={{ background: 'linear-gradient(135deg, #9333EA, #3B82F6)', boxShadow: '0 4px 20px rgba(147,51,234,0.4)' }}
       >
-        Tələbə panelinə qayıt
+        Dashboarda qayıt
       </motion.button>
     </motion.div>
   )
@@ -366,7 +311,7 @@ export default function DailyQuiz() {
   const isChild = isChildAge(ageGroup)
 
   // Fetch questions
-  const { data: questions, isLoading, isError, error, refetch } = useQuery<Question[]>({
+  const { data: questions, isLoading, isError, refetch } = useQuery<Question[]>({
     queryKey: ['daily', 'questions'],
     queryFn: () => questionService.fetchDaily(ageGroup),
     staleTime: 1000 * 60 * 5,
@@ -376,6 +321,25 @@ export default function DailyQuiz() {
   const mutation = useMutation({
     mutationFn: ({ questionId, answer, responseTime }: { questionId: string; answer: string; responseTime: number }) =>
       questionService.submitAnswer(questionId, answer, responseTime),
+  })
+
+  // Gamification (gems balansı — Streak Freeze alışı üçün)
+  const queryClient = useQueryClient()
+  const { data: gamification } = useQuery<GamificationProfile>({
+    queryKey: ['gamification', 'me'],
+    queryFn: () => api.get<{ data: GamificationProfile }>(API_ROUTES.GAMIFICATION.ME).then(r => r.data.data),
+    enabled: user?.role === 'student',
+    staleTime: 1000 * 60,
+  })
+
+  // Streak Freeze — real backend alışı (50 gem). Uğur yalnız 200-dən sonra; balans yenilənir.
+  const freezeMutation = useMutation({
+    mutationFn: () => api.post<{ message?: string }>('/streak-freeze/buy').then(r => r.data),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Streak Freeze alındı.')
+      queryClient.invalidateQueries({ queryKey: ['gamification', 'me'] })
+    },
+    onError: () => toast.error('Streak Freeze alınmadı. Balansı və bağlantını yoxlayın.'),
   })
 
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -478,11 +442,20 @@ export default function DailyQuiz() {
         }, 400)
       }, 1400)
 
-    } catch (err) {
-      setIsAnswered(false)
-      setSelectedAnswer(null)
-      setRevealedAnswer('')
-      toast.error(getErrorMessage(err, 'Cavab göndərilmədi'))
+    } catch {
+      // Backend timeout sentinel-ini (__timeout__) qəbul etmir (400) və ya şəbəkə xətası baş verir.
+      // UI donmamalı — cavabı buraxılmış sayıb feedback-siz növbəti suala / nəticəyə keçirik.
+      toast(answerId === '__timeout__' ? 'Vaxt bitdi ⏱️' : 'Cavab göndərilmədi, növbəti suala keçirik')
+      setShowMascot(false)
+      setAnsweredCount(prev => prev + 1)
+      setTimeout(() => {
+        if (currentIndex + 1 >= totalQuestions) {
+          setPhase('result')
+        } else {
+          setCurrentIndex(i => i + 1)
+          setPhase('question')
+        }
+      }, 800)
     }
   }
 
@@ -502,46 +475,33 @@ export default function DailyQuiz() {
     )
   }
 
-  if (isError) {
-    const status = getErrorStatus(error)
-    if (status === 429) {
-      return (
-        <QuizState
-          icon="✅"
-          title="Gündəlik suallar tamamlandı"
-          text="Bu gün üçün limit bitib. Seriyan qorunubsa, növbəti addımı tələbə panelindən seçə bilərsən."
-          primaryLabel="Tələbə panelinə qayıt"
-          onPrimary={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
-          secondaryLabel="Yenidən yoxla"
-          onSecondary={() => void refetch()}
-        />
-      )
-    }
-
+  // ── Render: boş / xəta (sonsuz loading-in qarşısını alır) ───────────────
+  if (isError || !questions || questions.length === 0) {
     return (
-      <QuizState
-        icon="⚠️"
-        title="Suallar yüklənmədi"
-        text={getErrorMessage(error, 'Gündəlik sualları almaq mümkün olmadı. Bağlantını yoxlayıb yenidən cəhd et.')}
-        primaryLabel="Yenidən yoxla"
-        onPrimary={() => void refetch()}
-        secondaryLabel="Tələbə panelinə qayıt"
-        onSecondary={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
-      />
-    )
-  }
-
-  if (!questions || questions.length === 0) {
-    return (
-      <QuizState
-        icon="📭"
-        title="Bu gün üçün sual tapılmadı"
-        text="Sual hovuzu bu yaş qrupu üçün boş görünür. Başqa axına keçmək üçün tələbə panelinə qayıt."
-        primaryLabel="Tələbə panelinə qayıt"
-        onPrimary={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
-        secondaryLabel="Yenidən yoxla"
-        onSecondary={() => void refetch()}
-      />
+      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-4 text-center">
+        <div className="text-6xl">🧩</div>
+        <div>
+          <h2 className="text-white font-bold text-xl mb-1">Bugünkü suallar hazır deyil</h2>
+          <p className="text-[#9CA3AF] text-sm max-w-sm">
+            Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
+            style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+          >
+            Yenidən cəhd et
+          </button>
+          <button
+            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+            className="px-5 py-2.5 rounded-2xl text-sm font-bold text-[#9CA3AF] border border-white/10 hover:text-white transition-colors"
+          >
+            Panelə qayıt
+          </button>
+        </div>
+      </div>
     )
   }
 
@@ -565,7 +525,9 @@ export default function DailyQuiz() {
   if (phase === 'no_hearts') {
     return (
       <NoHeartsScreen
-        gems={0}
+        gems={gamification?.gems ?? 0}
+        onBuyFreeze={() => freezeMutation.mutate()}
+        isBuying={freezeMutation.isPending}
         onExit={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
       />
     )

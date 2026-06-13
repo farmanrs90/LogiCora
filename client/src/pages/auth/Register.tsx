@@ -160,6 +160,16 @@ export default function Register() {
     },
   })
 
+  // Email/şifrə üçün whitespace guard — input dəyərini canlı təmizləyir (uncontrolled RHF).
+  const sanitize = (reg: UseFormRegisterReturn, lower = false): UseFormRegisterReturn => ({
+    ...reg,
+    onChange: (e) => {
+      const t = e.target as HTMLInputElement
+      t.value = lower ? t.value.replace(/\s/g, '').toLowerCase() : t.value.replace(/\s/g, '')
+      return reg.onChange(e)
+    },
+  })
+
   const role = watch('role') as RegisterRole | undefined
   const values = watch()
 
@@ -182,8 +192,8 @@ export default function Register() {
       const authData = await registerUser({
         name: data.name.trim(),
         surname: data.surname.trim(),
-        email: data.email.toLowerCase(),
-        password: data.password,
+        email: data.email.trim().toLowerCase(),
+        password: data.password.trim(),
         phone: data.phone.trim(),
         role: data.role,
         ageGroup,
@@ -277,16 +287,16 @@ export default function Register() {
                       <Field id="surname" label="Soyad" placeholder="Soyadın" error={errors.surname?.message} registration={register('surname')} />
                     </div>
 
-                    <Field id="email" label="Email" type="email" placeholder="məsələn: ad@mail.com" error={errors.email?.message} registration={register('email')} />
+                    <Field id="email" label="Email" type="email" placeholder="məsələn: ad@mail.com" error={errors.email?.message} registration={sanitize(register('email'), true)} />
                     <Field id="phone" label="Telefon" type="tel" placeholder="+994 50 000 00 00" error={errors.phone?.message} registration={register('phone')} />
 
-                    <Field id="password" label="Şifrə" type={showPass ? 'text' : 'password'} placeholder="Minimum 6 simvol" error={errors.password?.message} registration={register('password')}>
+                    <Field id="password" label="Şifrə" type={showPass ? 'text' : 'password'} placeholder="Minimum 6 simvol" error={errors.password?.message} registration={sanitize(register('password'))}>
                       <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-white" aria-label="Göstər/gizlət">
                         {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </Field>
 
-                    <Field id="confirmPass" label="Şifrəni təkrar et" type={showConfirm ? 'text' : 'password'} placeholder="Şifrəni təkrar yaz" error={errors.confirmPassword?.message} registration={register('confirmPassword')}>
+                    <Field id="confirmPass" label="Şifrəni təkrar et" type={showConfirm ? 'text' : 'password'} placeholder="Şifrəni təkrar yaz" error={errors.confirmPassword?.message} registration={sanitize(register('confirmPassword'))}>
                       <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-white" aria-label="Göstər/gizlət">
                         {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>

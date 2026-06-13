@@ -22,16 +22,23 @@ const studentTabs: TabItem[] = [
   { icon: '📅', label: 'Quiz',    path: APP_ROUTES.DAILY },
   { icon: '⚔️', label: 'Yarış',   path: '/competition' },
   { icon: '🎓', label: 'Kurslar', path: APP_ROUTES.COURSES },
-  { icon: '📊', label: 'Portfolio', path: '/portfolio/me' },
+  { icon: '💬', label: 'Çat',     path: APP_ROUTES.CHAT },
 ]
 
 const teacherTabs: TabItem[] = [
   { icon: '🏠', label: 'Ana',      path: APP_ROUTES.DASHBOARD.TEACHER },
+  { icon: '👥', label: 'Qruplar',  path: '/groups' },
   { icon: '⚔️', label: 'Yarış',    path: '/competition/create' },
+  { icon: '🎓', label: 'Kurslar',  path: '/courses' },
+  { icon: '💬', label: 'Çat',      path: APP_ROUTES.CHAT },
 ]
 
 const parentTabs: TabItem[] = [
   { icon: '🏠', label: 'Ana',      path: APP_ROUTES.DASHBOARD.PARENT },
+  { icon: '👶', label: 'Övladım',  path: `${APP_ROUTES.DASHBOARD.PARENT}#child-section` },
+  { icon: '📊', label: 'İrəliləyiş', path: `${APP_ROUTES.DASHBOARD.PARENT}#progress-section` },
+  { icon: '💬', label: 'Çat',      path: APP_ROUTES.CHAT },
+  { icon: '💳', label: 'Ödəniş',   path: `${APP_ROUTES.DASHBOARD.PARENT}#payments-section` },
 ]
 
 const tabsByRole: Record<string, TabItem[]> = {
@@ -67,7 +74,7 @@ function BottomTabBar({ role }: { role: Role | undefined }) {
 
         return (
           <button
-            key={tab.path}
+            key={tab.label}
             onClick={() => navigate(tab.path)}
             className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl
                        transition-colors duration-150 relative"

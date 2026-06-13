@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/api'
@@ -74,63 +74,6 @@ interface TimeCapsule {
   opened: boolean
 }
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
-
-const MOCK_CHILDREN: Child[] = [
-  { id: 'c1', name: 'Anar', ageGroup: '12-14', level: 28, league: 'gold' },
-  { id: 'c2', name: 'Leyla', ageGroup: '9-11', level: 14, league: 'silver' },
-]
-
-const MOCK_STATS: ChildStats = {
-  todayActive: true, todayXP: 140, streak: 22, quizDone: true,
-  attendance: { thisMonth: 18, total: 20, lastMissed: '2026-05-15' },
-  level: 28, league: 'gold', xpThisMonth: 3200, totalXP: 14840, rank: 3,
-  location: { zone: 'school', updatedAt: '15 dəq əvvəl', showMap: true },
-}
-
-const MOCK_REPORT: WeeklyReport = {
-  summary: 'Bu həftə oğlunuz riyaziyyatda 40% irəlilədi. İnformatikada möhtəşəm nəticə göstərdi. Ədəbiyyatda köməyə ehtiyac var.',
-  bullets: [
-    'Riyaziyyatda 3 yarışda iştirak etdi, 2-sini qazandı',
-    'İnformatika kursunun 80%-ni tamamladı',
-    'Ədəbiyyat quizini yalnız 1 dəfə etdi — diqqət tələb edir',
-  ],
-  subject: [
-    { name: 'Riyaziyyat', trend: 40 },
-    { name: 'İnformatika', trend: 35 },
-    { name: 'Fizika', trend: 12 },
-    { name: 'Ədəbiyyat', trend: -5 },
-  ],
-}
-
-const MOCK_ATTENDANCE: AttendanceDay[] = Array.from({ length: 20 }, (_, i) => ({
-  date: `2026-05-${String(i + 1).padStart(2, '0')}`,
-  status: i === 4 || i === 14 ? 'absent' : i === 9 ? 'distant' : i >= 17 ? 'none' : 'present',
-}))
-
-const MOCK_TEACHERS: Teacher[] = [
-  { id: 't1', name: 'Rəşad Əliyev', subject: 'Python', unreadCount: 2, lastMessage: 'Anar bu həftə çox yaxşı işləyir!' },
-  { id: 't2', name: 'Günel Hüseyni', subject: 'Riyaziyyat', unreadCount: 0, lastMessage: 'Növbəti həftə imtahan var.' },
-]
-
-const MOCK_PAYMENTS: PaymentItem[] = [
-  { id: 'p1', courseName: 'Python Kursu', teacherName: 'Rəşad Əliyev', amount: 79, status: 'paid', date: '2026-04-01' },
-  { id: 'p2', courseName: 'Riyaziyyat Olimpiadası', teacherName: 'Günel Hüseyni', amount: 45, status: 'pending', date: '2026-05-20' },
-]
-
-const MOCK_FEED: ActivityFeedItem[] = [
-  { id: 'a1', icon: '✅', text: 'Riyaziyyat quizini tamamladı', xp: 20, time: '2 saat əvvəl' },
-  { id: 'a2', icon: '🏆', text: 'Yarışda 3-cü oldu', time: 'Dünən' },
-  { id: 'a3', icon: '⭐', text: 'Yeni badge qazandı: Sürət Ustası', time: '2 gün əvvəl' },
-  { id: 'a4', icon: '🎓', text: 'Python kursunun 5-ci dərsini bitirdi', xp: 50, time: '3 gün əvvəl' },
-  { id: 'a5', icon: '📅', text: 'Dərsə vaxtında gəldi', time: '4 gün əvvəl' },
-]
-
-const MOCK_CAPSULES: TimeCapsule[] = [
-  { id: 'tc1', message: 'Sən çox güclüsən, oğlum!', openAt: '2026-09-01', opened: false },
-  { id: 'tc2', message: 'Məktəbi bitirdiyin üçün qürur duyuram!', openAt: '2026-06-15', opened: true },
-]
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const LEAGUE_EMOJI: Record<string, string> = {
@@ -139,32 +82,59 @@ const LEAGUE_EMOJI: Record<string, string> = {
 
 const ZONE_META: Record<string, { label: string; color: string; dot: string }> = {
   school: { label: 'Məktəbdədir', color: 'text-emerald-400', dot: '🟢' },
-  home:   { label: 'Evdədir',     color: 'text-blue-400',    dot: '🔵' },
-  other:  { label: 'Başqa yerdə', color: 'text-amber-400',   dot: '🟡' },
+  home: { label: 'Evdədir', color: 'text-blue-400', dot: '🔵' },
+  other: { label: 'Başqa yerdə', color: 'text-amber-400', dot: '🟡' },
 }
 
 const ATTEND_COLOR: Record<string, string> = {
   present: 'bg-emerald-500',
-  absent:  'bg-rose-500',
+  absent: 'bg-rose-500',
   distant: 'bg-blue-500',
-  none:    'bg-white/10',
+  none: 'bg-white/10',
 }
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('az-AZ', { day: 'numeric', month: 'long' })
 }
 
-// ── Link Child Modal ──────────────────────────────────────────────────────────
+// Kart daxili kiçik xəta/empty state-lər — backend xətasında fake data əvəzinə göstərilir.
+function CardError({ label, onRetry }: { label: string; onRetry?: () => void }) {
+  return (
+    <div className="text-center py-6">
+      <div className="text-2xl mb-1">⚠️</div>
+      <p className="text-xs text-white/50">{label}</p>
+      {onRetry && (
+        <button onClick={onRetry} className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+          Yenidən yoxla
+        </button>
+      )}
+    </div>
+  )
+}
+
+function CardEmpty({ label }: { label: string }) {
+  return <div className="text-center py-6 text-xs text-white/40">{label}</div>
+}
 
 function LinkChildModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
-  const [code, setCode] = useState('')
+  const [childId, setChildId] = useState('')
+  const [error, setError] = useState('')
 
   const linkMutation = useMutation({
-    mutationFn: (linkCode: string) => api.post('/parent/link-child', { code: linkCode }).then(r => r.data),
+    mutationFn: (id: string) => api.post('/parent/child', { childId: id }).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['children'] }); onClose() },
-    onError: () => { qc.invalidateQueries({ queryKey: ['children'] }); onClose() },
+    onError: () => {
+      setError('Uşaq əlavə edilmədi. Uşaq ID-sinin düzgün olduğunu yoxlayıb yenidən cəhd edin.')
+    },
   })
+
+  const handleSubmit = () => {
+    const id = childId.trim()
+    if (!id) return
+    setError('')
+    linkMutation.mutate(id)
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -177,16 +147,21 @@ function LinkChildModal({ onClose }: { onClose: () => void }) {
         <div className="text-center">
           <div className="text-5xl mb-3">👨‍👩‍👦</div>
           <h2 className="text-lg font-bold">Uşaq Əlavə Et</h2>
-          <p className="text-sm text-white/50 mt-1">Uşağın LogiCora hesabındakı ailəlik kodu ilə bağlayın</p>
+          <p className="text-sm text-white/50 mt-1">Övladınızın LogiCora hesabının Uşaq ID-sini daxil edin</p>
         </div>
-        <input
-          value={code} onChange={e => setCode(e.target.value)}
-          placeholder="məs. ANAR-2026-XK9"
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 text-center tracking-widest font-mono"
-        />
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-white/60">Uşaq ID-si</label>
+          <input
+            value={childId}
+            onChange={e => { setChildId(e.target.value); if (error) setError('') }}
+            placeholder="məs. 665f1c2a9b4e7d0012a3b4c5"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 text-center tracking-wide font-mono"
+          />
+          {error && <p className="text-xs text-rose-400 text-center">{error}</p>}
+        </div>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white transition-colors">Ləğv et</button>
-          <button onClick={() => code && linkMutation.mutate(code)} disabled={!code || linkMutation.isPending}
+          <button onClick={handleSubmit} disabled={!childId.trim() || linkMutation.isPending}
             className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {linkMutation.isPending ? 'Bağlanır...' : 'Bağla'}
@@ -196,7 +171,6 @@ function LinkChildModal({ onClose }: { onClose: () => void }) {
     </motion.div>
   )
 }
-
 // ── Map Modal ─────────────────────────────────────────────────────────────────
 
 function MapModal({ location, childName, onClose }: {
@@ -238,11 +212,10 @@ function MapModal({ location, childName, onClose }: {
               transition={{ duration: 2.5, repeat: Infinity }}
               className="relative"
             >
-              <div className={`w-20 h-20 rounded-full border-4 opacity-30 ${
-                location.zone === 'school' ? 'border-emerald-400 bg-emerald-400' :
-                location.zone === 'home' ? 'border-blue-400 bg-blue-400' :
-                'border-amber-400 bg-amber-400'
-              }`} />
+              <div className={`w-20 h-20 rounded-full border-4 opacity-30 ${location.zone === 'school' ? 'border-emerald-400 bg-emerald-400' :
+                  location.zone === 'home' ? 'border-blue-400 bg-blue-400' :
+                    'border-amber-400 bg-amber-400'
+                }`} />
               <div className="absolute inset-0 flex items-center justify-center text-3xl">
                 {location.zone === 'school' ? '🏫' : location.zone === 'home' ? '🏠' : '📍'}
               </div>
@@ -271,10 +244,41 @@ function MapModal({ location, childName, onClose }: {
 
 // ── Notification Settings ─────────────────────────────────────────────────────
 
+interface NotifPrefs { email: boolean; sms: boolean; instant: boolean }
+
 function NotifSettings() {
-  const [sms, setSms] = useState(true)
-  const [email, setEmail] = useState(false)
-  const [instant, setInstant] = useState(true)
+  const qc = useQueryClient()
+  const [prefError, setPrefError] = useState('')
+
+  // Backend-dən real ayarlar (Parent.notificationPreferences → { email, sms, instant }).
+  const { data: prefs } = useQuery<NotifPrefs>({
+    queryKey: ['notif-prefs'],
+    queryFn: () => api.get<NotifPrefs>('/parent/notification-preferences').then(r => r.data),
+  })
+
+  const sms = prefs?.sms ?? true
+  const email = prefs?.email ?? true
+  const instant = prefs?.instant ?? true
+
+  const prefMutation = useMutation({
+    mutationFn: (next: NotifPrefs) =>
+      api.put<NotifPrefs>('/parent/notification-preferences', next).then(r => r.data),
+    // Optimistik: toggle dərhal görünür, amma yalnız 200-dən sonra təsdiqlənir.
+    onMutate: async (next) => {
+      setPrefError('')
+      await qc.cancelQueries({ queryKey: ['notif-prefs'] })
+      const prev = qc.getQueryData<NotifPrefs>(['notif-prefs'])
+      qc.setQueryData(['notif-prefs'], next)
+      return { prev }
+    },
+    // Xəta: əvvəlki dəyərə rollback + xəta mesajı (fake success yox).
+    onError: (_err, _next, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['notif-prefs'], ctx.prev)
+      setPrefError('Bildiriş ayarları saxlanmadı. Yenidən cəhd edin.')
+    },
+    // Uğur YALNIZ backend cavabından sonra: serverin qaytardığı dəyəri yaz.
+    onSuccess: (data) => qc.setQueryData(['notif-prefs'], data),
+  })
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
     <button onClick={() => onChange(!value)}
@@ -290,18 +294,19 @@ function NotifSettings() {
     <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
       <h2 className="font-bold text-sm">🔔 Bildiriş Ayarları</h2>
       {[
-        { label: 'SMS bildiriş', sub: 'Telefon nömrənizə', value: sms, set: setSms },
-        { label: 'Email bildiriş', sub: 'E-poçtunuza', value: email, set: setEmail },
-        { label: 'Gəlmədikdə dərhal xəbər ver', sub: 'Davamiyyət bildirişi', value: instant, set: setInstant },
-      ].map(({ label, sub, value, set }) => (
+        { label: 'SMS bildiriş', sub: 'Telefon nömrənizə', value: sms, onChange: (v: boolean) => prefMutation.mutate({ email, sms: v, instant }) },
+        { label: 'Email bildiriş', sub: 'E-poçtunuza', value: email, onChange: (v: boolean) => prefMutation.mutate({ email: v, sms, instant }) },
+        { label: 'Gəlmədikdə dərhal xəbər ver', sub: 'Davamiyyət bildirişi', value: instant, onChange: (v: boolean) => prefMutation.mutate({ email, sms, instant: v }) },
+      ].map(({ label, sub, value, onChange }) => (
         <div key={label} className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">{label}</p>
             <p className="text-xs text-white/40">{sub}</p>
           </div>
-          <Toggle value={value} onChange={set} />
+          <Toggle value={value} onChange={onChange} />
         </div>
       ))}
+      {prefError && <p className="text-xs text-rose-400">{prefError}</p>}
     </div>
   )
 }
@@ -312,16 +317,24 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
   const qc = useQueryClient()
   const [message, setMessage] = useState('')
   const [openAt, setOpenAt] = useState('')
+  const [sendError, setSendError] = useState('')
 
-  const { data: capsules } = useQuery({
+  const { data: capsules, isError: capsulesError } = useQuery({
     queryKey: ['time-capsules', childId],
-    queryFn: () => api.get<TimeCapsule[]>('/parent/time-capsules').then(r => r.data).catch(() => MOCK_CAPSULES),
+    queryFn: () => api.get<TimeCapsule[]>('/parent/time-capsules').then(r => r.data),
   })
 
   const sendMutation = useMutation({
     mutationFn: () => api.post('/parent/time-capsule', { childId, message, openAt }).then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['time-capsules', childId] }); setMessage(''); setOpenAt('') },
-    onError: () => { qc.invalidateQueries({ queryKey: ['time-capsules', childId] }); setMessage(''); setOpenAt('') },
+    // Uğur YALNIZ backend cavabından sonra: formu təmizlə + siyahını real yenilə.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['time-capsules', childId] })
+      setMessage('')
+      setOpenAt('')
+      setSendError('')
+    },
+    // Xəta: fake uğur göstərmirik — form qalır, istifadəçiyə xəta bildirilir.
+    onError: () => setSendError('Kapsul göndərilmədi. Yenidən cəhd edin.'),
   })
 
   return (
@@ -331,7 +344,7 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
         <h2 className="font-bold">Zaman Kapsulu</h2>
       </div>
       <p className="text-xs text-white/50">Uşağınıza gizli mesaj yazın — seçdiyiniz tarixdə açılacaq</p>
-      <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3}
+      <textarea value={message} onChange={e => { setMessage(e.target.value); if (sendError) setSendError('') }} rows={3}
         placeholder="Sevgili Anar, bu günü xatırlayanda..."
         className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 resize-none"
       />
@@ -346,8 +359,11 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
           {sendMutation.isPending ? '...' : 'Göndər'}
         </button>
       </div>
+      {sendError && <p className="text-xs text-rose-400">{sendError}</p>}
       {/* Capsule list */}
-      {capsules && capsules.length > 0 && (
+      {capsulesError ? (
+        <p className="text-xs text-rose-300/70 pt-2 border-t border-white/10">Kapsullar yüklənmədi.</p>
+      ) : capsules && capsules.length > 0 ? (
         <div className="space-y-2 pt-2 border-t border-white/10">
           <p className="text-xs text-white/40">Yazılmış kapsullar</p>
           {capsules.map(cap => (
@@ -366,7 +382,9 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
             </div>
           ))}
         </div>
-      )}
+      ) : capsules ? (
+        <p className="text-xs text-white/40 pt-2 border-t border-white/10">Hələ kapsul yoxdur.</p>
+      ) : null}
     </div>
   )
 }
@@ -377,15 +395,20 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
   const [answer, setAnswer] = useState<'yes' | 'no' | 'prefer_not' | null>(null)
   const [types, setTypes] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const TYPES = ['Görmə', 'Eşitmə', 'İdrak', 'Motor', 'Digər']
 
+  // Real save: uğur YALNIZ backend 200-dən sonra; xəta udulmur, fake success yox.
   const handleSave = async () => {
+    setSaveError('')
     try {
-      await api.put(`/accessibility/${childId}`, { hasSpecialNeeds: answer === 'yes', types: answer === 'yes' ? types : [] })
-    } catch { /* mock ok */ }
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+      await api.put(`/accessibility/child/${childId}`, { hasSpecialNeeds: answer === 'yes', types: answer === 'yes' ? types : [] })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      setSaveError('Ayarlar saxlanmadı. Yenidən cəhd edin.')
+    }
   }
 
   return (
@@ -395,9 +418,8 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
       <div className="flex gap-2 flex-wrap">
         {[['yes', 'Bəli'], ['no', 'Xeyr'], ['prefer_not', 'Cavablamaq istəmirəm']].map(([val, label]) => (
           <button key={val} onClick={() => setAnswer(val as typeof answer)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-              answer === val ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${answer === val ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
+              }`}
           >
             {label}
           </button>
@@ -412,9 +434,8 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
             <div className="flex flex-wrap gap-2">
               {TYPES.map(t => (
                 <button key={t} onClick={() => setTypes(arr => arr.includes(t) ? arr.filter(x => x !== t) : [...arr, t])}
-                  className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${
-                    types.includes(t) ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${types.includes(t) ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
+                    }`}
                 >
                   {t}
                 </button>
@@ -433,6 +454,7 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
           {saved ? '✓ Saxlandı' : 'Yadda saxla'}
         </button>
       )}
+      {saveError && <p className="text-xs text-rose-400">{saveError}</p>}
     </div>
   )
 }
@@ -445,9 +467,9 @@ export default function ParentDashboard() {
   const [showLink, setShowLink] = useState(false)
   const [showMap, setShowMap] = useState(false)
 
-  const { data: children, isLoading: childrenLoading } = useQuery({
+  const { data: children, isLoading: childrenLoading, isError: childrenError, refetch: refetchChildren } = useQuery({
     queryKey: ['children'],
-    queryFn: () => api.get<Child[]>('/parent/children').then(r => r.data).catch(() => MOCK_CHILDREN),
+    queryFn: () => api.get<Child[]>('/parent/children').then(r => r.data),
   })
 
   useEffect(() => {
@@ -458,44 +480,77 @@ export default function ParentDashboard() {
 
   const activeChild = children?.find(c => c.id === selectedChildId) ?? null
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['child-stats', selectedChildId],
     queryFn: () =>
-      api.get<ChildStats>(`/parent/child/${selectedChildId}/stats`).then(r => r.data).catch(() => MOCK_STATS),
+      api.get<ChildStats>(`/parent/child/${selectedChildId}/stats`).then(r => r.data),
     enabled: !!selectedChildId,
   })
 
-  const { data: report } = useQuery({
+  const { data: report, isError: reportError, refetch: refetchReport } = useQuery({
     queryKey: ['weekly-report', selectedChildId],
-    queryFn: () => api.get<WeeklyReport>('/parent/weekly-report').then(r => r.data).catch(() => MOCK_REPORT),
+    queryFn: () => api.get<WeeklyReport>('/parent/weekly-report').then(r => r.data),
     enabled: !!selectedChildId,
   })
 
-  const { data: attendance } = useQuery({
+  const { data: attendance, isError: attendanceError, refetch: refetchAttendance } = useQuery({
     queryKey: ['child-attendance', selectedChildId],
     queryFn: () =>
-      api.get<AttendanceDay[]>(`/parent/child/${selectedChildId}/attendance`).then(r => r.data).catch(() => MOCK_ATTENDANCE),
+      api.get<AttendanceDay[]>(`/parent/child/${selectedChildId}/attendance`).then(r => r.data),
     enabled: !!selectedChildId,
   })
 
-  const { data: teachers } = useQuery({
+  const { data: teachers, isError: teachersError, refetch: refetchTeachers } = useQuery({
     queryKey: ['parent-teachers', selectedChildId],
-    queryFn: () => api.get<Teacher[]>(`/parent/child/${selectedChildId}/teachers`).then(r => r.data).catch(() => MOCK_TEACHERS),
+    queryFn: () => api.get<Teacher[]>(`/parent/child/${selectedChildId}/teachers`).then(r => r.data),
     enabled: !!selectedChildId,
   })
 
-  const { data: payments } = useQuery({
+  const { data: payments, isError: paymentsError, refetch: refetchPayments } = useQuery({
     queryKey: ['parent-payments', selectedChildId],
-    queryFn: () => api.get<PaymentItem[]>(`/parent/payments`).then(r => r.data).catch(() => MOCK_PAYMENTS),
+    queryFn: () => api.get<PaymentItem[]>(`/parent/payments`).then(r => r.data),
     enabled: !!selectedChildId,
   })
 
-  const { data: feed } = useQuery({
+  const { data: feed, isError: feedError, refetch: refetchFeed } = useQuery({
     queryKey: ['child-feed', selectedChildId],
     queryFn: () =>
-      api.get<ActivityFeedItem[]>(`/parent/child/${selectedChildId}/activity`).then(r => r.data).catch(() => MOCK_FEED),
+      api.get<ActivityFeedItem[]>(`/parent/child/${selectedChildId}/activity`).then(r => r.data),
     enabled: !!selectedChildId,
   })
+
+  // Sidebar/mobil tab parent linkləri #section hash ilə gəlir → uyğun bölməyə yumşaq scroll.
+  // Data async yükləndiyi üçün stats/attendance/payments dəyişəndə də yenidən cəhd edirik.
+  const location = useLocation()
+  useEffect(() => {
+    if (!location.hash) return
+    const id = location.hash.slice(1)
+    const t = setTimeout(() => {
+      const el = document.getElementById(id)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 120)
+    return () => clearTimeout(t)
+  }, [location.hash, stats, report, attendance, payments, children])
+
+  // ── Error state — children gətirilə bilmədi (fake uşaq göstərmirik) ──────────
+  if (childrenError) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center p-4">
+        <div className="text-center space-y-5 max-w-sm">
+          <div className="text-7xl mx-auto">⚠️</div>
+          <div>
+            <h1 className="text-2xl font-bold">Övlad məlumatları yüklənmədi</h1>
+            <p className="text-white/50 text-sm mt-2">Zəhmət olmasa yenidən cəhd edin.</p>
+          </div>
+          <button onClick={() => refetchChildren()}
+            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-lg transition-all"
+          >
+            🔄 Yenidən yoxla
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // ── Empty state — no children ───────────────────────────────────────────────
   if (!childrenLoading && (!children || children.length === 0)) {
@@ -507,7 +562,7 @@ export default function ParentDashboard() {
             className="text-8xl mx-auto"
           >😔</motion.div>
           <div>
-            <h1 className="text-2xl font-bold">Hələ uşaq əlavə etməmisiniz</h1>
+            <h1 className="text-2xl font-bold">Hələ övlad əlavə edilməyib</h1>
             <p className="text-white/50 text-sm mt-2">
               Cora deyir: "Övladınızın inkişafını birlikdə izləyək!"
             </p>
@@ -527,10 +582,10 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-        {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* ── Header (Övladım bölməsi) ───────────────────────────────── */}
+        <div id="child-section" className="scroll-mt-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -553,11 +608,10 @@ export default function ParentDashboard() {
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
             {children.map(child => (
               <button key={child.id} onClick={() => setSelectedChildId(child.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shrink-0 ${
-                  selectedChildId === child.id
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shrink-0 ${selectedChildId === child.id
                     ? 'border-indigo-500 bg-indigo-500/20 text-indigo-200'
                     : 'border-white/10 bg-white/5 text-white/60 hover:text-white'
-                }`}
+                  }`}
               >
                 <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
                   {child.name[0]}
@@ -572,6 +626,10 @@ export default function ParentDashboard() {
         {statsLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-36 bg-white/5 rounded-2xl animate-pulse" />)}
+          </div>
+        ) : statsError ? (
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6">
+            <CardError label="Övladın məlumatları yüklənmədi." onRetry={() => refetchStats()} />
           </div>
         ) : stats && activeChild ? (
           <>
@@ -661,9 +719,13 @@ export default function ParentDashboard() {
             </div>
 
             {/* ── Weekly AI Report ────────────────────────────────────── */}
-            {report && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-amber-950/50 to-orange-950/30 border border-amber-500/30 rounded-2xl p-5"
+            {reportError ? (
+              <div id="progress-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
+                <CardError label="Həftəlik hesabat yüklənmədi." onRetry={() => refetchReport()} />
+              </div>
+            ) : report ? (
+              <motion.div id="progress-section" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                className="scroll-mt-24 bg-gradient-to-br from-amber-950/50 to-orange-950/30 border border-amber-500/30 rounded-2xl p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -688,39 +750,47 @@ export default function ParentDashboard() {
                   </Link>
                 </div>
               </motion.div>
-            )}
+            ) : null}
 
             {/* ── Main grid ───────────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {/* Left 2/3 */}
               <div className="lg:col-span-2 space-y-5">
                 {/* Attendance week grid */}
-                {attendance && (
-                  <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-                    <h2 className="font-bold text-sm mb-4">📋 Son Davamiyyət</h2>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {attendance.slice(-14).map((day, i) => (
-                        <div key={i} className="group relative">
-                          <div className={`w-8 h-8 rounded-lg ${ATTEND_COLOR[day.status]}`} title={`${fmtDate(day.date)}: ${day.status}`} />
-                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-                            {fmtDate(day.date)}
+                <div id="attendance-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
+                  <h2 className="font-bold text-sm mb-4">📋 Son Davamiyyət</h2>
+                  {attendanceError ? (
+                    <CardError label="Davamiyyət yüklənmədi." onRetry={() => refetchAttendance()} />
+                  ) : attendance && attendance.length > 0 ? (
+                    <>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {attendance.slice(-14).map((day, i) => (
+                          <div key={i} className="group relative">
+                            <div className={`w-8 h-8 rounded-lg ${ATTEND_COLOR[day.status]}`} title={`${fmtDate(day.date)}: ${day.status}`} />
+                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                              {fmtDate(day.date)}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-4 mt-3 text-xs text-white/40">
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Gəldi</span>
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Gəlmədi</span>
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" /> Distant</span>
-                    </div>
-                    <NotifSettings />
-                  </div>
-                )}
+                        ))}
+                      </div>
+                      <div className="flex gap-4 mt-3 text-xs text-white/40">
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Gəldi</span>
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Gəlmədi</span>
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" /> Distant</span>
+                      </div>
+                    </>
+                  ) : attendance ? (
+                    <CardEmpty label="Hələ davamiyyət qeydi yoxdur." />
+                  ) : null}
+                  <NotifSettings />
+                </div>
 
                 {/* Activity feed */}
-                {feed && (
-                  <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-                    <h2 className="font-bold text-sm mb-4">⚡ Son Aktivliklər</h2>
+                <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+                  <h2 className="font-bold text-sm mb-4">⚡ Son Aktivliklər</h2>
+                  {feedError ? (
+                    <CardError label="Aktivliklər yüklənmədi." onRetry={() => refetchFeed()} />
+                  ) : feed && feed.length > 0 ? (
                     <div className="space-y-2">
                       {feed.map((item, i) => (
                         <motion.div key={item.id}
@@ -738,8 +808,10 @@ export default function ParentDashboard() {
                         </motion.div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : feed ? (
+                    <CardEmpty label="Hələ aktivlik yoxdur." />
+                  ) : null}
+                </div>
 
                 {/* Time capsule */}
                 {selectedChildId && <TimeCapsulePanel childId={selectedChildId} />}
@@ -751,9 +823,11 @@ export default function ParentDashboard() {
               {/* Right 1/3 */}
               <div className="space-y-5">
                 {/* Teachers */}
-                {teachers && (
-                  <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-                    <h2 className="font-bold text-sm mb-4">👨‍🏫 Müəllimlər</h2>
+                <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+                  <h2 className="font-bold text-sm mb-4">👨‍🏫 Müəllimlər</h2>
+                  {teachersError ? (
+                    <CardError label="Müəllimlər yüklənmədi." onRetry={() => refetchTeachers()} />
+                  ) : teachers && teachers.length > 0 ? (
                     <div className="space-y-3">
                       {teachers.map(teacher => (
                         <div key={teacher.id} className="flex items-start gap-3 p-3 bg-white/5 border border-white/8 rounded-xl">
@@ -776,16 +850,20 @@ export default function ParentDashboard() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : teachers ? (
+                    <CardEmpty label="Hələ müəllim yoxdur." />
+                  ) : null}
+                </div>
 
                 {/* Payments */}
-                {payments && (
-                  <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="font-bold text-sm">💳 Ödənişlər</h2>
-                      <span className="text-xs bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">Tezliklə</span>
-                    </div>
+                <div id="payments-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-bold text-sm">💳 Ödənişlər</h2>
+                    <span className="text-xs bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">Tezliklə</span>
+                  </div>
+                  {paymentsError ? (
+                    <CardError label="Ödənişlər yüklənmədi." onRetry={() => refetchPayments()} />
+                  ) : payments && payments.length > 0 ? (
                     <div className="space-y-2">
                       {payments.map(p => (
                         <div key={p.id} className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl">
@@ -802,11 +880,13 @@ export default function ParentDashboard() {
                         </div>
                       ))}
                     </div>
-                    <button className="w-full mt-3 py-2 border border-white/10 rounded-xl text-xs text-white/40 cursor-not-allowed">
-                      Ödəniş et (Tezliklə)
-                    </button>
-                  </div>
-                )}
+                  ) : payments ? (
+                    <CardEmpty label="Hələ ödəniş yoxdur." />
+                  ) : null}
+                  <button className="w-full mt-3 py-2 border border-white/10 rounded-xl text-xs text-white/40 cursor-not-allowed">
+                    Ödəniş et (Tezliklə)
+                  </button>
+                </div>
 
                 {/* Quick navigate */}
                 <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-2">

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -84,61 +84,6 @@ interface ClanSearchResult {
   rank:    number
   memberCount: number
 }
-
-// ── Mock data ──────────────────────────────────────────────────────────────
-
-const MOCK_CLAN: ClanData = {
-  _id: 'clan-1', name: 'Şimşəklər', slug: 'simsekler',
-  schoolName: 'Bakı Dövlət Məktəbi #47', city: 'Bakı',
-  emblem: null, color: '#9333EA',
-  totalXP: 48200, weeklyXP: 3750, wins: 18, losses: 4,
-  rank: 3, totalBattles: 23,
-  description: 'Biz birlikdə daha güclüyük! Hər gün öyrənir, hər yarışda qalib gəlirik.',
-  foundedAt: '2024-09-01',
-}
-
-const MOCK_MEMBERS: ClanMemberFull[] = [
-  { studentId: 'u1', userId: 'u1', name: 'Aytən',  surname: 'M.', avatarColor: '#9333EA', level: 14, weeklyXP: 620, totalXP: 8400, streak: 22, role: 'leader', joinedAt: '2024-09-01' },
-  { studentId: 'u2', userId: 'u2', name: 'Kənan',  surname: 'H.', avatarColor: '#3B82F6', level: 12, weeklyXP: 540, totalXP: 7100, streak: 15, role: 'member', joinedAt: '2024-09-05' },
-  { studentId: 'u3', userId: 'u3', name: 'Nigar',  surname: 'Ə.', avatarColor: '#06B6D4', level: 11, weeklyXP: 510, totalXP: 6900, streak: 18, role: 'member', joinedAt: '2024-09-10' },
-  { studentId: 'u4', userId: 'u4', name: 'Orxan',  surname: 'T.', avatarColor: '#F97316', level: 10, weeklyXP: 480, totalXP: 6200, streak: 9,  role: 'member', joinedAt: '2024-09-12' },
-  { studentId: 'u5', userId: 'u5', name: 'Leyla',  surname: 'K.', avatarColor: '#EC4899', level: 10, weeklyXP: 450, totalXP: 5800, streak: 12, role: 'member', joinedAt: '2024-09-15' },
-  { studentId: 'u6', userId: 'u6', name: 'Rauf',   surname: 'N.', avatarColor: '#22C55E', level:  8, weeklyXP: 390, totalXP: 4900, streak: 6,  role: 'member', joinedAt: '2024-10-01' },
-  { studentId: 'u7', userId: 'u7', name: 'Günel',  surname: 'A.', avatarColor: '#EAB308', level:  7, weeklyXP: 360, totalXP: 4500, streak: 4,  role: 'member', joinedAt: '2024-10-10' },
-  { studentId: 'u8', userId: 'u8', name: 'Fərid',  surname: 'M.', avatarColor: '#8B5CF6', level:  6, weeklyXP: 400, totalXP: 3400, streak: 20, role: 'member', joinedAt: '2024-11-01' },
-]
-
-const MOCK_BATTLES: BattleHistoryItem[] = [
-  { _id: 'b1', opponentSlug: 'kartallar', opponentName: 'Kartallar', opponentColor: '#F97316', opponentEmoji: '🦅', ourScore: 850, theirScore: 720, result: 'win',  subject: 'Riyaziyyat', format: 'Sürət',  endedAt: '2024-12-10', startedAt: '2024-12-10' },
-  { _id: 'b2', opponentSlug: 'aslanlar',  opponentName: 'Aslanlar',  opponentColor: '#EAB308', opponentEmoji: '🦁', ourScore: 920, theirScore: 800, result: 'win',  subject: 'Fizika',     format: 'Qarışıq', endedAt: '2024-12-08', startedAt: '2024-12-08' },
-  { _id: 'b3', opponentSlug: 'qurtlar',   opponentName: 'Qurtlar',   opponentColor: '#9CA3AF', opponentEmoji: '🐺', ourScore: 640, theirScore: 780, result: 'loss', subject: 'Kimya',      format: 'Fənn',    endedAt: '2024-12-05', startedAt: '2024-12-05' },
-  { _id: 'b4', opponentSlug: 'ulduzlar',  opponentName: 'Ulduzlar',  opponentColor: '#3B82F6', opponentEmoji: '⭐', ourScore: 900, theirScore: 710, result: 'win',  subject: 'Tarix',      format: 'Sürət',   endedAt: '2024-12-02', startedAt: '2024-12-02' },
-  { _id: 'b5', opponentSlug: 'timsahlar', opponentName: 'Timsahlar', opponentColor: '#22C55E', opponentEmoji: '🐊', ourScore: 770, theirScore: 650, result: 'win',  subject: 'Riyaziyyat', format: 'Sürət',   endedAt: '2024-11-28', startedAt: '2024-11-28' },
-  { _id: 'b6', opponentSlug: 'sahinler',  opponentName: 'Şahinlər',  opponentColor: '#EC4899', opponentEmoji: '🦅', ourScore: 590, theirScore: 640, result: 'loss', subject: 'Fizika',     format: 'Qarışıq', endedAt: '2024-11-24', startedAt: '2024-11-24' },
-]
-
-const MOCK_STATS: ClanStats = {
-  weeklyXPHistory: [
-    { week: 'H1', xp: 2100 }, { week: 'H2', xp: 2600 }, { week: 'H3', xp: 2300 },
-    { week: 'H4', xp: 3100 }, { week: 'H5', xp: 3400 }, { week: 'H6', xp: 2900 },
-    { week: 'H7', xp: 3200 }, { week: 'H8', xp: 3750 },
-  ],
-  memberXPShare: [
-    { name: 'Aytən M.', xp: 8400 }, { name: 'Kənan H.', xp: 7100 },
-    { name: 'Nigar Ə.', xp: 6900 }, { name: 'Orxan T.', xp: 6200 },
-    { name: 'Digərləri', xp: 19600 },
-  ],
-  strongestSubject: 'Riyaziyyat',
-  strongestPct: 67,
-  mostActiveUser: { name: 'Aytən M.', avatarColor: '#9333EA' },
-  bestBattleScore: 920,
-}
-
-const MOCK_SEARCH: ClanSearchResult[] = [
-  { _id: 'c2', name: 'Kartallar', slug: 'kartallar', schoolName: 'Məktəb #12', city: 'Bakı',    color: '#F97316', totalXP: 45000, rank: 5,  memberCount: 10 },
-  { _id: 'c3', name: 'Aslanlar',  slug: 'aslanlar',  schoolName: 'Məktəb #17', city: 'Gəncə',  color: '#EAB308', totalXP: 51000, rank: 2,  memberCount: 12 },
-  { _id: 'c4', name: 'Qurtlar',   slug: 'qurtlar',   schoolName: 'Məktəb #9',  city: 'Sumqayıt', color: '#9CA3AF', totalXP: 39000, rank: 8, memberCount: 9  },
-]
 
 const PIE_COLORS = ['#9333EA', '#3B82F6', '#06B6D4', '#F97316', '#6B7280']
 
@@ -236,7 +181,7 @@ function MemberCard({ m, rank, onChallenge }: {
             className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg"
             style={{ backgroundColor: m.avatarColor, boxShadow: `0 0 16px ${m.avatarColor}50` }}
           >
-            {m.name.charAt(0)}
+            {m.name?.charAt(0) ?? '?'}
           </div>
           {m.role === 'leader' && (
             <motion.span
@@ -497,6 +442,38 @@ function EmptyState({ onCreate, onSearch }: {
   )
 }
 
+// ── Load error state ───────────────────────────────────────────────────────
+
+function ClanLoadError({ onRetry, onBack }: { onRetry: () => void; onBack: () => void }) {
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center p-6 text-center">
+      <div className="text-7xl mb-5">⚠️</div>
+      <h2 className="text-white font-black text-2xl mb-2">Klan yüklənmədi</h2>
+      <p className="text-[#9CA3AF] text-sm mb-8 max-w-xs">Zəhmət olmasa yenidən cəhd edin.</p>
+      <div className="flex flex-col gap-3 w-full max-w-xs">
+        <motion.button
+          onClick={onRetry}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl font-black text-white text-base"
+          style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)', boxShadow: '0 4px 20px rgba(147,51,234,0.4)' }}
+        >
+          🔄 Yenidən yoxla
+        </motion.button>
+        <motion.button
+          onClick={onBack}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl font-bold text-white text-base"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+        >
+          🏆 Klanlara bax
+        </motion.button>
+      </div>
+    </div>
+  )
+}
+
 // ── Tabs ───────────────────────────────────────────────────────────────────
 
 type TabKey = 'members' | 'battles' | 'stats' | 'challenge'
@@ -524,47 +501,70 @@ export default function ClanPage() {
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
-  const { data: clan, isLoading: clanLoading } = useQuery<ClanData>({
+  const isMeRoute = slug === 'me'
+
+  const { data: clan, isLoading: clanLoading, isError: clanError, refetch: refetchClan } = useQuery<ClanData | null>({
     queryKey: ['clan', slug],
-    queryFn:  () => api.get<{ data: ClanData }>(API_ROUTES.CLANS.BY_SLUG(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => (slug ? MOCK_CLAN : null as unknown as ClanData)),
+    queryFn:  () => api.get<{ data: ClanData | null }>(API_ROUTES.CLANS.BY_SLUG(slug!))
+                      .then(r => r.data.data),
     enabled:  !!slug,
     staleTime: 1000 * 60 * 2,
   })
 
-  const { data: members, isLoading: membersLoading } = useQuery<ClanMemberFull[]>({
+  // /clan/me → backend /clans/me real klanı qaytarır; varsa real slug-a yönləndir.
+  useEffect(() => {
+    if (isMeRoute && clan && clan.slug && clan.slug !== 'me') {
+      navigate(APP_ROUTES.CLAN(clan.slug), { replace: true })
+    }
+  }, [isMeRoute, clan, navigate])
+
+  const { data: members, isLoading: membersLoading, refetch: refetchMembers } = useQuery<ClanMemberFull[]>({
     queryKey: ['clan', slug, 'members'],
     queryFn:  () => api.get<{ data: ClanMemberFull[] }>(API_ROUTES.CLANS.MEMBERS(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_MEMBERS),
-    enabled:  !!slug && tab === 'members',
+                      .then(r => r.data.data),
+    enabled:  !!slug && !isMeRoute && tab === 'members',
+    retry:    false,
     staleTime: 1000 * 60 * 2,
   })
 
-  const { data: battles, isLoading: battlesLoading } = useQuery<BattleHistoryItem[]>({
+  const { data: battles, isLoading: battlesLoading, refetch: refetchBattles } = useQuery<BattleHistoryItem[]>({
     queryKey: ['clan', slug, 'battles'],
     queryFn:  () => api.get<{ data: BattleHistoryItem[] }>(API_ROUTES.CLANS.BATTLES(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_BATTLES),
-    enabled:  !!slug && tab === 'battles',
+                      .then(r => r.data.data),
+    enabled:  !!slug && !isMeRoute && tab === 'battles',
+    retry:    false,
     staleTime: 1000 * 60,
   })
 
-  const { data: stats, isLoading: statsLoading } = useQuery<ClanStats>({
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<ClanStats>({
     queryKey: ['clan', slug, 'stats'],
     queryFn:  () => api.get<{ data: ClanStats }>(API_ROUTES.CLANS.STATS(slug!))
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_STATS),
-    enabled:  !!slug && tab === 'stats',
+                      .then(r => r.data.data),
+    enabled:  !!slug && !isMeRoute && tab === 'stats',
+    retry:    false,
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: searchResults, isFetching: searchLoading } = useQuery<ClanSearchResult[]>({
+  // Klan axtarışı — real leaderboard siyahısını çəkir, query ilə client-side filter edir (mock yox).
+  const { data: searchResults, isFetching: searchLoading, isError: searchError, refetch: refetchSearch } = useQuery<ClanSearchResult[]>({
     queryKey: ['clan-search', searchQuery],
-    queryFn:  () => api.get<{ data: ClanSearchResult[] }>(API_ROUTES.CLANS.SEARCH, { params: { search: searchQuery } })
-                      .then(r => r.data.data)
-                      .catch(() => MOCK_SEARCH.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))),
+    queryFn:  () => api.get<{ data: Array<{ _id: string; name: string; slug: string; schoolName?: string; totalXP?: number; members?: unknown[] }> }>(API_ROUTES.CLANS.LEADERBOARD)
+                      .then(r => {
+                        const q = searchQuery.trim().toLowerCase()
+                        return (r.data.data ?? [])
+                          .map((cl, i): ClanSearchResult => ({
+                            _id:         cl._id,
+                            name:        cl.name,
+                            slug:        cl.slug,
+                            schoolName:  cl.schoolName ?? '',
+                            city:        '',
+                            color:       PIE_COLORS[i % PIE_COLORS.length],
+                            totalXP:     cl.totalXP ?? 0,
+                            rank:        i + 1,
+                            memberCount: Array.isArray(cl.members) ? cl.members.length : 0,
+                          }))
+                          .filter(cl => cl.name.toLowerCase().includes(q) && cl._id !== clan?._id)
+                      }),
     enabled:  tab === 'challenge' && searchQuery.trim().length >= 2,
     staleTime: 1000 * 30,
   })
@@ -626,14 +626,25 @@ export default function ClanPage() {
     return <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center"><Spinner size="lg" /></div>
   }
 
+  // Backend xətası: fake klan göstərmirik — real xəta vəziyyəti.
+  if (clanError) {
+    return <ClanLoadError onRetry={() => refetchClan()} onBack={() => navigate(APP_ROUTES.CLAN_LEADERBOARD)} />
+  }
+
+  // /clan/me + real klan → yuxarıdakı effect real slug-a yönləndirir; bu an spinner.
+  if (isMeRoute && clan) {
+    return <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center"><Spinner size="lg" /></div>
+  }
+
+  // Klan yoxdur (öz klanın yoxdur və ya slug tapılmadı) → empty state, fake clan yox.
   if (!clan) {
     return <EmptyState onCreate={() => setShowCreate(true)} onSearch={() => setShowJoin(true)} />
   }
 
   const c          = clan
-  const memberList = members ?? MOCK_MEMBERS
-  const battleList = battles ?? MOCK_BATTLES
-  const clanStats  = stats   ?? MOCK_STATS
+  const memberList = members ?? []
+  const battleList = battles ?? []
+  const clanStats  = stats ?? null
 
   const sortedMembers = [...memberList].sort((a, b) => b.weeklyXP - a.weeklyXP)
   const isMember = memberList.some(m => m.userId === user?._id)
@@ -833,7 +844,7 @@ export default function ClanPage() {
                     <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
                   ))}
                 </div>
-              ) : (
+              ) : memberList.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {sortedMembers.map((m, i) => (
                     <MemberCard
@@ -843,6 +854,12 @@ export default function ClanPage() {
                       onChallenge={userId => navigate(`/competition/new?opponent=${userId}`)}
                     />
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">👥</div>
+                  <p className="text-[#9CA3AF] text-sm">Hələ üzv məlumatı yoxdur.</p>
+                  <button onClick={() => refetchMembers()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
                 </div>
               )
             )}
@@ -855,7 +872,7 @@ export default function ClanPage() {
                     <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
                   ))}
                 </div>
-              ) : (
+              ) : battleList.length > 0 ? (
                 <div>
                   {/* Bar chart */}
                   <div
@@ -929,6 +946,12 @@ export default function ClanPage() {
                     })}
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">⚔️</div>
+                  <p className="text-[#9CA3AF] text-sm">Hələ döyüş tarixçəsi yoxdur.</p>
+                  <button onClick={() => refetchBattles()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
+                </div>
               )
             )}
 
@@ -940,7 +963,7 @@ export default function ClanPage() {
                     <div key={i} className="h-48 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
                   ))}
                 </div>
-              ) : (
+              ) : clanStats ? (
                 <div className="space-y-4">
                   {/* Line chart */}
                   <div
@@ -1018,6 +1041,12 @@ export default function ClanPage() {
                       ))}
                     </div>
                   </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">📊</div>
+                  <p className="text-[#9CA3AF] text-sm">Hələ statistika yoxdur.</p>
+                  <button onClick={() => refetchStats()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
                 </div>
               )
             )}
@@ -1106,10 +1135,18 @@ export default function ClanPage() {
                   </div>
                 )}
 
-                {searchQuery.length >= 2 && !searchLoading && searchResults?.length === 0 && (
+                {searchQuery.length >= 2 && !searchLoading && searchError && (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-3">⚠️</div>
+                    <p className="text-[#9CA3AF] text-sm">Klan siyahısı yüklənmədi.</p>
+                    <button onClick={() => refetchSearch()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
+                  </div>
+                )}
+
+                {searchQuery.length >= 2 && !searchLoading && !searchError && searchResults?.length === 0 && (
                   <div className="text-center py-10">
                     <div className="text-4xl mb-3">🤷</div>
-                    <p className="text-[#9CA3AF] text-sm">Heç bir klan tapılmadı.</p>
+                    <p className="text-[#9CA3AF] text-sm">Uyğun klan tapılmadı.</p>
                   </div>
                 )}
 

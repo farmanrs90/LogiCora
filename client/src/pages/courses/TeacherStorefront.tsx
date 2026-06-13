@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import api from '../../lib/axios'
 import { API_ROUTES } from '../../constants'
 import { useAuth } from '../../context/AuthContext'
@@ -68,6 +69,22 @@ interface TeacherProfile {
   showcaseCourseIds: string[]
 }
 
+type TeacherApiProfile = Omit<Partial<TeacherProfile>, 'socialLinks'> & {
+  _id?: string
+  displayName?: string
+  userId?: string | { _id?: string; name?: string; surname?: string }
+  specialization?: string
+  experience?: number
+  introVideo?: string
+  socialLinks?: TeacherProfile['socialLinks'] | Record<string, string | null | undefined>
+}
+
+interface ApiEnvelope<T> {
+  success?: boolean
+  data?: T | null
+  message?: string
+}
+
 interface EditProfileForm {
   bio: string
   longBio: string
@@ -77,69 +94,72 @@ interface EditProfileForm {
   subject: string
 }
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-
-const MOCK_TEACHER: TeacherProfile = {
-  id: 't1',
-  name: 'Rəşad Əliyev',
-  slug: 'rashad-aliyev',
-  avatar: undefined,
-  coverImage: undefined,
-  isVerified: true,
-  isFoundingTeacher: true,
-  isFeatured: true,
-  bio: 'Python, Data Science, Backend Development. 10 il sənaye təcrübəsi.',
-  longBio: 'Google və Microsoft sertifikatlarına malik proqramçı. Azərbaycanın ən böyük proqramlaşdırma icmasının qurucusu. 5000+ tələbəyə Python öyrədib. Bakı Dövlət Universitetinin müdavimi. Hazırda PASHA Bank-da Senior Engineer kimi çalışır.',
-  introVideoUrl: undefined,
-  subject: 'Proqramlaşdırma',
-  city: 'Bakı',
-  school: 'Bakı Dövlət Universiteti',
-  yearsExperience: 10,
-  totalStudents: 12400,
-  rating: 4.9,
-  reviewCount: 1240,
-  courseCount: 8,
-  impactScore: 9840,
-  socialLinks: [
-    { platform: 'github', url: 'https://github.com' },
-    { platform: 'linkedin', url: 'https://linkedin.com' },
-  ],
-  courses: [
-    {
-      id: 'c1', title: 'Python ilə Tam Proqramlaşdırma Kursu',
-      thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400',
-      price: 120, discountedPrice: 79, isFree: false, rating: 4.8,
-      studentCount: 2840, level: 'Başlanğıc', isPublished: true, isFeatured: true,
-    },
-    {
-      id: 'c2', title: 'Django REST API — Real Layihələr',
-      thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400',
-      price: 150, isFree: false, rating: 4.9, studentCount: 1640,
-      level: 'Orta', isPublished: true, isFeatured: false,
-    },
-    {
-      id: 'c3', title: 'Data Science ilə Pandas & NumPy',
-      thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400',
-      price: 0, isFree: true, rating: 4.7, studentCount: 4200,
-      level: 'Başlanğıc', isPublished: true, isFeatured: false,
-    },
-  ],
-  competitions: [
-    { id: 'k1', title: 'Python Sprint #12', subject: 'Python', participantCount: 340, status: 'ended', scheduledAt: '2026-04-10' },
-    { id: 'k2', title: 'Algorithm Battle', subject: 'Alqoritmlər', participantCount: 220, status: 'upcoming', scheduledAt: '2026-05-30' },
-  ],
-  reviews: [
-    { id: 'r1', user: { name: 'Aynur M.' }, rating: 5, comment: 'Rəşad müəllim çox gözəl izah edir!', courseName: 'Python Kursu', createdAt: '2026-03-12' },
-    { id: 'r2', user: { name: 'Tural Q.' }, rating: 5, comment: 'Bu kursdan sonra işə düzəldim!', courseName: 'Django REST API', createdAt: '2026-02-28' },
-    { id: 'r3', user: { name: 'Leyla H.' }, rating: 4, comment: 'Çox yaxşı kurs.', courseName: 'Data Science', createdAt: '2026-02-10' },
-  ],
-  showcaseCourseIds: ['c1', 'c2'],
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('az-AZ', { year: 'numeric', month: 'short', day: 'numeric' })
+function fmtDate(iso?: string): string {
+  const date = iso ? new Date(iso) : null
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return '—'
+  }
+
+  return date.toLocaleDateString('az-AZ', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+function safeNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function isApiEnvelope(response: TeacherApiProfile | ApiEnvelope<TeacherApiProfile>): response is ApiEnvelope<TeacherApiProfile> {
+  return typeof response === 'object' && (
+    'data' in response ||
+    'success' in response ||
+    'message' in response
+  )
+}
+
+function unwrapTeacherResponse(
+  response: TeacherApiProfile | ApiEnvelope<TeacherApiProfile> | null | undefined
+): TeacherApiProfile | null {
+  if (!response) {
+    return null
+  }
+
+  if (isApiEnvelope(response)) {
+    return response.data ?? null
+  }
+
+  return response
+}
+
+function normalizeSocialLinks(links: TeacherApiProfile['socialLinks']): TeacherProfile['socialLinks'] {
+  if (Array.isArray(links)) {
+    return links.filter(link => !!link?.url)
+  }
+
+  if (!links || typeof links !== 'object') {
+    return []
+  }
+
+  return Object.entries(links)
+    .filter(([, url]) => typeof url === 'string' && url.length > 0)
+    .map(([platform, url]) => ({ platform, url: url as string }))
+}
+
+function getTeacherUserId(userId: TeacherApiProfile['userId']): string | undefined {
+  if (typeof userId === 'string') {
+    return userId
+  }
+
+  return userId?._id
+}
+
+function getTeacherUserName(userId: TeacherApiProfile['userId']): string {
+  if (!userId || typeof userId === 'string') {
+    return ''
+  }
+
+  return [userId.name, userId.surname].filter(Boolean).join(' ')
 }
 
 function StarRating({ value, size = 14 }: { value: number; size?: number }) {
@@ -160,9 +180,14 @@ function StarRating({ value, size = 14 }: { value: number; size?: number }) {
 // ── Course Card ───────────────────────────────────────────────────────────────
 
 function MiniCourseCard({ course }: { course: TeacherCourse }) {
-  const price = course.discountedPrice ?? course.price
+  const originalPrice = safeNumber(course.price)
+  const price = safeNumber(course.discountedPrice ?? course.price)
+  const rating = safeNumber(course.rating)
+  const studentCount = safeNumber(course.studentCount)
+  const hasDiscount = typeof course.discountedPrice === 'number' && originalPrice > 0 && course.discountedPrice < originalPrice
+
   return (
-    <Link to={`/courses/${course.id}`} className="group block">
+    <Link to={course.id ? `/courses/${course.id}` : '/courses'} className="group block">
       <motion.div
         whileHover={{ y: -4 }}
         className={`bg-[#141414] border rounded-2xl overflow-hidden transition-colors ${
@@ -185,9 +210,9 @@ function MiniCourseCard({ course }: { course: TeacherCourse }) {
           <div className="absolute top-2 right-2">
             {course.isFree ? (
               <span className="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full font-semibold">Pulsuz</span>
-            ) : course.discountedPrice ? (
+            ) : hasDiscount ? (
               <span className="text-xs bg-rose-500 text-white px-2 py-0.5 rounded-full font-semibold">
-                {Math.round(((course.price - price) / course.price) * 100)}% endirim
+                {Math.round(((originalPrice - price) / originalPrice) * 100)}% endirim
               </span>
             ) : null}
           </div>
@@ -199,12 +224,12 @@ function MiniCourseCard({ course }: { course: TeacherCourse }) {
           <div className="flex items-center gap-2 text-xs text-white/50">
             <span className="capitalize">{course.level}</span>
             <span>·</span>
-            <span>{course.studentCount.toLocaleString()} tələbə</span>
+            <span>{studentCount.toLocaleString()} tələbə</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              <StarRating value={course.rating} size={12} />
-              <span className="text-xs text-yellow-400 font-semibold">{course.rating}</span>
+              <StarRating value={rating} size={12} />
+              <span className="text-xs text-yellow-400 font-semibold">{rating}</span>
             </div>
             {!course.isFree && (
               <div className="flex items-center gap-1.5">
@@ -227,17 +252,17 @@ function EditProfileModal({
   teacher,
   onClose,
 }: {
-  teacher: TeacherProfile
+  teacher: TeacherApiProfile
   onClose: () => void
 }) {
   const qc = useQueryClient()
   const [form, setForm] = useState<EditProfileForm>({
-    bio: teacher.bio,
-    longBio: teacher.longBio,
-    city: teacher.city,
+    bio: teacher.bio ?? '',
+    longBio: teacher.longBio ?? teacher.bio ?? '',
+    city: teacher.city ?? '',
     school: teacher.school ?? '',
-    yearsExperience: teacher.yearsExperience,
-    subject: teacher.subject,
+    yearsExperience: safeNumber(teacher.yearsExperience ?? teacher.experience),
+    subject: teacher.subject ?? teacher.specialization ?? '',
   })
 
   const updateMutation = useMutation({
@@ -248,11 +273,9 @@ function EditProfileModal({
       onClose()
     },
     onError: () => {
-      // Mock success
-      qc.setQueryData(['teacher', teacher.slug], (old: TeacherProfile | undefined) =>
-        old ? { ...old, ...form } : old
-      )
-      onClose()
+      // Backend xətası: lokal cache yenilənmir, modal AÇIQ qalır — fake success yoxdur.
+      // Müəllim düzəliş edib yenidən cəhd edə bilsin.
+      toast.error('Profil yenilənmədi. Zəhmət olmasa yenidən cəhd edin.')
     },
   })
 
@@ -368,16 +391,13 @@ export default function TeacherStorefront() {
   const [activeTab, setActiveTab] = useState<Tab>('Kurslar')
   const [showEditModal, setShowEditModal] = useState(false)
 
-  const { data: teacher, isLoading } = useQuery({
+  const { data: teacher, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ['teacher', slug],
     queryFn: () =>
-      api.get<TeacherProfile>(API_ROUTES.TEACHERS.BY_SLUG(slug!))
-        .then(r => r.data)
-        .catch(() => MOCK_TEACHER),
+      api.get<TeacherApiProfile | ApiEnvelope<TeacherApiProfile> | null>(API_ROUTES.TEACHERS.BY_SLUG(slug!))
+        .then(r => unwrapTeacherResponse(r.data)),
     enabled: !!slug,
   })
-
-  const isOwner = user?._id === teacher?.id || (user?.role === 'teacher' && slug === 'rashad-aliyev')
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
   if (isLoading) {
@@ -393,7 +413,71 @@ export default function TeacherStorefront() {
     )
   }
 
-  if (!teacher) return null
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center space-y-5">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-300">
+            !
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl font-bold">Müəllim profili yüklənmədi.</h1>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors disabled:opacity-50"
+            >
+              Yenidən yoxla
+            </button>
+            <Link
+              to="/courses"
+              className="px-4 py-2.5 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20 transition-colors text-sm"
+            >
+              Kurslara qayıt
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!teacher || !(teacher.id || teacher._id || teacher.slug || teacher.name || teacher.displayName || teacher.userId)) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center space-y-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50">
+            ?
+          </div>
+          <h1 className="text-xl font-bold">Bu müəllim profili mövcud deyil.</h1>
+        </div>
+      </div>
+    )
+  }
+
+  const courses = Array.isArray(teacher.courses) ? teacher.courses : []
+  const competitions = Array.isArray(teacher.competitions) ? teacher.competitions : []
+  const reviews = Array.isArray(teacher.reviews) ? teacher.reviews : []
+  const socialLinks = normalizeSocialLinks(teacher.socialLinks)
+  const totalStudents = safeNumber(teacher.totalStudents)
+  const rating = safeNumber(teacher.rating)
+  const reviewCount = safeNumber(teacher.reviewCount)
+  const courseCount = safeNumber(teacher.courseCount, courses.length)
+  const yearsExperience = safeNumber(teacher.yearsExperience ?? teacher.experience)
+  const impactScore = safeNumber(teacher.impactScore)
+  const teacherId = teacher.id || teacher._id
+  const teacherUserId = getTeacherUserId(teacher.userId)
+  const teacherUserName = getTeacherUserName(teacher.userId)
+  const teacherName = teacher.name || teacher.displayName || teacherUserName || 'Müəllim'
+  const teacherInitial = teacherName[0] ?? '?'
+  const teacherSubject = teacher.subject || teacher.specialization || '—'
+  const teacherCity = teacher.city || '—'
+  const teacherBio = teacher.bio || ''
+  const teacherLongBio = teacher.longBio || teacher.bio || '—'
+  const introVideoUrl = teacher.introVideoUrl || teacher.introVideo
+  const currentUserId = user?._id
+  const isOwner = Boolean(currentUserId && (currentUserId === teacherUserId || currentUserId === teacherId))
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white">
@@ -442,9 +526,9 @@ export default function TeacherStorefront() {
             )}
             <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 border-4 border-[#0D0D0D] flex items-center justify-center text-4xl font-bold shadow-xl">
               {teacher.avatar ? (
-                <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover rounded-xl" />
+                <img src={teacher.avatar} alt={teacherName} className="w-full h-full object-cover rounded-xl" />
               ) : (
-                teacher.name[0]
+                teacherInitial
               )}
             </div>
             {teacher.isFoundingTeacher && (
@@ -459,20 +543,20 @@ export default function TeacherStorefront() {
           {/* Name + meta */}
           <div className="flex-1 pt-2">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold">{teacher.name}</h1>
+              <h1 className="text-2xl font-bold">{teacherName}</h1>
               {teacher.isVerified && (
                 <span className="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">
                   ✓ Təsdiqlənmiş
                 </span>
               )}
             </div>
-            <p className="text-white/60 text-sm mb-2">{teacher.subject} · {teacher.city}</p>
-            <p className="text-white/70 text-sm max-w-xl">{teacher.bio}</p>
+            <p className="text-white/60 text-sm mb-2">{teacherSubject} · {teacherCity}</p>
+            <p className="text-white/70 text-sm max-w-xl">{teacherBio}</p>
 
             {/* Social links */}
-            {teacher.socialLinks.length > 0 && (
+            {socialLinks.length > 0 && (
               <div className="flex gap-2 mt-3">
-                {teacher.socialLinks.map(link => (
+                {socialLinks.map(link => (
                   <a
                     key={link.platform}
                     href={link.url}
@@ -514,11 +598,11 @@ export default function TeacherStorefront() {
         {/* ── Stats bar ─────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 py-6 border-b border-white/10">
           {[
-            { label: 'Tələbə', value: teacher.totalStudents.toLocaleString(), icon: '👥' },
-            { label: 'Reytinq', value: teacher.rating.toFixed(1), icon: '⭐' },
-            { label: 'Kurs', value: teacher.courseCount.toString(), icon: '📚' },
-            { label: 'Təcrübə', value: `${teacher.yearsExperience} il`, icon: '🏆' },
-            { label: 'Impact Skoru', value: teacher.impactScore.toLocaleString(), icon: '⚡' },
+            { label: 'Tələbə', value: totalStudents.toLocaleString(), icon: '👥' },
+            { label: 'Reytinq', value: rating.toFixed(1), icon: '⭐' },
+            { label: 'Kurs', value: courseCount.toString(), icon: '📚' },
+            { label: 'Təcrübə', value: `${yearsExperience} il`, icon: '🏆' },
+            { label: 'Impact Skoru', value: impactScore.toLocaleString(), icon: '⚡' },
           ].map(({ label, value, icon }) => (
             <motion.div
               key={label}
@@ -534,13 +618,13 @@ export default function TeacherStorefront() {
         </div>
 
         {/* ── Intro video ──────────────────────────────────────────────────── */}
-        {(teacher.introVideoUrl || isOwner) && (
+        {(introVideoUrl || isOwner) && (
           <div className="py-6 border-b border-white/10">
             <h2 className="text-base font-semibold mb-3">Tanıtım Videosu</h2>
-            {teacher.introVideoUrl ? (
+            {introVideoUrl ? (
               <div className="aspect-video max-w-2xl rounded-2xl overflow-hidden bg-black">
                 <video
-                  src={teacher.introVideoUrl}
+                  src={introVideoUrl}
                   controls
                   className="w-full h-full"
                 />
@@ -608,7 +692,7 @@ export default function TeacherStorefront() {
                       </Link>
                     </div>
                   )}
-                  {teacher.courses.length === 0 ? (
+                  {courses.length === 0 ? (
                     <div className="py-20 text-center space-y-3">
                       <div className="text-6xl">📚</div>
                       <p className="text-white/50">Hələ ki heç bir kurs yoxdur</p>
@@ -620,9 +704,9 @@ export default function TeacherStorefront() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {teacher.courses.map((course, i) => (
+                      {courses.map((course, i) => (
                         <motion.div
-                          key={course.id}
+                          key={course.id || `course-${i}`}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.08 }}
@@ -638,14 +722,14 @@ export default function TeacherStorefront() {
               {/* ── Yarışmalar ──────────────────────────────────────────── */}
               {activeTab === 'Yarışmalar' && (
                 <div className="space-y-4">
-                  {teacher.competitions.length === 0 ? (
+                  {competitions.length === 0 ? (
                     <div className="py-20 text-center">
                       <div className="text-6xl mb-3">🏆</div>
                       <p className="text-white/50">Hələ ki heç bir yarışma yoxdur</p>
                     </div>
-                  ) : teacher.competitions.map((comp, i) => (
+                  ) : competitions.map((comp, i) => (
                     <motion.div
-                      key={comp.id}
+                      key={comp.id || `competition-${i}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
@@ -663,11 +747,11 @@ export default function TeacherStorefront() {
                           </span>
                         </div>
                         <p className="text-xs text-white/50 mt-1">
-                          {comp.subject} · {comp.participantCount} iştirakçı · {fmtDate(comp.scheduledAt)}
+                          {comp.subject} · {safeNumber(comp.participantCount)} iştirakçı · {fmtDate(comp.scheduledAt)}
                         </p>
                       </div>
                       <Link
-                        to={`/competition/${comp.id}`}
+                        to={comp.id ? `/competition/${comp.id}` : '/competition'}
                         className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors shrink-0 ml-4"
                       >
                         Gör →
@@ -683,46 +767,58 @@ export default function TeacherStorefront() {
                   {/* Summary */}
                   <div className="flex items-center gap-6 bg-white/5 border border-white/10 rounded-2xl p-6">
                     <div className="text-center">
-                      <p className="text-5xl font-bold text-yellow-400">{teacher.rating}</p>
-                      <StarRating value={teacher.rating} size={18} />
-                      <p className="text-xs text-white/40 mt-1">{teacher.reviewCount} rəy</p>
+                      <p className="text-5xl font-bold text-yellow-400">{rating.toFixed(1)}</p>
+                      <StarRating value={rating} size={18} />
+                      <p className="text-xs text-white/40 mt-1">{reviewCount} rəy</p>
                     </div>
                     <div className="w-px h-16 bg-white/10" />
                     <div className="flex-1 text-sm text-white/60 leading-relaxed">
-                      Azərbaycanın ən yüksək reytinqli müəllimlərindən biri. Tələbələrin
-                      <span className="text-white font-semibold"> 96%</span>-i kursu tövsiyə edir.
+                      {reviewCount > 0
+                        ? `${reviewCount} rəy əsasında ortalama reytinq.`
+                        : 'Bu müəllim üçün hələ rəy yoxdur.'}
                     </div>
                   </div>
 
                   {/* Reviews */}
-                  <div className="space-y-4">
-                    {teacher.reviews.map((review, i) => (
-                      <motion.div
-                        key={review.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-white/5 border border-white/8 rounded-xl p-4 space-y-2"
-                      >
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-indigo-600/60 flex items-center justify-center text-sm font-bold">
-                              {review.user.name[0]}
+                  {reviews.length === 0 ? (
+                    <div className="py-16 text-center">
+                      <p className="text-white/50">Hələ ki heç bir rəy yoxdur</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {reviews.map((review, i) => {
+                        const reviewerName = review.user?.name || 'İstifadəçi'
+                        const reviewRating = safeNumber(review.rating)
+
+                        return (
+                          <motion.div
+                            key={review.id || `review-${i}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="bg-white/5 border border-white/8 rounded-xl p-4 space-y-2"
+                          >
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-indigo-600/60 flex items-center justify-center text-sm font-bold">
+                                  {reviewerName[0] ?? '?'}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">{reviewerName}</p>
+                                  <p className="text-xs text-white/40">{review.courseName}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <StarRating value={reviewRating} size={12} />
+                                <span className="text-xs text-white/40">{fmtDate(review.createdAt)}</span>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium">{review.user.name}</p>
-                              <p className="text-xs text-white/40">{review.courseName}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <StarRating value={review.rating} size={12} />
-                            <span className="text-xs text-white/40">{fmtDate(review.createdAt)}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-white/70 leading-relaxed">{review.comment}</p>
-                      </motion.div>
-                    ))}
-                  </div>
+                            <p className="text-sm text-white/70 leading-relaxed">{review.comment}</p>
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -731,14 +827,14 @@ export default function TeacherStorefront() {
                 <div className="max-w-2xl space-y-6">
                   <div>
                     <h2 className="text-lg font-bold mb-3">Müəllim haqqında</h2>
-                    <p className="text-white/70 leading-relaxed">{teacher.longBio}</p>
+                    <p className="text-white/70 leading-relaxed">{teacherLongBio}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { label: 'Fənn', value: teacher.subject },
-                      { label: 'Şəhər', value: teacher.city },
+                      { label: 'Fənn', value: teacherSubject },
+                      { label: 'Şəhər', value: teacherCity },
                       { label: 'Müəssisə', value: teacher.school ?? '—' },
-                      { label: 'Təcrübə', value: `${teacher.yearsExperience} il` },
+                      { label: 'Təcrübə', value: `${yearsExperience} il` },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-3">
                         <p className="text-xs text-white/40 mb-1">{label}</p>
@@ -764,9 +860,9 @@ export default function TeacherStorefront() {
                       </div>
                       <div className="grid grid-cols-3 gap-3">
                         {[
-                          { label: 'Bu ay tələbə', value: '+124' },
-                          { label: 'Aktiv kurslar', value: teacher.courses.filter(c => c.isPublished).length.toString() },
-                          { label: 'Bu ay gəlir', value: '840 ₼' },
+                          { label: 'Bu ay tələbə', value: '—' },
+                          { label: 'Aktiv kurslar', value: courses.filter(c => c.isPublished).length.toString() },
+                          { label: 'Bu ay gəlir', value: '—' },
                         ].map(({ label, value }) => (
                           <div key={label} className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-center">
                             <p className="text-lg font-bold text-indigo-300">{value}</p>

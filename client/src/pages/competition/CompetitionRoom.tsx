@@ -120,7 +120,7 @@ function MiniLeaderboard({ board, myId }: { board: Participant[]; myId?: string 
             className="w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0"
             style={{ backgroundColor: p.avatarColor }}
           >
-            {p.name.charAt(0)}
+            {p.name?.charAt(0) ?? '?'}
           </div>
           <span className="flex-1 text-sm font-semibold text-white truncate">{p.name}</span>
           <span className="text-xs font-bold text-[#9CA3AF]">{p.score}</span>
@@ -213,7 +213,7 @@ function HostView({
         style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>Aparıcı</span>
+          <span className="text-xs font-black px-2 py-1 rounded-md" style={{ background: 'rgba(147,51,234,0.15)', color: '#C084FC' }}>HOST</span>
           <span className="text-[#9CA3AF] text-xs truncate max-w-[160px]">{title}</span>
         </div>
         <span className="text-[#9CA3AF] text-xs">{questionNumber}/{totalQuestions} sual</span>
@@ -288,7 +288,7 @@ function HostView({
             {leaderboard.map((p, i) => (
               <div key={p.userId} className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <span className="w-6 text-center font-black text-[#9CA3AF]">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0" style={{ backgroundColor: p.avatarColor }}>{p.name.charAt(0)}</div>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0" style={{ backgroundColor: p.avatarColor }}>{p.name?.charAt(0) ?? '?'}</div>
                 <span className="flex-1 text-sm font-semibold text-white truncate">{p.name}</span>
                 <span className="text-xs font-bold text-[#9CA3AF]">{p.score}</span>
               </div>
@@ -345,19 +345,23 @@ export default function CompetitionRoom() {
   const [spectatorCount, setSpectatorCount] = useState(0)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [reactionEmoji, setReactionEmoji] = useState<{ emoji: string; key: number } | null>(null)
-  const [connectionSlow, setConnectionSlow] = useState(false)
 
   const startTimeRef = useRef<number>(Date.now())
 
-  // Socket gecikəndə real vəziyyəti göstər, saxta sual axınına keçmə.
+  // Socket qoşula bilmirsə real bağlantı xətası göstəririk — FAKE demo sual YOX.
+  const [connectionError, setConnectionError] = useState(false)
+  const [retryNonce, setRetryNonce] = useState(0)
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (!isConnected && phase === 'waiting') {
-        setConnectionSlow(true)
-      }
-    }, 4000)
+    if (isConnected) { setConnectionError(false); return }
+    const t = setTimeout(() => setConnectionError(true), 8000)
     return () => clearTimeout(t)
-  }, [isConnected, phase])
+  }, [isConnected, retryNonce])
+
+  const handleReconnect = useCallback(() => {
+    setConnectionError(false)
+    setRetryNonce(n => n + 1)        // 8s aşkarlama taymerini yenidən başlat
+    socketRef.current?.connect()     // socket.io manual reconnect
+  }, [socketRef])
 
   // Socket event handlers
   const handleQuestion = useCallback((data: { question: Question; questionNumber: number; totalQuestions: number }) => {
@@ -369,7 +373,6 @@ export default function CompetitionRoom() {
     setIsAnswered(false)
     setCorrectAnswer('')
     setAnsweredCount(0)
-    setConnectionSlow(false)
     setPhase('question')
     startTimeRef.current = Date.now()
   }, [])
@@ -417,7 +420,6 @@ export default function CompetitionRoom() {
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !isConnected) return
-    setConnectionSlow(false)
 
     socket.on('competition:question', handleQuestion)
     socket.on('competition:answer_result', handleAnswerResult)
@@ -478,6 +480,7 @@ export default function CompetitionRoom() {
       answer: answerId,
       responseTime,
     })
+    // Real nəticə serverdən 'competition:answer_result' event-i ilə gəlir — lokal fake nəticə YOX.
   }
 
   function handleSendReaction(type: string) {
@@ -490,6 +493,43 @@ export default function CompetitionRoom() {
 
   const timerPct = currentQuestion ? timeLeft / (currentQuestion.timeLimit ?? 20) : 1
   const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
+
+  // ── Real bağlantı xətası — fake yarış əvəzinə (host/player hər ikisi üçün) ──
+  if (connectionError) {
+    return (
+      <div className="min-h-screen flex flex-col relative">
+        <Arena />
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-5 px-6 text-center">
+          <motion.span className="text-6xl" animate={{ y: [0, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>📡</motion.span>
+          <div className="space-y-2">
+            <h2 className="text-white font-bold text-xl">Yarış serverinə qoşulmaq mümkün olmadı</h2>
+            <p className="text-[#9CA3AF] text-sm max-w-xs mx-auto">Bağlantını yoxlayın və yenidən cəhd edin.</p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button
+              onClick={handleReconnect}
+              className="w-full py-3.5 rounded-2xl font-bold text-white text-sm"
+              style={{ background: 'linear-gradient(135deg, #9333EA, #3B82F6)', boxShadow: '0 4px 16px rgba(147,51,234,0.4)' }}
+            >
+              Yenidən qoşul
+            </button>
+            <button
+              onClick={() => navigate(id ? APP_ROUTES.COMPETITION.LOBBY(id) : APP_ROUTES.DASHBOARD.STUDENT)}
+              className="w-full py-3.5 rounded-2xl font-bold text-[#9CA3AF] text-sm border border-[rgba(255,255,255,0.12)]"
+            >
+              Lobby-ə qayıt
+            </button>
+            <button
+              onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+              className="text-[#9CA3AF] text-xs"
+            >
+              Dashboard-a qayıt
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (isHost) {
     return (
@@ -579,13 +619,8 @@ export default function CompetitionRoom() {
                 🤖
               </motion.span>
               <p className="text-white font-bold text-xl text-center">
-                {isConnected ? 'Sual gəlir...' : connectionSlow ? 'Yarış bağlantısı gecikir' : 'Yarış bağlantısı yoxlanılır...'}
+                {isConnected ? 'Sual gəlir...' : 'Yarış serverinə qoşulur...'}
               </p>
-              {connectionSlow && (
-                <p className="max-w-xs text-center text-sm leading-6 text-[#9CA3AF]">
-                  Canlı bağlantı olmadan yarış sualları etibarlı başlamır. Lobby-ə qayıdıb yenidən yoxla.
-                </p>
-              )}
               <div className="flex gap-1">
                 {[0, 1, 2].map(i => (
                   <motion.span
@@ -597,14 +632,6 @@ export default function CompetitionRoom() {
                   />
                 ))}
               </div>
-              {connectionSlow && (
-                <button
-                  onClick={() => navigate(APP_ROUTES.COMPETITION.LOBBY(id!))}
-                  className="rounded-2xl border border-white/10 px-4 py-2 text-sm font-bold text-[#9CA3AF] transition-colors hover:text-white"
-                >
-                  Lobby-ə qayıt
-                </button>
-              )}
             </motion.div>
           )}
 

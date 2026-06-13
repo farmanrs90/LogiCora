@@ -7,11 +7,16 @@ const { hashPassword } = require('./utils/hashPassword');
 const User = require('./modules/user/user.model');
 const Student = require('./modules/student/student.model');
 const Teacher = require('./modules/teacher/teacher.model');
+const Parent = require('./modules/parent/parent.model');
 const Gamification = require('./modules/gamification/gamification.model');
 const Question = require('./modules/question/question.model');
 const Course = require('./modules/course/course.model');
 const DailyQuestion = require('./modules/dailyQuestion/dailyQuestion.model');
 const KidsVideo = require('./modules/kids/kids.model');
+const Group = require('./modules/group/group.model');
+const Attendance = require('./modules/attendance/attendance.model');
+const Enrollment = require('./modules/course/enrollment.model');
+const Competition = require('./modules/competition/competition.model');
 
 
 // --- Sual qurma köməkçisi ---
@@ -100,11 +105,16 @@ const seed = async () => {
     User.deleteMany({}),
     Student.deleteMany({}),
     Teacher.deleteMany({}),
+    Parent.deleteMany({}),
     Gamification.deleteMany({}),
     Question.deleteMany({}),
     Course.deleteMany({}),
     DailyQuestion.deleteMany({}),
     KidsVideo.deleteMany({}),
+    Group.deleteMany({}),
+    Attendance.deleteMany({}),
+    Enrollment.deleteMany({}),
+    Competition.deleteMany({}),
   ]);
 
   const adminPass = await hashPassword('Admin123!');
@@ -140,43 +150,75 @@ const seed = async () => {
     rating: 4.6, totalStudents: 90, impactScore: 280, bio: 'Fizika və elm müəllimi.',
   });
 
-  // --- Tələbələr (müxtəlif yaş) + Gamification ---
+  // --- Tələbələr (müxtəlif yaş) + Gamification (real demo dəyərləri) ---
   const studentsData = [
-    { name: 'Ayan', surname: 'Quliyeva', email: 'student1@logicora.az', phone: '0503333333', ageGroup: '9-11', grade: 4 },
-    { name: 'Kənan', surname: 'Məmmədov', email: 'student2@logicora.az', phone: '0504444444', ageGroup: '12-14', grade: 7 },
-    { name: 'Nilay', surname: 'Rəhimova', email: 'student3@logicora.az', phone: '0505555555', ageGroup: '6-8', grade: 2 },
+    {
+      name: 'Ayan', surname: 'Quliyeva', email: 'student1@logicora.az', phone: '0503333333', ageGroup: '9-11', grade: 4,
+      daysSinceLogin: 0,
+      gamif: { totalXP: 4200, level: 12, streak: 8, leagueTier: 'silver', weeklyXP: 640, gems: 120, badges: ['first_quiz', 'streak_7'] },
+    },
+    {
+      name: 'Kənan', surname: 'Məmmədov', email: 'student2@logicora.az', phone: '0504444444', ageGroup: '12-14', grade: 7,
+      daysSinceLogin: 0,
+      gamif: { totalXP: 14840, level: 28, streak: 22, leagueTier: 'gold', weeklyXP: 1850, gems: 540, badges: ['first_quiz', 'streak_7', 'streak_30', 'competition_win'] },
+    },
+    {
+      name: 'Nilay', surname: 'Rəhimova', email: 'student3@logicora.az', phone: '0505555555', ageGroup: '6-8', grade: 2,
+      daysSinceLogin: 6,
+      gamif: { totalXP: 1100, level: 5, streak: 3, leagueTier: 'bronze', weeklyXP: 210, gems: 40, badges: ['first_quiz'] },
+    },
   ];
+  const studentUsers = [];
+  const studentDocs = [];
   for (const s of studentsData) {
+    const lastLoginDate = new Date(Date.now() - s.daysSinceLogin * 24 * 60 * 60 * 1000);
     const u = await User.create({
       name: s.name, surname: s.surname, email: s.email, phone: s.phone,
       password: demoPass, role: 'student', ageGroup: s.ageGroup,
-      isPhoneVerified: true, profileCompleted: true,
+      isPhoneVerified: true, profileCompleted: true, lastLoginDate,
     });
+    studentUsers.push(u);
     const student = await Student.create({ userId: u._id, grade: s.grade, school: 'Demo məktəb' });
-    await Gamification.create({ studentId: student._id });
+    studentDocs.push(student);
+    await Gamification.create({ studentId: student._id, lastActivityDate: new Date(), ...s.gamif });
   }
 
-  // --- Kurslar ---
-  await Course.create([
+  // --- Valideyn (parent) + uşaq bağlantısı ---
+  const pUser = await User.create({
+    name: 'Elçin', surname: 'Quliyev', email: 'parent1@logicora.az',
+    phone: '0506666666', password: demoPass, role: 'parent', ageGroup: '23+',
+    isPhoneVerified: true, profileCompleted: true,
+  });
+  await Parent.create({
+    userId: pUser._id,
+    children: studentUsers.map((u) => u._id),
+  });
+
+  // --- Kurslar --- (totalEnrolled aşağıdakı Enrollment seed-i ilə uyğundur)
+  const courses = await Course.create([
     {
       title: 'Əyləncəli Riyaziyyat', description: 'Başlanğıc səviyyə riyaziyyat kursu.',
       teacherId: teacher1._id, category: 'Riyaziyyat', level: 'beginner', price: 0,
       ageGroup: ['9-11', '12-14'], isPublished: true, whatYouLearn: ['Toplama', 'Çıxma', 'Vurma'],
+      totalEnrolled: 2,
     },
     {
       title: 'Fizikaya Giriş', description: 'Gündəlik həyatda fizika.',
       teacherId: teacher2._id, category: 'Fizika', level: 'intermediate', price: 29,
       ageGroup: ['12-14', '15-17'], isPublished: true, whatYouLearn: ['Qüvvə', 'Enerji', 'Hərəkət'],
+      totalEnrolled: 1,
     },
     {
       title: 'Məntiq Oyunları', description: 'Düşünmə bacarığını inkişaf etdir.',
       teacherId: teacher1._id, category: 'Məntiq', level: 'beginner', price: 0,
       ageGroup: ['6-8', '9-11'], isPublished: true, whatYouLearn: ['Ardıcıllıq', 'Naxış tapma'],
+      totalEnrolled: 2,
     },
   ]);
+  const [courseMath, coursePhysics, courseLogic] = courses;
 
   // --- Suallar (50) ---
-  await Question.insertMany(buildQuestions(admin._id));
+  const insertedQuestions = await Question.insertMany(buildQuestions(admin._id));
     // --- Uşaq videoları (Kids Hub) ---
   await KidsVideo.insertMany([
     {
@@ -243,13 +285,111 @@ const seed = async () => {
   ]);
 
 
+  // ─────────────────────────────────────────────────────────────────
+  // REAL DEMO DATA — Group / Attendance / Enrollment / Competition
+  // Məqsəd: parent progress, teacher dashboard, student dashboard real dolsun.
+  // ─────────────────────────────────────────────────────────────────
+  const [stuAyan, stuKenan, stuNilay] = studentDocs;
+  const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+
+  // ── Qruplar (Group) — müəllim ↔ tələbə əlaqəsi (attendance/teacher dashboard üçün) ──
+  const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const todayKey = WEEKDAY_KEYS[new Date().getDay()]; // bugünkü dərs cədvəldə görünsün
+
+  const [grpMath, grpPhysics, grpLogic] = await Group.create([
+    {
+      name: 'Riyaziyyat 7-ci sinif', description: 'Həftəlik riyaziyyat dərsləri',
+      teacherId: teacher1._id, studentIds: [stuAyan._id, stuKenan._id],
+      schedule: { day: todayKey, startTime: '16:00', endTime: '17:30' }, status: 'active',
+    },
+    {
+      name: 'Fizika 12-14', description: 'Fizika qrupu',
+      teacherId: teacher2._id, studentIds: [stuKenan._id],
+      schedule: { day: 'wednesday', startTime: '18:00', endTime: '19:30' }, status: 'active',
+    },
+    {
+      name: 'Məntiq Klubu', description: 'Məntiq və düşünmə bacarıqları',
+      teacherId: teacher1._id, studentIds: [stuAyan._id, stuNilay._id],
+      schedule: { day: 'saturday', startTime: '15:00', endTime: '16:00' }, status: 'active',
+    },
+  ]);
+
+  // ── Davamiyyət (Attendance) — son ~25 gün, qarışıq status ──
+  // Schema enum: present / absent / late / excused.
+  // Parent UI map-i: present→present, late→distant, excused→none, absent→absent.
+  const statusPool = ['present', 'present', 'present', 'present', 'late', 'present', 'absent', 'present', 'excused', 'present'];
+  const buildSessions = (group, count) => {
+    const sessions = [];
+    for (let i = 0; i < count; i++) {
+      const d = daysAgo(i * 2 + 1);   // hər 2 gündən bir → qrup daxilində unikal tarixlər
+      d.setHours(12, 0, 0, 0);
+      const records = group.studentIds.map((sid, idx) => ({
+        studentId: sid,
+        status: statusPool[(i + idx) % statusPool.length],
+      }));
+      sessions.push({ groupId: group._id, teacherId: group.teacherId, date: d, records });
+    }
+    return Attendance.insertMany(sessions);
+  };
+  await buildSessions(grpMath, 16);
+  await buildSessions(grpPhysics, 14);
+  await buildSessions(grpLogic, 12);
+
+  // ── Enrollment — kurs progressi (35-100%) real görünsün ──
+  await Enrollment.insertMany([
+    { studentId: stuKenan._id, courseId: courseMath._id,    progress: 72, enrolledAt: daysAgo(40) },
+    { studentId: stuKenan._id, courseId: coursePhysics._id, progress: 45, enrolledAt: daysAgo(20) },
+    { studentId: stuAyan._id,  courseId: courseMath._id,    progress: 60, enrolledAt: daysAgo(35) },
+    { studentId: stuAyan._id,  courseId: courseLogic._id,   progress: 100, completedAt: daysAgo(5), enrolledAt: daysAgo(50) },
+    { studentId: stuNilay._id, courseId: courseLogic._id,   progress: 35, enrolledAt: daysAgo(15) },
+  ]);
+
+  // ── Yarış tarixçəsi (Competition) — tamamlanmış, real participant/nəticə ──
+  const compQuestions = insertedQuestions.slice(0, 6).map((q) => ({ questionId: q._id, timeLimit: 30, points: 100 }));
+  await Competition.create([
+    {
+      title: 'Riyaziyyat Sprinti #1', createdBy: tUser1._id, groupId: grpMath._id,
+      questions: compQuestions, status: 'finished',
+      startedAt: daysAgo(10), finishedAt: daysAgo(10), pin: '100100',
+      participants: [
+        { studentId: stuKenan._id, score: 950, correctAnswers: 9, totalAnswers: 10, rank: 1 },
+        { studentId: stuAyan._id,  score: 720, correctAnswers: 7, totalAnswers: 10, rank: 2 },
+        { studentId: stuNilay._id, score: 540, correctAnswers: 5, totalAnswers: 10, rank: 3 },
+      ],
+    },
+    {
+      title: 'Fizika Yarışı', createdBy: tUser2._id, groupId: grpPhysics._id,
+      questions: compQuestions, status: 'finished',
+      startedAt: daysAgo(3), finishedAt: daysAgo(3), pin: '200200',
+      participants: [
+        { studentId: stuAyan._id,  score: 880, correctAnswers: 8, totalAnswers: 10, rank: 1 },
+        { studentId: stuKenan._id, score: 680, correctAnswers: 7, totalAnswers: 10, rank: 2 },
+      ],
+    },
+    {
+      // Canlı host demo üçün gözləyən yarış — müəllim PIN ilə başlada bilər
+      title: 'Canlı Demo Yarışı', createdBy: tUser1._id, groupId: grpMath._id,
+      questions: compQuestions, status: 'waiting', pin: '123456', participants: [],
+    },
+  ]);
+
   console.log('\n✅ Seed tamamlandı!');
+  console.log('   ── Hesablar ───────────────────────────────');
   console.log('   Admin:    admin@logicora.az / Admin123!');
-  console.log('   Müəllim:  muellim1@logicora.az / Test123!');
-  console.log('   Tələbə:   student1@logicora.az / Test123!  (9-11 yaş)');
-  console.log('   Tələbə:   student2@logicora.az / Test123!  (12-14 yaş)');
-  console.log('   Tələbə:   student3@logicora.az / Test123!  (6-8 yaş)');
-  console.log('   Suallar:  50 ədəd (5 fənn)\n');
+  console.log('   Müəllim:  muellim1@logicora.az / Test123!  (Murad — Riyaziyyat, Məntiq qrupları)');
+  console.log('   Müəllim:  muellim2@logicora.az / Test123!  (Leyla — Fizika qrupu)');
+  console.log('   Tələbə:   student1@logicora.az / Test123!  (Ayan, 9-11 yaş, Lv.12 gümüş)');
+  console.log('   Tələbə:   student2@logicora.az / Test123!  (Kənan, 12-14 yaş, Lv.28 qızıl ⭐)');
+  console.log('   Tələbə:   student3@logicora.az / Test123!  (Nilay, 6-8 yaş, Lv.5 bürünc)');
+  console.log('   Valideyn: parent1@logicora.az / Test123!  (3 uşaq: Ayan, Kənan, Nilay)');
+  console.log('   ── Demo məlumat ───────────────────────────');
+  console.log('   Suallar:      50 ədəd (5 fənn)');
+  console.log('   Qruplar:      3 (Riyaziyyat 7, Fizika 12-14, Məntiq Klubu)');
+  console.log('   Davamiyyət:   42 sessiya (qarışıq present/late/absent/excused)');
+  console.log('   Enrollment:   5 (Kənan 2 kurs, Ayan 2 kurs, Nilay 1 kurs)');
+  console.log('   Yarışlar:     2 tamamlanmış + 1 canlı demo');
+  console.log('   Yarış PIN:    100100, 200200 (tamamlanmış) · 123456 (CANLI demo host üçün)');
+  console.log('');
 
   await mongoose.connection.close();
   process.exit(0);

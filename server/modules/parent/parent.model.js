@@ -21,6 +21,7 @@ const parentSchema = new mongoose.Schema(
     notificationPreferences: {
       email: { type: Boolean, default: true },
       sms: { type: Boolean, default: true },
+      instant: { type: Boolean, default: true },
     },
   },
   { timestamps: true, versionKey: false }
