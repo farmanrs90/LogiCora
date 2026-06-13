@@ -70,16 +70,215 @@ interface CourseDetailData {
   certificate?: { url: string; issuedAt: string }
 }
 
+type RawRecord = Record<string, unknown>
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDuration(mins: number): string {
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
+  const safeMins = Number.isFinite(mins) && mins > 0 ? Math.floor(mins) : 0
+  const h = Math.floor(safeMins / 60)
+  const m = safeMins % 60
   return h > 0 ? `${h} saat ${m > 0 ? m + ' dəq' : ''}` : `${m} dəq`
 }
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('az-AZ', { year: 'numeric', month: 'long' })
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('az-AZ', { year: 'numeric', month: 'long' })
+}
+
+function isRecord(value: unknown): value is RawRecord {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback
+}
+
+function asOptionalString(value: unknown): string | undefined {
+  const str = asString(value).trim()
+  return str || undefined
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  const num = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+  return Number.isFinite(num) ? num : fallback
+}
+
+function asOptionalNumber(value: unknown): number | undefined {
+  const num = asNumber(value, NaN)
+  return Number.isFinite(num) ? num : undefined
+}
+
+function asBoolean(value: unknown, fallback = false): boolean {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function normalizeLevel(value: unknown): CourseDetailData['level'] {
+  const level = asString(value)
+  if (level === 'intermediate' || level === 'orta') return 'orta'
+  if (level === 'advanced' || level === 'irəliləmiş') return 'irəliləmiş'
+  return 'başlanğıc'
+}
+
+function normalizeLesson(raw: unknown, index: number): Lesson | null {
+  if (!isRecord(raw)) return null
+
+  const id = asString(raw._id) || asString(raw.id)
+  if (!id) return null
+
+  return {
+    id,
+    title: asString(raw.title),
+    duration: asNumber(raw.duration),
+    videoUrl: asOptionalString(raw.videoUrl),
+    isFree: asBoolean(raw.isFree),
+    isCompleted: asBoolean(raw.isCompleted),
+    order: asNumber(raw.order, index + 1),
+  }
+}
+
+function normalizeLessons(raw: unknown): Lesson[] {
+  return Array.isArray(raw)
+    ? raw.map((lesson, index) => normalizeLesson(lesson, index)).filter((lesson): lesson is Lesson => Boolean(lesson))
+    : []
+}
+
+function normalizeSections(raw: unknown): Section[] {
+  if (!Array.isArray(raw)) return []
+
+  return raw.map((section, index) => {
+    if (!isRecord(section)) return null
+
+    const lessons = normalizeLessons(section.lessons)
+    const title = asString(section.title) || 'Bölmə'
+
+    return {
+      id: asString(section._id) || asString(section.id) || `${index}`,
+      title,
+      lessons,
+    }
+  }).filter((section): section is Section => Boolean(section))
+}
+
+function normalizeReviews(raw: unknown): Review[] {
+  if (!Array.isArray(raw)) return []
+
+  return raw.reduce<Review[]>((acc, review, index) => {
+    if (!isRecord(review)) return acc
+
+    const user = isRecord(review.user) ? review.user : {}
+    const avatar = asOptionalString(user.avatar)
+    const normalized: Review = {
+      id: asString(review._id) || asString(review.id) || `${index}`,
+      user: {
+        name: asString(user.name) || asString(review.userName) || 'İstifadəçi',
+        ...(avatar ? { avatar } : {}),
+      },
+      rating: asNumber(review.rating),
+      comment: asString(review.comment),
+      createdAt: asString(review.createdAt),
+    }
+
+    acc.push(normalized)
+    return acc
+  }, [])
+}
+
+function normalizeTeacher(course: RawRecord): CourseDetailData['teacher'] {
+  const rawTeacher = isRecord(course.teacher)
+    ? course.teacher
+    : isRecord(course.teacherId)
+      ? course.teacherId
+      : {}
+  const user = isRecord(rawTeacher.userId) ? rawTeacher.userId : {}
+  const teacherId = asString(rawTeacher._id) || asString(rawTeacher.id) || asString(course.teacherId)
+  const userName = [asString(user.name), asString(user.surname)].filter(Boolean).join(' ').trim()
+  const directName = [asString(rawTeacher.name), asString(rawTeacher.surname)].filter(Boolean).join(' ').trim()
+  const name = asString(course.teacherName)
+    || asString(rawTeacher.displayName)
+    || directName
+    || userName
+    || 'Müəllim'
+
+  return {
+    id: teacherId,
+    name,
+    slug: asString(rawTeacher.slug) || teacherId,
+    avatar: asOptionalString(rawTeacher.avatar),
+    isVerified: asBoolean(rawTeacher.isVerified),
+    totalStudents: asNumber(rawTeacher.totalStudents),
+    rating: asNumber(rawTeacher.rating),
+    bio: asString(rawTeacher.bio),
+    courseCount: asNumber(rawTeacher.courseCount),
+  }
+}
+
+function unwrapApiEnvelope(payload: unknown): unknown {
+  if (!isRecord(payload)) return payload
+  if ('data' in payload && ('success' in payload || 'message' in payload)) return payload.data ?? null
+  return payload
+}
+
+function normalizeCourseDetailResponse(payload: unknown): CourseDetailData | null {
+  const unwrapped = unwrapApiEnvelope(payload)
+  if (!isRecord(unwrapped)) return null
+
+  const source = isRecord(unwrapped.course) ? unwrapped.course : unwrapped
+  const id = asString(source._id) || asString(source.id)
+  if (!id) return null
+
+  const price = Math.max(0, asNumber(source.price))
+  const discountedPrice = asOptionalNumber(source.discountedPrice ?? source.discountPrice)
+  const flatLessons = normalizeLessons(isRecord(unwrapped.course) ? unwrapped.lessons : source.lessons)
+  const sections = normalizeSections(source.sections)
+  const normalizedSections = sections.length > 0
+    ? sections
+    : flatLessons.length > 0
+      ? [{ id: `${id}-lessons`, title: 'Dərslər', lessons: flatLessons }]
+      : []
+  let certificate: CourseDetailData['certificate']
+  if (isRecord(source.certificate)) {
+    const url = asString(source.certificate.url)
+    if (url) {
+      certificate = {
+        url,
+        issuedAt: asString(source.certificate.issuedAt),
+      }
+    }
+  }
+
+  return {
+    id,
+    title: asString(source.title),
+    description: asString(source.description),
+    longDescription: asString(source.longDescription) || asString(source.description),
+    thumbnail: asString(source.thumbnail ?? source.thumbnailUrl),
+    previewVideoUrl: asOptionalString(source.previewVideoUrl ?? source.previewVideo),
+    price,
+    discountedPrice,
+    isFree: asBoolean(source.isFree, price === 0),
+    rating: asNumber(source.rating),
+    reviewCount: asNumber(source.reviewCount ?? source.ratingCount),
+    studentCount: asNumber(source.studentCount ?? source.totalEnrolled),
+    duration: asNumber(source.duration ?? source.totalDuration),
+    level: normalizeLevel(source.level),
+    language: asString(source.language, 'az'),
+    updatedAt: asString(source.updatedAt ?? source.createdAt),
+    tags: asStringArray(source.tags),
+    whatYoullLearn: asStringArray(source.whatYoullLearn ?? source.whatYouLearn),
+    requirements: asStringArray(source.requirements),
+    sections: normalizedSections,
+    reviews: normalizeReviews(source.reviews),
+    teacher: normalizeTeacher(source),
+    isEnrolled: asBoolean(source.isEnrolled),
+    enrollmentProgress: Math.min(100, Math.max(0, asNumber(source.enrollmentProgress))),
+    certificate,
+  }
 }
 
 function StarRating({ value, size = 16 }: { value: number; size?: number }) {
@@ -223,7 +422,7 @@ function EnrollmentCard({
   onCertificate: () => void
 }) {
   const displayPrice = course.discountedPrice ?? course.price
-  const hasDiscount = course.discountedPrice !== undefined && course.discountedPrice < course.price
+  const hasDiscount = course.price > 0 && course.discountedPrice !== undefined && course.discountedPrice < course.price
 
   return (
     <motion.div
@@ -366,8 +565,8 @@ export default function CourseDetail() {
   const { data: course, isLoading, isError, refetch } = useQuery({
     queryKey: ['course', id],
     queryFn: () =>
-      api.get<CourseDetailData>(API_ROUTES.COURSES.BY_ID(id!))
-        .then(r => r.data),
+      api.get<unknown>(API_ROUTES.COURSES.BY_ID(id!))
+        .then(r => normalizeCourseDetailResponse(r.data)),
     enabled: !!id,
   })
 
