@@ -17,6 +17,7 @@ const Group = require('./modules/group/group.model');
 const Attendance = require('./modules/attendance/attendance.model');
 const Enrollment = require('./modules/course/enrollment.model');
 const Competition = require('./modules/competition/competition.model');
+const Classroom = require('./modules/classroom/classroom.model');
 
 
 // --- Sual qurma köməkçisi ---
@@ -115,6 +116,7 @@ const seed = async () => {
     Attendance.deleteMany({}),
     Enrollment.deleteMany({}),
     Competition.deleteMany({}),
+    Classroom.deleteMany({}),
   ]);
 
   const adminPass = await hashPassword('Admin123!');
@@ -314,6 +316,46 @@ const seed = async () => {
     },
   ]);
 
+  // ── Sinif sessiyaları (Classroom) — TeacherClassroomIndex /classroom/mine üçün real demo ──
+  // teacherId real müəllim USER-idir (model User-ə ref edir; listMine req.user._id ilə filtrləyir),
+  // groupId real qrupdur, participants real tələbə sənədləridir. Mock/fake deyil.
+  const qrToken = require('crypto').randomBytes(16).toString('hex');
+  const minsAgo = (n) => new Date(Date.now() - n * 60 * 1000);
+  const hoursLater = (n) => new Date(Date.now() + n * 60 * 60 * 1000);
+
+  await Classroom.create([
+    {
+      // CANLI — müəllim "Sinif" klikləyəndə dərhal aktiv dərs görsün
+      title: 'Riyaziyyat 7 — Canlı dərs', teacherId: tUser1._id, groupId: grpMath._id,
+      scheduledAt: minsAgo(15), duration: 60, status: 'live', startedAt: minsAgo(15),
+      qrToken, qrExpiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      participants: [
+        { studentId: stuAyan._id,  isPresent: true, joinedAt: minsAgo(14) },
+        { studentId: stuKenan._id, isPresent: true, joinedAt: minsAgo(12) },
+      ],
+    },
+    {
+      // PLANLAŞDIRILIB — növbəti dərs
+      title: 'Məntiq Klubu — növbəti dərs', teacherId: tUser1._id, groupId: grpLogic._id,
+      scheduledAt: hoursLater(24), duration: 60, status: 'scheduled', participants: [],
+    },
+    {
+      // BİTİB — keçmiş dərs (real iştirakçı tarixçəsi)
+      title: 'Riyaziyyat 7 — keçən dərs', teacherId: tUser1._id, groupId: grpMath._id,
+      scheduledAt: daysAgo(2), duration: 60, status: 'ended',
+      startedAt: daysAgo(2), endedAt: daysAgo(2),
+      participants: [
+        { studentId: stuAyan._id,  isPresent: true, joinedAt: daysAgo(2) },
+        { studentId: stuKenan._id, isPresent: true, joinedAt: daysAgo(2) },
+      ],
+    },
+    {
+      // muellim2 üçün də ən azı 1 sessiya
+      title: 'Fizika 12-14 — növbəti dərs', teacherId: tUser2._id, groupId: grpPhysics._id,
+      scheduledAt: hoursLater(48), duration: 90, status: 'scheduled', participants: [],
+    },
+  ]);
+
   // ── Davamiyyət (Attendance) — son ~25 gün, qarışıq status ──
   // Schema enum: present / absent / late / excused.
   // Parent UI map-i: present→present, late→distant, excused→none, absent→absent.
@@ -389,6 +431,7 @@ const seed = async () => {
   console.log('   Enrollment:   5 (Kənan 2 kurs, Ayan 2 kurs, Nilay 1 kurs)');
   console.log('   Yarışlar:     2 tamamlanmış + 1 canlı demo');
   console.log('   Yarış PIN:    100100, 200200 (tamamlanmış) · 123456 (CANLI demo host üçün)');
+  console.log('   Siniflər:     4 sessiya (muellim1: 1 canlı + 1 planlı + 1 bitmiş · muellim2: 1 planlı)');
   console.log('');
 
   await mongoose.connection.close();
