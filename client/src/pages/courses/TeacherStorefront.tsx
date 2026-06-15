@@ -94,6 +94,25 @@ interface EditProfileForm {
   subject: string
 }
 
+const TEACHER_SPECIALIZATIONS = [
+  'mathematics',
+  'language',
+  'science',
+  'history',
+  'physical_education',
+  'art',
+  'music',
+  'other',
+] as const
+
+type TeacherSpecialization = typeof TEACHER_SPECIALIZATIONS[number]
+
+interface TeacherProfileUpdatePayload {
+  bio: string
+  experience: number
+  specialization?: TeacherSpecialization
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(iso?: string): string {
@@ -160,6 +179,54 @@ function getTeacherUserName(userId: TeacherApiProfile['userId']): string {
   }
 
   return [userId.name, userId.surname].filter(Boolean).join(' ')
+}
+
+function isTeacherSpecialization(value: string | undefined): value is TeacherSpecialization {
+  return !!value && TEACHER_SPECIALIZATIONS.includes(value as TeacherSpecialization)
+}
+
+function getApiErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.length > 0) {
+      return message
+    }
+  }
+
+  return 'Profil yenilənmədi. Zəhmət olmasa yenidən cəhd edin.'
+}
+
+function getUnsupportedChangedFields(data: EditProfileForm, initial: EditProfileForm): string[] {
+  const fields: string[] = []
+
+  if (data.longBio !== initial.longBio) fields.push('ətraflı bio')
+  if (data.city !== initial.city) fields.push('şəhər')
+  if (data.school !== initial.school) fields.push('məktəb / universitet')
+
+  return fields
+}
+
+function buildTeacherProfileUpdatePayload(data: EditProfileForm): TeacherProfileUpdatePayload {
+  const subject = data.subject.trim()
+
+  if (subject && !isTeacherSpecialization(subject)) {
+    throw new Error(`Fənn yalnız backend contract dəyərlərindən biri ola bilər: ${TEACHER_SPECIALIZATIONS.join(', ')}`)
+  }
+
+  const payload: TeacherProfileUpdatePayload = {
+    bio: data.bio,
+    experience: Number.isFinite(data.yearsExperience) ? Math.max(0, Math.trunc(data.yearsExperience)) : 0,
+  }
+
+  if (isTeacherSpecialization(subject)) {
+    payload.specialization = subject
+  }
+
+  return payload
 }
 
 function StarRating({ value, size = 14 }: { value: number; size?: number }) {
@@ -256,26 +323,35 @@ function EditProfileModal({
   onClose: () => void
 }) {
   const qc = useQueryClient()
-  const [form, setForm] = useState<EditProfileForm>({
+  const initialForm: EditProfileForm = {
     bio: teacher.bio ?? '',
     longBio: teacher.longBio ?? teacher.bio ?? '',
     city: teacher.city ?? '',
     school: teacher.school ?? '',
     yearsExperience: safeNumber(teacher.yearsExperience ?? teacher.experience),
     subject: teacher.subject ?? teacher.specialization ?? '',
-  })
+  }
+  const [form, setForm] = useState<EditProfileForm>(initialForm)
 
   const updateMutation = useMutation({
-    mutationFn: (data: EditProfileForm) =>
-      api.put(API_ROUTES.USER.UPDATE, data).then(r => r.data),
+    mutationFn: (data: EditProfileForm) => {
+      const unsupportedChangedFields = getUnsupportedChangedFields(data, initialForm)
+
+      if (unsupportedChangedFields.length > 0) {
+        throw new Error(`${unsupportedChangedFields.join(', ')} üçün real update endpoint yoxdur.`)
+      }
+
+      return api.put('/teachers', buildTeacherProfileUpdatePayload(data)).then(r => r.data)
+    },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['teacher', teacher.slug] })
+      qc.invalidateQueries({ queryKey: ['teacher'] })
+      toast.success('Profil yeniləndi.')
       onClose()
     },
-    onError: () => {
+    onError: (error) => {
       // Backend xətası: lokal cache yenilənmir, modal AÇIQ qalır — fake success yoxdur.
       // Müəllim düzəliş edib yenidən cəhd edə bilsin.
-      toast.error('Profil yenilənmədi. Zəhmət olmasa yenidən cəhd edin.')
+      toast.error(getApiErrorMessage(error))
     },
   })
 
