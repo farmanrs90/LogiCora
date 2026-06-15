@@ -71,6 +71,20 @@ const getTeacherProfile = async (userId) => {
   return teacher;
 };
 
+const getMyTeacherProfile = async (userId) => {
+  const teacher = await Teacher.findOne({ userId })
+    .populate('userId', 'name surname email phone')
+    .populate('groups');
+
+  if (!teacher) {
+    const error = new Error('Teacher profile not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return teacher;
+};
+
 const updateTeacherProfile = async (userId, payload) => {
   const teacher = await Teacher.findOneAndUpdate(
     { userId },
@@ -378,6 +392,7 @@ const getMyAnalytics = async (userId, _period) => {
 module.exports = {
   createTeacherProfile,
   getTeacherProfile,
+  getMyTeacherProfile,
   updateTeacherProfile,
   deleteTeacherProfile,
   getAllTeachers,

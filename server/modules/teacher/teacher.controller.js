@@ -20,6 +20,15 @@ const getTeacher = async (req, res, next) => {
   }
 };
 
+const getMyTeacher = async (req, res, next) => {
+  try {
+    const data = await teacherService.getMyTeacherProfile(req.user._id);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const updateTeacher = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -126,6 +135,7 @@ const getMyAnalytics = async (req, res, next) => {
 module.exports = {
   createTeacher,
   getTeacher,
+  getMyTeacher,
   updateTeacher,
   deleteTeacher,
   getAllTeachers,
