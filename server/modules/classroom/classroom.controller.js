@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const Classroom = require('./classroom.model');
 const Student = require('../student/student.model');
+const Group = require('../group/group.model');
 
 const QR_LIFETIME_MS = 30 * 60 * 1000; // 30 dəqiqə
 const generateQR = () => crypto.randomBytes(16).toString('hex');
@@ -164,9 +165,23 @@ const getAttendance = async (req, res, next) => {
 
 const listMine = async (req, res, next) => {
   try {
-    const filter = req.user.role === 'teacher'
-      ? { teacherId: req.user._id }
-      : {}; // student üçün — sonra: groups-a görə filter
+    let filter;
+    if (req.user.role === 'teacher') {
+      filter = { teacherId: req.user._id };
+    } else if (req.user.role === 'student') {
+      const student = await Student.findOne({ userId: req.user._id }).select('_id');
+      if (!student) return res.json({ success: true, data: [] });
+
+      const groupIds = await Group.distinct('_id', { studentIds: student._id });
+      filter = {
+        $or: [
+          { 'participants.studentId': student._id },
+          { groupId: { $in: groupIds } },
+        ],
+      };
+    } else {
+      filter = { _id: { $in: [] } };
+    }
     const items = await Classroom.find(filter).sort({ scheduledAt: -1 }).limit(50);
     res.json({ success: true, data: items });
   } catch (err) { next(err); }
