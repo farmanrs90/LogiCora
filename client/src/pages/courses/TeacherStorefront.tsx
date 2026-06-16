@@ -200,16 +200,6 @@ function getApiErrorMessage(error: unknown): string {
   return 'Profil yenilənmədi. Zəhmət olmasa yenidən cəhd edin.'
 }
 
-function getUnsupportedChangedFields(data: EditProfileForm, initial: EditProfileForm): string[] {
-  const fields: string[] = []
-
-  if (data.longBio !== initial.longBio) fields.push('ətraflı bio')
-  if (data.city !== initial.city) fields.push('şəhər')
-  if (data.school !== initial.school) fields.push('məktəb / universitet')
-
-  return fields
-}
-
 function buildTeacherProfileUpdatePayload(data: EditProfileForm): TeacherProfileUpdatePayload {
   const subject = data.subject.trim()
 
@@ -323,6 +313,7 @@ function EditProfileModal({
   onClose: () => void
 }) {
   const qc = useQueryClient()
+  const unsupportedFieldHelper = 'Bu məlumat hazırda profil saxlanmasına qoşulmayıb.'
   const initialForm: EditProfileForm = {
     bio: teacher.bio ?? '',
     longBio: teacher.longBio ?? teacher.bio ?? '',
@@ -334,24 +325,18 @@ function EditProfileModal({
   const [form, setForm] = useState<EditProfileForm>(initialForm)
 
   const updateMutation = useMutation({
-    mutationFn: (data: EditProfileForm) => {
-      const unsupportedChangedFields = getUnsupportedChangedFields(data, initialForm)
-
-      if (unsupportedChangedFields.length > 0) {
-        throw new Error(`${unsupportedChangedFields.join(', ')} üçün real update endpoint yoxdur.`)
-      }
-
-      return api.put('/teachers', buildTeacherProfileUpdatePayload(data)).then(r => r.data)
-    },
+    mutationFn: (data: EditProfileForm) =>
+      api.put('/teachers', buildTeacherProfileUpdatePayload(data)).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['teacher'] })
+      toast.dismiss('teacher-profile-update-error')
       toast.success('Profil yeniləndi.')
       onClose()
     },
     onError: (error) => {
       // Backend xətası: lokal cache yenilənmir, modal AÇIQ qalır — fake success yoxdur.
       // Müəllim düzəliş edib yenidən cəhd edə bilsin.
-      toast.error(getApiErrorMessage(error))
+      toast.error(getApiErrorMessage(error), { id: 'teacher-profile-update-error' })
     },
   })
 
@@ -391,20 +376,22 @@ function EditProfileModal({
             <label className="block text-xs text-white/50 mb-1.5">Haqqında (ətraflı)</label>
             <textarea
               value={form.longBio}
-              onChange={e => setForm(f => ({ ...f, longBio: e.target.value }))}
+              readOnly
               rows={4}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white/45 focus:outline-none transition-colors resize-none cursor-not-allowed"
               placeholder="Özünüz haqqında ətraflı yazın..."
             />
+            <p className="mt-1 text-[11px] text-white/35">{unsupportedFieldHelper}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-white/50 mb-1.5">Şəhər</label>
               <input
                 value={form.city}
-                onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                readOnly
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white/45 focus:outline-none transition-colors cursor-not-allowed"
               />
+              <p className="mt-1 text-[11px] text-white/35">{unsupportedFieldHelper}</p>
             </div>
             <div>
               <label className="block text-xs text-white/50 mb-1.5">Təcrübə (il)</label>
@@ -430,9 +417,10 @@ function EditProfileModal({
             <label className="block text-xs text-white/50 mb-1.5">Məktəb / Universitet</label>
             <input
               value={form.school}
-              onChange={e => setForm(f => ({ ...f, school: e.target.value }))}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+              readOnly
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white/45 focus:outline-none transition-colors cursor-not-allowed"
             />
+            <p className="mt-1 text-[11px] text-white/35">{unsupportedFieldHelper}</p>
           </div>
         </div>
 

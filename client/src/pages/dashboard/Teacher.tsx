@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -60,22 +60,69 @@ function todayStr(): string {
   return new Date().toLocaleDateString('az-AZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+function ChartFrame({
+  className,
+  children,
+  fallback = null,
+}: {
+  className: string
+  children: ReactNode
+  fallback?: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+
+    const updateSize = () => {
+      const { width, height } = element.getBoundingClientRect()
+      setSize((current) => (
+        current.width === width && current.height === height
+          ? current
+          : { width, height }
+      ))
+    }
+
+    updateSize()
+
+    if (typeof ResizeObserver === 'undefined') {
+      const timer = window.setTimeout(updateSize, 0)
+      return () => window.clearTimeout(timer)
+    }
+
+    const observer = new ResizeObserver(updateSize)
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} className={className}>
+      {size.width > 0 && size.height > 0 ? children : fallback}
+    </div>
+  )
+}
+
 // ── Sparkline ─────────────────────────────────────────────────────────────────
 
 function Sparkline({ data, dataKey, color }: { data: object[]; dataKey: string; color: string }) {
   const id = `spark-${color.replace('#', '')}`
   return (
-    <ResponsiveContainer width="100%" height={44}>
-      <AreaChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-            <stop offset="95%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fill={`url(#${id})`} dot={false} />
-      </AreaChart>
-    </ResponsiveContainer>
+    <ChartFrame className="w-full min-w-0 h-11 min-h-[44px]">
+      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={44}>
+        <AreaChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fill={`url(#${id})`} dot={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </ChartFrame>
   )
 }
 
@@ -111,8 +158,11 @@ function StatCard({
 
 // ── Impact Gauge ──────────────────────────────────────────────────────────────
 
-function ImpactGauge({ score }: { score: number }) {
-  const data = [{ name: 'Impact', value: score, fill: '#6366F1' }]
+function ImpactGauge({ score }: { score?: number | null }) {
+  const hasScore = typeof score === 'number' && Number.isFinite(score)
+  const chartValue = hasScore ? Math.max(0, Math.min(100, score)) : 0
+  const data = hasScore ? [{ name: 'Impact', value: chartValue, fill: '#6366F1' }] : []
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
       className="bg-[#141414] border border-white/10 rounded-2xl p-5 flex flex-col gap-2 hover:border-white/20 transition-colors"
@@ -121,15 +171,24 @@ function ImpactGauge({ score }: { score: number }) {
         <p className="text-xs text-white/50 font-medium">Impact Score</p>
       </div>
       <div className="flex items-center gap-4">
-        <div className="w-24 h-24 shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadialBarChart innerRadius="65%" outerRadius="100%" data={data} startAngle={220} endAngle={-40} barSize={10}>
-              <RadialBar dataKey="value" cornerRadius={8} background={{ fill: 'rgba(255,255,255,0.05)' }} />
-            </RadialBarChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartFrame
+          className="w-24 min-w-[96px] h-24 min-h-[96px] shrink-0"
+          fallback={<div className="w-full h-full rounded-full border border-white/10 bg-white/[0.03]" />}
+        >
+          {hasScore ? (
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={96}>
+              <RadialBarChart innerRadius="65%" outerRadius="100%" data={data} startAngle={220} endAngle={-40} barSize={10}>
+                <RadialBar dataKey="value" cornerRadius={8} background={{ fill: 'rgba(255,255,255,0.05)' }} />
+              </RadialBarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="w-full h-full rounded-full border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40 text-sm">
+              —
+            </div>
+          )}
+        </ChartFrame>
         <div>
-          <p className="text-3xl font-bold text-white">{score}<span className="text-lg text-white/30">/100</span></p>
+          <p className="text-3xl font-bold text-white">{hasScore ? score : '—'}<span className="text-lg text-white/30">/100</span></p>
           <p className="text-xs text-white/50 mt-1 leading-relaxed max-w-[140px]">
             Tələbələrinin ortalama irəliləyişinə görə hesablanır
           </p>
@@ -237,6 +296,8 @@ function RecentStudents({ students }: { students: RecentStudent[] }) {
 // ── Course Performance Card ────────────────────────────────────────────────────
 
 function CoursePerformanceCard({ course }: { course: CoursePerf }) {
+  const weeklyData = Array.isArray(course.weeklyData) ? course.weeklyData : []
+
   return (
     <div className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors">
       <div className="flex gap-4 p-4">
@@ -264,17 +325,17 @@ function CoursePerformanceCard({ course }: { course: CoursePerf }) {
           )}
         </div>
       </div>
-      {course.weeklyData.length > 0 && (
+      {weeklyData.length > 0 && (
         <div className="px-4 pb-2">
           <p className="text-xs text-white/30 mb-1">Həftəlik qeydiyyat</p>
-          <div className="h-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={course.weeklyData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+          <ChartFrame className="w-full min-w-0 h-10 min-h-[40px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={40}>
+              <LineChart data={weeklyData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
                 <Line type="monotone" dataKey="count" stroke="#6366F1" strokeWidth={2} dot={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '11px' }} />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </ChartFrame>
         </div>
       )}
       <div className="px-4 pb-4 pt-2">
