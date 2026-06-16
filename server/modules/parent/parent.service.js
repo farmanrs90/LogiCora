@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Parent = require('./parent.model');
 const User = require('../user/user.model');
 const Student = require('../student/student.model');
@@ -147,10 +148,16 @@ const deleteParentProfile = async (userId) => {
   return parent;
 };
 
-const addChild = async (userId, childId) => {
+const buildParentResponse = (parent, message) => {
+  const response = parent.toObject ? parent.toObject() : parent;
+  if (message) response.message = message;
+  return response;
+};
+
+const getPopulatedParentWithChild = async (parentId, childUserId) => {
   const parent = await Parent.findOneAndUpdate(
-    { userId },
-    { $addToSet: { children: childId } },
+    { _id: parentId },
+    { $addToSet: { children: childUserId } },
     { new: true }
   ).populate('children', 'name email');
 
@@ -159,8 +166,67 @@ const addChild = async (userId, childId) => {
     error.statusCode = 404;
     throw error;
   }
-
   return parent;
+};
+
+const addChild = async (userId, childId) => {
+  const parent = await getParentOrThrow(userId);
+
+  if (!childId || !mongoose.Types.ObjectId.isValid(childId)) {
+    const error = new Error('Child user not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const childUser = await User.findById(childId).select('_id name surname email role');
+  if (!childUser) {
+    const error = new Error('Child user not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  if (childUser.role !== 'student') {
+    const error = new Error('Child user must be a student');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const student = await Student.findOne({ userId: childUser._id }).select('_id parentId');
+  if (!student) {
+    const error = new Error('Student profile not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (student.parentId && String(student.parentId) === String(parent._id)) {
+    const updatedParent = await getPopulatedParentWithChild(parent._id, childUser._id);
+    return buildParentResponse(updatedParent, 'Child already linked');
+  }
+
+  if (student.parentId) {
+    const error = new Error('Child is already linked to another parent');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const claimedStudent = await Student.findOneAndUpdate(
+    { _id: student._id, $or: [{ parentId: null }, { parentId: { $exists: false } }] },
+    { $set: { parentId: parent._id } },
+    { new: true }
+  ).select('_id parentId');
+
+  if (!claimedStudent) {
+    const currentStudent = await Student.findById(student._id).select('parentId');
+    if (currentStudent?.parentId && String(currentStudent.parentId) === String(parent._id)) {
+      const updatedParent = await getPopulatedParentWithChild(parent._id, childUser._id);
+      return buildParentResponse(updatedParent, 'Child already linked');
+    }
+    const error = new Error('Child is already linked to another parent');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const updatedParent = await getPopulatedParentWithChild(parent._id, childUser._id);
+  return updatedParent;
 };
 
 const removeChild = async (userId, childId) => {

@@ -191,10 +191,19 @@ const seed = async () => {
     phone: '0506666666', password: demoPass, role: 'parent', ageGroup: '23+',
     isPhoneVerified: true, profileCompleted: true,
   });
-  await Parent.create({
-    userId: pUser._id,
-    children: studentUsers.map((u) => u._id),
-  });
+  const childUserIds = studentUsers.map((u) => u._id);
+  const parentProfile = await Parent.findOneAndUpdate(
+    { userId: pUser._id },
+    {
+      $setOnInsert: { userId: pUser._id },
+      $addToSet: { children: { $each: childUserIds } },
+    },
+    { new: true, upsert: true }
+  );
+  await Student.updateMany(
+    { userId: { $in: childUserIds } },
+    { $set: { parentId: parentProfile._id } }
+  );
 
   // --- Kurslar --- (totalEnrolled aşağıdakı Enrollment seed-i ilə uyğundur)
   const courses = await Course.create([
