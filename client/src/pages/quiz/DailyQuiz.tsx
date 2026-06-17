@@ -10,7 +10,7 @@ import { questionService } from '../../services/questionService'
 import api from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import type { RootState } from '../../app/store'
-import type { Question, AgeGroup, GamificationProfile } from '../../types'
+import type { Question, AgeGroup, DailyStatusResponse, GamificationProfile } from '../../types'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
 
 import FormatA from '../../features/quiz/formats/FormatA'
@@ -310,12 +310,44 @@ export default function DailyQuiz() {
   const isSpecialNeeds = user?.isSpecialNeeds ?? false
   const isChild = isChildAge(ageGroup)
 
-  // Fetch questions
-  const { data: questions, isLoading, isError, refetch } = useQuery<Question[]>({
+  // Fetch daily status first; completed users should not call /daily questions.
+  const {
+    data: dailyStatus,
+    isLoading: isDailyStatusLoading,
+    isFetching: isDailyStatusFetching,
+    isError: isDailyStatusError,
+    refetch: refetchDailyStatus,
+  } = useQuery<DailyStatusResponse>({
+    queryKey: ['daily', 'status'],
+    queryFn: () => api.get<{ data: DailyStatusResponse }>(API_ROUTES.DAILY.STATUS).then(r => r.data.data),
+    retry: false,
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+
+  const dailyCompleted = Boolean(
+    dailyStatus && (dailyStatus.completed || dailyStatus.answeredCount >= dailyStatus.totalCount),
+  )
+  const canFetchDailyQuestions = Boolean(
+    dailyStatus && !dailyCompleted && !isDailyStatusFetching && !isDailyStatusError,
+  )
+
+  // Fetch questions only after status says the daily quiz still has unanswered items.
+  const {
+    data: questions,
+    isLoading: isQuestionsLoading,
+    isError: isQuestionsError,
+    refetch: refetchQuestions,
+  } = useQuery<Question[]>({
     queryKey: ['daily', 'questions'],
     queryFn: () => questionService.fetchDaily(ageGroup),
+    enabled: canFetchDailyQuestions,
     staleTime: 1000 * 60 * 5,
     retry: false,
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 
   // Answer mutation
@@ -370,6 +402,15 @@ export default function DailyQuiz() {
   const goDashboard = useCallback(() => {
     navigate(APP_ROUTES.DASHBOARD.STUDENT)
   }, [navigate])
+
+  const handleRetryDaily = useCallback(() => {
+    if (canFetchDailyQuestions) {
+      void refetchQuestions()
+      return
+    }
+
+    void refetchDailyStatus()
+  }, [canFetchDailyQuestions, refetchDailyStatus, refetchQuestions])
 
   const handleExitQuiz = useCallback(() => {
     if ((phase === 'question' || phase === 'feedback') && current) {
@@ -476,7 +517,7 @@ export default function DailyQuiz() {
 
   // ── Render: loading ────────────────────────────────────────────────────
 
-  if (isLoading) {
+  if (isDailyStatusLoading || isDailyStatusFetching || (canFetchDailyQuestions && isQuestionsLoading)) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-6">
         <motion.div
@@ -491,19 +532,23 @@ export default function DailyQuiz() {
   }
 
   // ── Render: boş / xəta (sonsuz loading-in qarşısını alır) ───────────────
-  if (isError || !questions || questions.length === 0) {
+  if (isDailyStatusError || dailyCompleted || isQuestionsError || !questions || questions.length === 0) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-4 text-center">
         <div className="text-6xl">🧩</div>
         <div>
-          <h2 className="text-white font-bold text-xl mb-1">Bugünkü suallar hazır deyil</h2>
+          <h2 className="text-white font-bold text-xl mb-1">
+            {dailyCompleted ? 'Gündəlik limit tamamlandı' : 'Bugünkü suallar hazır deyil'}
+          </h2>
           <p className="text-[#9CA3AF] text-sm max-w-sm">
-            Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.
+            {dailyCompleted
+              ? 'Bugünkü suallar tamamlanıb. Paneldən digər fəaliyyətlərə davam edə bilərsən.'
+              : 'Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.'}
           </p>
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => refetch()}
+            onClick={handleRetryDaily}
             className="px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
             style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
           >
