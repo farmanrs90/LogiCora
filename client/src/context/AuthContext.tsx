@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux'
 import type { User, LoginInput, RegisterInput, AuthResponse } from '../types'
 import { API_ROUTES } from '../constants'
 import { setAvatarColor } from '../features/theme/themeSlice'
+import { clearAuth } from '../features/auth/authSlice'
 import { colorForCharacter } from '../lib/companion'
 import type { AppDispatch } from '../app/store'
 import api from '../lib/api'
@@ -13,7 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (data: LoginInput) => Promise<AuthResponse>
   register: (data: RegisterInput) => Promise<AuthResponse>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -27,6 +28,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const applyUser = (u: User | null) => {
     setUser(u)
     dispatch(setAvatarColor(colorForCharacter(u?.characterType)))
+  }
+
+  const clearLocalSession = () => {
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    applyUser(null)
+    dispatch(clearAuth())
   }
 
   useEffect(() => {
@@ -43,8 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data } = await api.get(API_ROUTES.USER.PROFILE)
       applyUser(data.data)
     } catch {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
+      clearLocalSession()
     } finally {
       setIsLoading(false)
     }
@@ -66,11 +73,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return data.data
   }
 
-  const logout = () => {
-    api.post(API_ROUTES.AUTH.LOGOUT).catch(() => {})
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    applyUser(null)
+  const logout = async () => {
+    const token = localStorage.getItem('accessToken')
+
+    try {
+      if (token) {
+        await api.post(API_ROUTES.AUTH.LOGOUT)
+      }
+    } catch {
+      // Token may already be expired/invalid. Logout still means local session cleanup.
+    } finally {
+      clearLocalSession()
+    }
   }
 
   return (

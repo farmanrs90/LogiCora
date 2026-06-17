@@ -1,11 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings, LogOut } from 'lucide-react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { useQuery } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
-import { clearAuth } from '../../features/auth/authSlice'
-import type { RootState, AppDispatch } from '../../app/store'
+import type { RootState } from '../../app/store'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../lib/api'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
@@ -140,7 +138,6 @@ function NavLink({ item, active, color }: { item: NavItem; active: boolean; colo
 // ── Sidebar ───────────────────────────────────────────────────────────────
 
 export default function Sidebar() {
-  const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
   const location = useLocation()
   const { logout } = useAuth()
@@ -159,11 +156,12 @@ export default function Sidebar() {
     staleTime: 1000 * 60 * 2,
   })
 
-  function handleLogout() {
-    logout()
-    dispatch(clearAuth())
+  async function handleLogout() {
+    const confirmed = window.confirm('Hesabdan çıxmaq istəyirsiniz?')
+    if (!confirmed) return
+
+    await logout()
     navigate(APP_ROUTES.LOGIN, { replace: true })
-    toast.success('Sistemdən çıxdınız.')
   }
   // Uşaq Klubu yalnız kiçik yaş tələbələrinə (3-8 yaş) göstərilir
   const KID_AGES = ['3-5', '6-8']
