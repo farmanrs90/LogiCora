@@ -181,21 +181,46 @@ const challengeClan = async (userId, challengedClanId) => {
 };
 
 const finishBattle = async (battleId, challengerScore, challengedScore) => {
+  const challengerScoreValue = Number(challengerScore);
+  const challengedScoreValue = Number(challengedScore);
+  if (
+    !Number.isFinite(challengerScoreValue) ||
+    !Number.isFinite(challengedScoreValue) ||
+    challengerScoreValue < 0 ||
+    challengedScoreValue < 0
+  ) {
+    const error = new Error('Döyüş xalları düzgün deyil.');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const battle = await ClanBattle.findById(battleId);
-  if (!battle || battle.status !== 'active') {
+  if (!battle) {
     const error = new Error('Aktiv döyüş tapılmadı.');
     error.statusCode = 404;
     throw error;
   }
 
-  battle.challengerScore = challengerScore;
-  battle.challengedScore = challengedScore;
+  if (battle.status === 'finished') {
+    const error = new Error('Döyüş artıq tamamlanıb.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!['pending', 'active'].includes(battle.status)) {
+    const error = new Error('Döyüş tamamlanmaq üçün uyğun statusda deyil.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  battle.challengerScore = challengerScoreValue;
+  battle.challengedScore = challengedScoreValue;
   battle.status = 'finished';
   battle.finishedAt = new Date();
 
-  if (challengerScore > challengedScore) {
+  if (challengerScoreValue > challengedScoreValue) {
     battle.winner = battle.challengerId;
-  } else if (challengedScore > challengerScore) {
+  } else if (challengedScoreValue > challengerScoreValue) {
     battle.winner = battle.challengedId;
   }
 
