@@ -7,6 +7,19 @@ const generatePin = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const runFinishSideEffect = async (competitionId, participant, sideEffect, action) => {
+  try {
+    await action();
+  } catch (error) {
+    console.warn('[competition.finish.sideEffect]', {
+      competitionId: competitionId.toString(),
+      participantId: participant.studentId?.toString(),
+      sideEffect,
+      message: error?.message || String(error),
+    });
+  }
+};
+
 const createCompetition = async (userId, { title, groupId, questions }) => {
   let pin = generatePin();
   let exists = await Competition.findOne({ pin });
@@ -157,6 +170,12 @@ const finishCompetition = async (competitionId, userId) => {
     throw error;
   }
 
+  if (competition.status === 'finished') {
+    const error = new Error('Competition already finished');
+    error.statusCode = 400;
+    throw error;
+  }
+
   competition.status = 'finished';
   competition.finishedAt = new Date();
 
@@ -176,30 +195,38 @@ const finishCompetition = async (competitionId, userId) => {
 
   for (const participant of competition.participants) {
     if (participant.score > 0) {
-      await awardXP(participant.studentId, {
-        score: participant.score,
-        percentage: Math.round((participant.correctAnswers / totalQ) * 100),
-        assessmentId: competition._id,
-        submissionCount: 1,
-      });
+      await runFinishSideEffect(competition._id, participant, 'awardXP', () =>
+        awardXP(participant.studentId, {
+          score: participant.score,
+          percentage: Math.round((participant.correctAnswers / totalQ) * 100),
+          assessmentId: competition._id,
+          submissionCount: 1,
+        })
+      );
     }
 
-    await sendToStudent(participant.studentId, {
-      type: 'assessment_result',
-      title: 'Yarış bitdi!',
-      message: `${competition.title} yarışında ${participant.rank}-ci oldun`,
-      meta: { competitionId: competition._id, rank: participant.rank, score: participant.score },
-    });
+    await runFinishSideEffect(competition._id, participant, 'sendToStudent', () =>
+      sendToStudent(participant.studentId, {
+        type: 'assessment_result',
+        title: 'Yarış bitdi!',
+        message: `${competition.title} yarışında ${participant.rank}-ci oldun`,
+        meta: { competitionId: competition._id, rank: participant.rank, score: participant.score },
+      })
+    );
 
     // Portfolio (BIO) — hər yarışı tələbənin daimi tarixçəsinə yaz
-    await updateSkillTree(participant.studentId, subject, participant.score);
-    await addTimelineEntry(participant.studentId, {
-      type:        'competition',
-      title:       competition.title,
-      description: `${participant.rank}-ci yer · ${participant.correctAnswers}/${totalQ} düzgün`,
-      xpEarned:    participant.score,
-      verified:    true,
-    });
+    await runFinishSideEffect(competition._id, participant, 'updateSkillTree', () =>
+      updateSkillTree(participant.studentId, subject, participant.score)
+    );
+    await runFinishSideEffect(competition._id, participant, 'addTimelineEntry', () =>
+      addTimelineEntry(participant.studentId, {
+        type:        'competition',
+        title:       competition.title,
+        description: `${participant.rank}-ci yer · ${participant.correctAnswers}/${totalQ} düzgün`,
+        xpEarned:    participant.score,
+        verified:    true,
+      })
+    );
   }
 
   return competition;
