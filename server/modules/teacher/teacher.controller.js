@@ -62,6 +62,16 @@ const getAllTeachers = async (req, res, next) => {
   }
 };
 
+// Public storefront — slug / Teacher _id / userId ilə tək müəllim profili.
+const getPublicTeacher = async (req, res, next) => {
+  try {
+    const data = await teacherService.getPublicTeacherProfile(req.params.id);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const addGroup = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -139,6 +149,7 @@ module.exports = {
   updateTeacher,
   deleteTeacher,
   getAllTeachers,
+  getPublicTeacher,
   addGroup,
   removeGroup,
   getMyStats,

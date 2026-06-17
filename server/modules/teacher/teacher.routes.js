@@ -28,4 +28,8 @@ router.delete('/group/:groupId', auth, roleCheck(['teacher']), teacherController
 // Public route (get all teachers)
 router.get('/all', teacherController.getAllTeachers);
 
+// Public route — tək müəllim profili (slug / Teacher _id / userId).
+// MÜTLƏQ ən sonda: /me, /me/*, /all, /, /group literal route-larından sonra ki, onları kölgələməsin.
+router.get('/:id', teacherController.getPublicTeacher);
+
 module.exports = router;

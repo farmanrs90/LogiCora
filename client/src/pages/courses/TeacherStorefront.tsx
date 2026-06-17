@@ -461,6 +461,9 @@ export default function TeacherStorefront() {
       api.get<TeacherApiProfile | ApiEnvelope<TeacherApiProfile> | null>(API_ROUTES.TEACHERS.BY_SLUG(slug!))
         .then(r => unwrapTeacherResponse(r.data)),
     enabled: !!slug,
+    // Profil tapılmayanda (404) təkrar sorğu atma — konsol 404 spam-ını dayandırır,
+    // istifadəçiyə dərhal honest error/empty state göstərilir.
+    retry: false,
   })
 
   // ── Loading skeleton ───────────────────────────────────────────────────────

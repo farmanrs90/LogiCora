@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Teacher = require('./teacher.model');
 const User = require('../user/user.model');
 const Group = require('../group/group.model');
@@ -129,6 +130,34 @@ const getAllTeachers = async (filters = {}) => {
     .populate('groups');
 
   return teachers;
+};
+
+// Public storefront — tək müəllim profilini identifikatora görə tapır.
+// Storefront link bəzən slug, slug yoxdursa Teacher _id (CourseDetail fallback) göndərir,
+// ona görə slug, Teacher _id və userId üzrə axtarırıq. Tapılmasa honest 404 atılır (mock yox).
+const getPublicTeacherProfile = async (identifier) => {
+  if (!identifier) {
+    const error = new Error('Teacher profile not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const or = [{ slug: String(identifier).toLowerCase() }];
+  if (mongoose.Types.ObjectId.isValid(identifier)) {
+    or.push({ _id: identifier }, { userId: identifier });
+  }
+
+  const teacher = await Teacher.findOne({ $or: or })
+    .populate('userId', 'name surname email phone')
+    .populate('groups');
+
+  if (!teacher) {
+    const error = new Error('Teacher profile not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return teacher;
 };
 
 const addGroupToTeacher = async (userId, groupId) => {
@@ -396,6 +425,7 @@ module.exports = {
   updateTeacherProfile,
   deleteTeacherProfile,
   getAllTeachers,
+  getPublicTeacherProfile,
   addGroupToTeacher,
   removeGroupFromTeacher,
   getMyStats,
