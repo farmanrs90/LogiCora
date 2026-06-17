@@ -7,7 +7,6 @@ import { useAuth } from '../../context/AuthContext'
 import { APP_ROUTES } from '../../constants'
 import type { RootState } from '../../app/store'
 import type { Role } from '../../types'
-import CompanionWidget from '../companion/CompanionWidget'
 
 // ── Bottom tab bar data ───────────────────────────────────────────────────
 
@@ -143,11 +142,8 @@ export default function PageWrapper({ children }: PageWrapperProps) {
         </motion.div>
       </main>
 
-          {/* Mobile bottom tab bar */}
+      {/* Mobile bottom tab bar */}
       <BottomTabBar role={user?.role} />
-
-      {/* Floating köməkçi — bütün app səhifələrində yanında */}
-      <CompanionWidget />
     </div>
   )
 }
