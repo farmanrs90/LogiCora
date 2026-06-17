@@ -100,6 +100,11 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
+function getErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object' || !('response' in error)) return undefined
+  return (error as { response?: { status?: number } }).response?.status
+}
+
 // ── Response adapter ───────────────────────────────────────────────────────
 // Backend `data` sahəsi həm massiv (Course[]), həm də { courses, nextPage, total }
 // formatında gələ bilər. Bu funksiya hər iki halı tək, etibarlı CoursePage formasına salır.
@@ -519,9 +524,17 @@ export default function CourseList() {
 
   const { data: featuredTeachers, isError: isFeaturedTeachersError } = useQuery<FeaturedTeacher[]>({
     queryKey: ['teachers', 'featured'],
-    queryFn:  () => api.get<{ data: unknown }>(API_ROUTES.TEACHERS.FEATURED)
-                      .then(r => normalizeFeaturedTeachers(r.data.data)),
+    queryFn: async () => {
+      try {
+        const res = await api.get<{ data: unknown }>(API_ROUTES.TEACHERS.FEATURED)
+        return normalizeFeaturedTeachers(res.data.data)
+      } catch (error) {
+        if (getErrorStatus(error) === 404) return []
+        throw error
+      }
+    },
     staleTime: 1000 * 60 * 5,
+    retry: false,
   })
 
   const {

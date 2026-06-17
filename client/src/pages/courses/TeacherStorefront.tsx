@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -451,6 +451,7 @@ type Tab = typeof TABS[number]
 
 export default function TeacherStorefront() {
   const { slug } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('Kurslar')
   const [showEditModal, setShowEditModal] = useState(false)
@@ -465,6 +466,15 @@ export default function TeacherStorefront() {
     // istifadəçiyə dərhal honest error/empty state göstərilir.
     retry: false,
   })
+
+  const handleBackToCourses = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    navigate('/courses')
+  }
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
   if (isLoading) {
@@ -564,6 +574,14 @@ export default function TeacherStorefront() {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-transparent to-transparent" />
+
+        <button
+          onClick={handleBackToCourses}
+          className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-sm border border-white/20 rounded-lg text-xs text-white/70 hover:text-white hover:border-white/40 transition-colors"
+        >
+          <span aria-hidden="true">←</span>
+          Kurslara qayıt
+        </button>
 
         {/* Owner controls */}
         {isOwner && (
