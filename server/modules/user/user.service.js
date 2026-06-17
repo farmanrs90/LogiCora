@@ -1,6 +1,17 @@
 const User = require('./user.model');
 const { hashPassword, comparePassword } = require('../../utils/hashPassword');
 
+const PROFILE_UPDATE_FIELDS = [
+  'name',
+  'surname',
+  'phone',
+  'characterType',
+  'profileCompleted',
+  'hobbies',
+  'isSpecialNeeds',
+  'specialNeedsType',
+];
+
 const getUserProfile = async (userId) => {
   const user = await User.findById(userId).select('-password');
   if (!user) {
@@ -12,9 +23,20 @@ const getUserProfile = async (userId) => {
 };
 
 const updateUserProfile = async (userId, payload) => {
+  const safeUpdate = {};
+  for (const field of PROFILE_UPDATE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(payload || {}, field)) {
+      safeUpdate[field] = payload[field];
+    }
+  }
+
+  if (Object.keys(safeUpdate).length === 0) {
+    return getUserProfile(userId);
+  }
+
   const user = await User.findByIdAndUpdate(
     userId,
-    { $set: payload },
+    { $set: safeUpdate },
     { new: true, runValidators: true }
   ).select('-password');
 
