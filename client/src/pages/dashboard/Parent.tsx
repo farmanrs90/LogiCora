@@ -93,6 +93,8 @@ const ATTEND_COLOR: Record<string, string> = {
   none: 'bg-white/10',
 }
 
+const SHOW_PARENT_LOCATION_MAP = false
+
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('az-AZ', { day: 'numeric', month: 'long' })
 }
@@ -706,7 +708,7 @@ export default function ParentDashboard() {
               </motion.div>
 
               {/* Card 4 — Location */}
-              {stats.location?.showMap ? (
+              {SHOW_PARENT_LOCATION_MAP && stats.location?.showMap ? (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}
                   className="bg-[#141414] border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-white/20 transition-colors"
                   onClick={() => setShowMap(true)}
