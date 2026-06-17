@@ -4,8 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Settings, LogOut, ChevronDown, X } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useQuery } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
-import { clearAuth } from '../../features/auth/authSlice'
 import { markAllAsRead } from '../../features/notifications/notificationSlice'
 import type { RootState, AppDispatch } from '../../app/store'
 import type { AppNotification } from '../../features/notifications/notificationSlice'
@@ -110,11 +108,12 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  function handleLogout() {
-    logout()
-    dispatch(clearAuth())
+  async function handleLogout() {
+    const confirmed = window.confirm('Hesabdan çıxmaq istəyirsiniz?')
+    if (!confirmed) return
+
+    await logout()
     navigate(APP_ROUTES.LOGIN, { replace: true })
-    toast.success('Sistemdən çıxdınız.')
   }
 
   const sColor = gp ? streakColor(gp.streak) : '#3B82F6'
