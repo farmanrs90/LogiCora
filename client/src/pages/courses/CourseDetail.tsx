@@ -414,11 +414,13 @@ function EnrollmentCard({
   course,
   onEnroll,
   isEnrolling,
+  onContinue,
   onCertificate,
 }: {
   course: CourseDetailData
   onEnroll: () => void
   isEnrolling: boolean
+  onContinue: () => void
   onCertificate: () => void
 }) {
   const displayPrice = course.discountedPrice ?? course.price
@@ -482,7 +484,10 @@ function EnrollmentCard({
                 />
               </div>
             </div>
-            <button className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors">
+            <button
+              onClick={onContinue}
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+            >
               Dəvam et →
             </button>
             {course.enrollmentProgress === 100 && (
@@ -546,6 +551,7 @@ export default function CourseDetail() {
   const [activeTab, setActiveTab] = useState<Tab>('Kurs haqqında')
   const [showAllLearn, setShowAllLearn] = useState(false)
   const [showAllSections, setShowAllSections] = useState(false)
+  const tabsRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [isCardSticky, setIsCardSticky] = useState(false)
 
@@ -589,14 +595,15 @@ export default function CourseDetail() {
     },
   })
 
-  const handleCertificate = async () => {
-    if (!id) return
-    try {
-      const res = await api.get(API_ROUTES.COURSES.CERTIFICATE(id))
-      window.open(res.data.url, '_blank')
-    } catch {
-      alert('Sertifikat hazırlanır...')
-    }
+  const handleContinue = () => {
+    setActiveTab('Dərslər')
+    requestAnimationFrame(() => {
+      tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
+  const handleCertificate = () => {
+    toast.error('Sertifikat funksiyası demo üçün deaktivdir. Rəsmi sertifikat doğrulaması post-demo mərhələsində əlavə ediləcək.')
   }
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
@@ -712,6 +719,7 @@ export default function CourseDetail() {
                   course={course}
                   onEnroll={() => enrollMutation.mutate()}
                   isEnrolling={enrollMutation.isPending}
+                  onContinue={handleContinue}
                   onCertificate={handleCertificate}
                 />
               </div>
@@ -731,12 +739,13 @@ export default function CourseDetail() {
                 course={course}
                 onEnroll={() => enrollMutation.mutate()}
                 isEnrolling={enrollMutation.isPending}
+                onContinue={handleContinue}
                 onCertificate={handleCertificate}
               />
             </div>
 
             {/* Tabs */}
-            <div className="relative border-b border-white/10">
+            <div ref={tabsRef} className="relative border-b border-white/10">
               <div className="flex gap-0 overflow-x-auto scrollbar-none">
                 {TABS.map(tab => (
                   <button
@@ -966,6 +975,7 @@ export default function CourseDetail() {
                 course={course}
                 onEnroll={() => enrollMutation.mutate()}
                 isEnrolling={enrollMutation.isPending}
+                onContinue={handleContinue}
                 onCertificate={handleCertificate}
               />
             </div>
