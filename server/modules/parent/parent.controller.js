@@ -43,8 +43,8 @@ const deleteParent = async (req, res, next) => {
 const addChild = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { childId } = req.body;
-    const data = await parentService.addChild(userId, childId);
+    const { childEmail, childId } = req.body || {};
+    const data = await parentService.addChild(userId, { childEmail, childId });
     return res.status(200).json(data);
   } catch (error) {
     return next(error);

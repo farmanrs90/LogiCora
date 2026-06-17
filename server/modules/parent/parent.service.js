@@ -159,7 +159,7 @@ const getPopulatedParentWithChild = async (parentId, childUserId) => {
     { _id: parentId },
     { $addToSet: { children: childUserId } },
     { new: true }
-  ).populate('children', 'name email');
+  ).populate('children', 'name surname email role');
 
   if (!parent) {
     const error = new Error('Parent profile not found');
@@ -169,12 +169,38 @@ const getPopulatedParentWithChild = async (parentId, childUserId) => {
   return parent;
 };
 
-const addChild = async (userId, childId) => {
-  const parent = await getParentOrThrow(userId);
+const resolveChildUser = async (parentUserId, childInput) => {
+  const payload = childInput && typeof childInput === 'object'
+    ? childInput
+    : { childId: childInput };
+  const childEmail = typeof payload.childEmail === 'string'
+    ? payload.childEmail.trim().toLowerCase()
+    : '';
+  const childId = payload.childId;
 
-  if (!childId || !mongoose.Types.ObjectId.isValid(childId)) {
-    const error = new Error('Child user not found');
-    error.statusCode = 404;
+  if (childEmail) {
+    const childUser = await User.findOne({ email: childEmail }).select('_id name surname email role');
+    if (!childUser) {
+      const error = new Error('Child user not found');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (String(childUser._id) === String(parentUserId)) {
+      const error = new Error('Parent cannot link own account as child');
+      error.statusCode = 400;
+      throw error;
+    }
+    return childUser;
+  }
+
+  if (!childId) {
+    const error = new Error('childEmail or childId is required');
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!mongoose.Types.ObjectId.isValid(childId)) {
+    const error = new Error('Invalid childId');
+    error.statusCode = 400;
     throw error;
   }
 
@@ -184,6 +210,17 @@ const addChild = async (userId, childId) => {
     error.statusCode = 404;
     throw error;
   }
+  if (String(childUser._id) === String(parentUserId)) {
+    const error = new Error('Parent cannot link own account as child');
+    error.statusCode = 400;
+    throw error;
+  }
+  return childUser;
+};
+
+const addChild = async (userId, childInput) => {
+  const parent = await getParentOrThrow(userId);
+  const childUser = await resolveChildUser(userId, childInput);
   if (childUser.role !== 'student') {
     const error = new Error('Child user must be a student');
     error.statusCode = 400;
