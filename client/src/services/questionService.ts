@@ -66,9 +66,20 @@ export const questionService = {
     _responseTime: number, // daily-də istifadə olunmur (validation naməlum açarı rədd edir)
   ): Promise<AnswerResponse> {
     void _responseTime
+    const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : ''
+    const normalizedAnswer = typeof answer === 'string' ? answer.trim() : ''
+
+    if (!normalizedQuestionId) {
+      throw new Error('questionId tələb olunur.')
+    }
+
+    if (!normalizedAnswer) {
+      throw new Error('Cavab boş ola bilməz.')
+    }
+
     const res = await api.post<{ data: BackendAnswerResult }>(API_ROUTES.DAILY.ANSWER, {
-      questionId,
-      answer,
+      questionId: normalizedQuestionId,
+      answer: normalizedAnswer,
     })
     const d = res.data.data
     return {

@@ -29,6 +29,26 @@ function isChildAge(ag?: AgeGroup) {
   return ag === '3-5' || ag === '6-8'
 }
 
+function normalizeAnswerInput(answer: unknown): string {
+  if (typeof answer === 'string') return answer.trim()
+
+  if (answer && typeof answer === 'object') {
+    const candidate = answer as { id?: unknown; answer?: unknown; selectedAnswer?: unknown; selectedOption?: unknown }
+    const value = candidate.id ?? candidate.answer ?? candidate.selectedAnswer ?? candidate.selectedOption
+    return typeof value === 'string' ? value.trim() : ''
+  }
+
+  return ''
+}
+
+function getQuestionId(question: Question | undefined): string {
+  if (!question) return ''
+
+  const fallbackId = (question as Question & { id?: unknown }).id
+  const rawId = question._id || (typeof fallbackId === 'string' ? fallbackId : '')
+  return typeof rawId === 'string' ? rawId.trim() : ''
+}
+
 // ── Confetti piece ────────────────────────────────────────────────────────
 
 function ConfettiPiece({ i }: { i: number }) {
@@ -433,9 +453,9 @@ export default function DailyQuiz() {
 
   // Countdown timer
   const handleTimeUp = useCallback(() => {
-    if (isAnswered || phase !== 'question') return
+    if (isAnswered || phase !== 'question' || mutation.isPending) return
     handleAnswer('__timeout__') // boş cavab backend-də 400 verir, sentinel göndəririk
-  }, [isAnswered, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAnswered, mutation.isPending, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useInterval(
     () => {
@@ -448,20 +468,33 @@ export default function DailyQuiz() {
   )
 
   // Handle answer submission
-  async function handleAnswer(answerId: string) {
-    if (isAnswered || !current) return
+  async function handleAnswer(answerInput: unknown) {
+    if (isAnswered || mutation.isPending || !current) return
+
+    const questionId = getQuestionId(current)
+    const answer = normalizeAnswerInput(answerInput)
+
+    if (!questionId) {
+      toast.error('Sual ID tapılmadı. Səhifəni yeniləyib yenidən cəhd edin.')
+      return
+    }
+
+    if (!answer) {
+      toast.error('Cavab boş ola bilməz.')
+      return
+    }
 
     const responseTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
-    setSelectedAnswer(answerId)
-    setIsAnswered(true)
 
     try {
       const res = await mutation.mutateAsync({
-        questionId: current._id,
-        answer: answerId,
+        questionId,
+        answer,
         responseTime,
       })
 
+      setSelectedAnswer(answer)
+      setIsAnswered(true)
       const correct = res.correct
       setRevealedAnswer(res.correctAnswer)
       setMascotCorrect(correct)
@@ -499,19 +532,12 @@ export default function DailyQuiz() {
       }, 1400)
 
     } catch {
-      // Backend timeout sentinel-ini (__timeout__) qəbul etmir (400) və ya şəbəkə xətası baş verir.
-      // UI donmamalı — cavabı buraxılmış sayıb feedback-siz növbəti suala / nəticəyə keçirik.
-      toast(answerId === '__timeout__' ? 'Vaxt bitdi ⏱️' : 'Cavab göndərilmədi, növbəti suala keçirik')
+      toast.error('Cavab göndərilmədi. Yenidən cəhd edin.')
+      setSelectedAnswer(null)
+      setIsAnswered(false)
       setShowMascot(false)
-      setAnsweredCount(prev => prev + 1)
-      setTimeout(() => {
-        if (currentIndex + 1 >= totalQuestions) {
-          setPhase('result')
-        } else {
-          setCurrentIndex(i => i + 1)
-          setPhase('question')
-        }
-      }, 800)
+      setRevealedAnswer('')
+      setPhase('question')
     }
   }
 
@@ -597,6 +623,7 @@ export default function DailyQuiz() {
 
   const timerPct = totalTime > 0 ? timeLeft / totalTime : 0
   const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
+  const answerControlsLocked = isAnswered || mutation.isPending
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col">
@@ -679,7 +706,7 @@ export default function DailyQuiz() {
               <FormatA
                 question={current}
                 onAnswer={handleAnswer}
-                isAnswered={isAnswered}
+                isAnswered={answerControlsLocked}
                 correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
@@ -691,7 +718,7 @@ export default function DailyQuiz() {
               <FormatB
                 question={current}
                 onAnswer={handleAnswer}
-                isAnswered={isAnswered}
+                isAnswered={answerControlsLocked}
                 correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
@@ -704,7 +731,7 @@ export default function DailyQuiz() {
               <FormatC
                 question={current}
                 onAnswer={handleAnswer}
-                isAnswered={isAnswered}
+                isAnswered={answerControlsLocked}
                 correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
@@ -714,7 +741,7 @@ export default function DailyQuiz() {
               <FormatD
                 question={current}
                 onAnswer={handleAnswer}
-                isAnswered={isAnswered}
+                isAnswered={answerControlsLocked}
                 correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
@@ -724,7 +751,7 @@ export default function DailyQuiz() {
               <FormatE
                 question={current}
                 onAnswer={handleAnswer}
-                isAnswered={isAnswered}
+                isAnswered={answerControlsLocked}
                 correctAnswer={revealedAnswer}
                 selectedAnswer={selectedAnswer}
                 avatarColor={avatarColor}
@@ -743,7 +770,7 @@ export default function DailyQuiz() {
       <XPCoins visible={showCoins} amount={lastXP} />
 
       {/* ── Age hint for children ── */}
-      {isChild && !isAnswered && (
+      {isChild && !answerControlsLocked && (
         <div className="shrink-0 px-4 pb-4 text-center">
           <p className="text-[#9CA3AF] text-xs">Cavabını seç 👆</p>
         </div>
