@@ -36,6 +36,8 @@ const refillHeartsIfNeeded = async (profile) => {
   }
 };
 
+const isDuplicateAnswerError = (error) => error && error.code === 11000;
+
 const getDailyQuestions = async (user) => {
   const today = getTodayString();
 
@@ -84,7 +86,22 @@ const getDailyQuestions = async (user) => {
   };
 };
 
-const submitAnswer = async (user, { questionId, answer }) => {
+const submitAnswer = async (user, payload = {}) => {
+  const { questionId, answer } = payload;
+
+  if (!questionId) {
+    const error = new Error('questionId tələb olunur.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (typeof answer !== 'string' || answer.trim().length === 0) {
+    const error = new Error('Cavab boş ola bilməz.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedAnswer = answer.trim();
   const today = getTodayString();
 
   // Check if this question was already answered today
@@ -110,7 +127,7 @@ const submitAnswer = async (user, { questionId, answer }) => {
     throw error;
   }
 
-  const isCorrect = question.correctAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
+  const isCorrect = question.correctAnswer.trim().toLowerCase() === normalizedAnswer.toLowerCase();
 
   // Find student profile for this user (gamification uses studentId)
   const student = await Student.findOne({ userId: user._id });
@@ -127,6 +144,12 @@ const submitAnswer = async (user, { questionId, answer }) => {
 
   // Refill hearts at the start of a new day
   await refillHeartsIfNeeded(profile);
+
+  if (profile.hearts <= 0) {
+    const error = new Error('Ürəyiniz qalmayıb. Sabah yenidən cəhd edin.');
+    error.statusCode = 400;
+    throw error;
+  }
 
   let xpEarned = 0;
   let heartLost = false;
@@ -181,17 +204,27 @@ const submitAnswer = async (user, { questionId, answer }) => {
     }
   }
 
-  await profile.save();
-
   // Save the daily question record
-  const record = await DailyQuestion.create({
-    userId: user._id,
-    questionId,
-    answeredAt: new Date(),
-    isCorrect,
-    xpEarned,
-    date: today,
-  });
+  let record;
+  try {
+    record = await DailyQuestion.create({
+      userId: user._id,
+      questionId,
+      answeredAt: new Date(),
+      isCorrect,
+      xpEarned,
+      date: today,
+    });
+  } catch (error) {
+    if (isDuplicateAnswerError(error)) {
+      const duplicateError = new Error('Bu suala bu gün artıq cavab vermişsiniz.');
+      duplicateError.statusCode = 400;
+      throw duplicateError;
+    }
+    throw error;
+  }
+
+  await profile.save();
 
   return {
     isCorrect,
