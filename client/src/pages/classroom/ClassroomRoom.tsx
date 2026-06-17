@@ -155,8 +155,8 @@ function normalizeClassroomResponse(payload: unknown): ClassroomData | null {
   }
 }
 
-// ── Mock QR Code visual ────────────────────────────────────────────────────
-// Draws a pixel-art QR-like pattern using CSS — no external lib required
+// ── Attendance token visual ─────────────────────────────────────────────────
+// Draws a token-derived visual using CSS — no external lib required
 
 function QRCodeVisual({ token, size = 200 }: { token: string; size?: number }) {
   // Deterministic pixel grid from token chars
@@ -741,7 +741,10 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                   className="rounded-2xl p-5 mb-5 flex flex-col items-center"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <p className="text-[#9CA3AF] text-xs mb-4">Tələbələr bu QR-ı skan etsin</p>
+                  <p className="text-white text-sm font-bold mb-1">QR ilə davamiyyət</p>
+                  <p className="text-[#9CA3AF] text-xs mb-4 text-center">
+                    Sessiya aktiv olduqda tələbələr QR skanı və ya PIN kod ilə davamiyyət qeyd edə bilər.
+                  </p>
 
                   {/* Animated border around QR */}
                   <motion.div
@@ -756,7 +759,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                           className="rounded-2xl bg-white/5 text-center text-[#9CA3AF] text-xs flex items-center justify-center p-6"
                           style={{ width: 204, height: 204 }}
                         >
-                          QR kod dərs başladıqda yaranacaq.
+                          QR kod aktiv dərs sessiyası başladıqda yaranacaq.
                         </div>
                       )}
                   </motion.div>
@@ -774,9 +777,13 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                       >
                         {Math.floor(qrCountdown / 60)}:{String(qrCountdown % 60).padStart(2, '0')}
                       </p>
-                      <p className="text-[#9CA3AF] text-xs">QR vaxtı</p>
+                      <p className="text-[#9CA3AF] text-xs">Kodun qalan vaxtı</p>
                     </div>
                   </div>
+
+                  <p className="text-[#9CA3AF] text-xs mt-3 text-center">
+                    Bu kod yalnız aktiv dərs sessiyası üçün keçərlidir.
+                  </p>
 
                   <button
                     disabled
