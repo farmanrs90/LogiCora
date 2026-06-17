@@ -315,6 +315,7 @@ export default function DailyQuiz() {
     queryKey: ['daily', 'questions'],
     queryFn: () => questionService.fetchDaily(ageGroup),
     staleTime: 1000 * 60 * 5,
+    retry: false,
   })
 
   // Answer mutation
@@ -365,6 +366,20 @@ export default function DailyQuiz() {
   const current = questions?.[currentIndex]
   const format = current?.format ?? 'A'
   const totalTime = current?.timeLimit ?? 30
+
+  const goDashboard = useCallback(() => {
+    navigate(APP_ROUTES.DASHBOARD.STUDENT)
+  }, [navigate])
+
+  const handleExitQuiz = useCallback(() => {
+    if ((phase === 'question' || phase === 'feedback') && current) {
+      const shouldLeave = window.confirm('Quizdən çıxmaq istəyirsiniz? Cavablanmamış suallar itə bilər.')
+      if (!shouldLeave) return
+    }
+
+    goDashboard()
+  }, [current, goDashboard, phase])
+
   // Reset timer when question changes
   useEffect(() => {
     if (!current) return
@@ -515,7 +530,7 @@ export default function DailyQuiz() {
         xp={totalXP}
         streak={streak}
         badge={earnedBadge}
-        onDashboard={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+        onDashboard={goDashboard}
       />
     )
   }
@@ -528,7 +543,7 @@ export default function DailyQuiz() {
         gems={gamification?.gems ?? 0}
         onBuyFreeze={() => freezeMutation.mutate()}
         isBuying={freezeMutation.isPending}
-        onExit={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+        onExit={goDashboard}
       />
     )
   }
@@ -545,6 +560,14 @@ export default function DailyQuiz() {
         className="shrink-0 px-4 lg:px-6 py-3 flex items-center gap-3 border-b"
         style={{ borderColor: 'rgba(255,255,255,0.06)' }}
       >
+        <button
+          onClick={handleExitQuiz}
+          className="shrink-0 px-3 py-2 rounded-xl text-xs font-bold text-[#9CA3AF] border border-white/10 hover:text-white hover:border-white/20 transition-colors"
+        >
+          <span className="hidden sm:inline">Panelə qayıt</span>
+          <span className="sm:hidden">Çıxış</span>
+        </button>
+
         {/* XP earned today */}
         <div className="flex items-center gap-1.5 min-w-[72px]">
           <span className="text-base">⭐</span>
