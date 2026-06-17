@@ -116,24 +116,37 @@ function CardEmpty({ label }: { label: string }) {
   return <div className="text-center py-6 text-xs text-white/40">{label}</div>
 }
 
+function getApiErrorMessage(err: unknown, fallback: string): string {
+  const response = err && typeof err === 'object' && 'response' in err ? err.response : null
+  if (!response || typeof response !== 'object' || !('data' in response)) return fallback
+
+  const data = response.data
+  if (!data || typeof data !== 'object' || !('message' in data)) return fallback
+
+  return typeof data.message === 'string' && data.message.trim() ? data.message : fallback
+}
+
 function LinkChildModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
-  const [childId, setChildId] = useState('')
+  const [childEmail, setChildEmail] = useState('')
   const [error, setError] = useState('')
 
   const linkMutation = useMutation({
-    mutationFn: (id: string) => api.post('/parent/child', { childId: id }).then(r => r.data),
+    mutationFn: (email: string) => api.post('/parent/child', { childEmail: email }).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['children'] }); onClose() },
-    onError: () => {
-      setError('Uşaq əlavə edilmədi. Uşaq ID-sinin düzgün olduğunu yoxlayıb yenidən cəhd edin.')
+    onError: (err: unknown) => {
+      setError(getApiErrorMessage(err, 'Uşaq əlavə edilmədi. Email ünvanını yoxlayıb yenidən cəhd edin.'))
     },
   })
 
   const handleSubmit = () => {
-    const id = childId.trim()
-    if (!id) return
+    const email = childEmail.trim()
+    if (!email) {
+      setError('Uşağın email ünvanını daxil edin.')
+      return
+    }
     setError('')
-    linkMutation.mutate(id)
+    linkMutation.mutate(email)
   }
 
   return (
@@ -147,21 +160,22 @@ function LinkChildModal({ onClose }: { onClose: () => void }) {
         <div className="text-center">
           <div className="text-5xl mb-3">👨‍👩‍👦</div>
           <h2 className="text-lg font-bold">Uşaq Əlavə Et</h2>
-          <p className="text-sm text-white/50 mt-1">Övladınızın LogiCora hesabının Uşaq ID-sini daxil edin</p>
+          <p className="text-sm text-white/50 mt-1">Övladınızın LogiCora hesabındakı email ünvanını daxil edin</p>
         </div>
         <div className="space-y-2">
-          <label className="block text-xs font-medium text-white/60">Uşaq ID-si</label>
+          <label className="block text-xs font-medium text-white/60">Uşaq emaili</label>
           <input
-            value={childId}
-            onChange={e => { setChildId(e.target.value); if (error) setError('') }}
-            placeholder="məs. 665f1c2a9b4e7d0012a3b4c5"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 text-center tracking-wide font-mono"
+            type="email"
+            value={childEmail}
+            onChange={e => { setChildEmail(e.target.value); if (error) setError('') }}
+            placeholder="student2@logicora.az"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 text-center"
           />
           {error && <p className="text-xs text-rose-400 text-center">{error}</p>}
         </div>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white transition-colors">Ləğv et</button>
-          <button onClick={handleSubmit} disabled={!childId.trim() || linkMutation.isPending}
+          <button onClick={handleSubmit} disabled={linkMutation.isPending}
             className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {linkMutation.isPending ? 'Bağlanır...' : 'Bağla'}
