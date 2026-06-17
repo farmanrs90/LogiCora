@@ -154,16 +154,33 @@ const enrollStudent = async (student, courseId, paymentId = null) => {
 
   const existing = await Enrollment.findOne({ studentId: student._id, courseId });
   if (existing) {
-    const error = new Error('Bu kursa artıq qeydiyyatdan keçmisiniz.');
-    error.statusCode = 400;
-    throw error;
+    return {
+      ...existing.toObject(),
+      alreadyEnrolled: true,
+      message: 'Already enrolled',
+    };
   }
 
-  const enrollment = await Enrollment.create({
-    studentId: student._id,
-    courseId,
-    paymentId,
-  });
+  let enrollment;
+  try {
+    enrollment = await Enrollment.create({
+      studentId: student._id,
+      courseId,
+      paymentId,
+    });
+  } catch (error) {
+    if (error && error.code === 11000) {
+      const existingAfterRace = await Enrollment.findOne({ studentId: student._id, courseId });
+      if (existingAfterRace) {
+        return {
+          ...existingAfterRace.toObject(),
+          alreadyEnrolled: true,
+          message: 'Already enrolled',
+        };
+      }
+    }
+    throw error;
+  }
 
   course.totalEnrolled += 1;
   await course.save();
