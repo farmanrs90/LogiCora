@@ -36,7 +36,7 @@ interface QuizAnswer {
 // ── Static data ───────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
-  { label: 'Ana səhifə', href: '#' },
+  { label: 'Ana səhifə', href: '/' },
   { label: 'Haqqında',   href: '#features' },
   { label: 'Kurslar',    href: '#courses'  },
   { label: 'Qiymət',     href: '#pricing'  },
@@ -497,10 +497,9 @@ const goRegister = () =>
           </p>
           <div className="flex gap-6">
             {['Məxfilik', 'Şərtlər'].map((item) => (
-              <a key={item} href="#"
-                className="text-white/25 text-sm hover:text-white/50 transition-colors duration-200">
-                {item}
-              </a>
+              <span key={item} className="text-white/25 text-sm cursor-default">
+                {item} · Tezliklə
+              </span>
             ))}
           </div>
         </div>
