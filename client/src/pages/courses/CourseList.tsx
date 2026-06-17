@@ -88,6 +88,7 @@ const CATEGORIES = [
 ]
 
 const DEFAULT_FILTERS: Filters = { category: '', level: '', ageGroup: '', price: '', rating: '' }
+const FEATURED_TEACHERS_ENABLED = false
 
 // ── Custom debounce hook ───────────────────────────────────────────────────
 
@@ -535,6 +536,9 @@ export default function CourseList() {
     },
     staleTime: 1000 * 60 * 5,
     retry: false,
+    refetchOnWindowFocus: false,
+    enabled: FEATURED_TEACHERS_ENABLED,
+    initialData: [],
   })
 
   const {
