@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { type Companion } from '../lib/companion'
 
 import {
   motion,
@@ -10,7 +9,6 @@ import {
   type Variants,
 } from 'framer-motion'
 import { APP_ROUTES } from '../constants'
-import { LogiCoraHero } from '../components/hero/LogiCoraHero'
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -72,19 +70,15 @@ export default function Landing() {
   const [mobileOpen, setMobileOpen]       = useState(false)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
 
-  const [guide, setGuide] = useState<Guide>((searchParams.get('guide') as Guide) ?? null)
+  // Logi/Cora avatar seçimi deferred — guide yalnız rəng aksenti üçün URL-dən oxunur (vizual personaj yoxdur)
+  const guide = (searchParams.get('guide') as Guide) ?? null
   const accent = guideAccent(guide)
 
   const navBg = useTransform(scrollY, [0, 100], ['rgba(13,13,13,0)', 'rgba(13,13,13,0.95)'])
-  // Köməkçi seçiləndə: rəngi tətbiq et + saytı göstərməyə başla (tur)
-function handleGuideSelect(g: Companion) {
-  setGuide(g)
-  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
-}
 
-// Registerə dəvət — seçilmiş köməkçini özü ilə aparır (rəng davam etsin)
-const goRegister = () =>
-  navigate(guide ? `${APP_ROUTES.REGISTER}?guide=${guide}` : APP_ROUTES.REGISTER)
+  // Registerə dəvət — guide param varsa rəng üçün saxlanılır
+  const goRegister = () =>
+    navigate(guide ? `${APP_ROUTES.REGISTER}?guide=${guide}` : APP_ROUTES.REGISTER)
 
 
   const sectionVariants: Variants = {
@@ -95,8 +89,44 @@ const goRegister = () =>
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden">
 
-      {/* ── HERO ────────────────────────────────────────────────────────────── */}
-      <LogiCoraHero onSelect={handleGuideSelect} />
+      {/* ── HERO (neytral — avatar/personaj yoxdur) ─────────────────────────── */}
+      <section className="relative flex min-h-screen flex-col items-center justify-center px-4 text-center overflow-hidden">
+        <div className="pointer-events-none absolute inset-0"
+          style={{ background: `radial-gradient(ellipse 60% 50% at 50% 40%, ${accent.hex}14 0%, transparent 70%)` }} />
+        <motion.span
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+          className={`relative ${accent.text} mb-5 text-xs font-semibold uppercase tracking-widest`}>
+          Lifelong Education Passport
+        </motion.span>
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
+          className="relative max-w-4xl text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl md:text-7xl">
+          LogiCora — öyrənməni{' '}
+          <span style={{ color: accent.hex }}>ömürlük portfoliona</span>
+          {' '}çevir
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
+          className="relative mt-6 max-w-2xl text-base text-white/45 sm:text-lg">
+          Məktəb, müəllim, valideyn və şagird üçün vahid öyrənmə platforması.
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
+          className="relative mt-10 flex flex-col items-center gap-3 sm:flex-row">
+          <button onClick={goRegister}
+            className="rounded-full px-8 py-3.5 font-semibold text-white transition-colors"
+            style={{ backgroundColor: accent.hex }}>
+            Başla →
+          </button>
+          <button onClick={() => navigate(APP_ROUTES.LOGIN)}
+            className="rounded-full border border-white/20 px-8 py-3.5 font-semibold text-white/80 transition-colors hover:border-white/40 hover:text-white">
+            Daxil ol
+          </button>
+        </motion.div>
+        <a href="#features" className="relative mt-16 text-sm text-white/30 transition-colors hover:text-white/60">
+          Aşağı keç ↓
+        </a>
+      </section>
 
       {/* ── FIXED NAVBAR (görünür scroll-dan sonra) ─────────────────────────── */}
       <motion.nav
@@ -107,7 +137,7 @@ const goRegister = () =>
         transition={{ delay: 0.5 }}
       >
         <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-4 sm:px-6 lg:px-8 pointer-events-auto">
-          <span className="font-bold text-white text-xl select-none">🤖✨ LogiCora</span>
+          <span className="font-bold text-white text-xl select-none">LogiCora</span>
 
           <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
@@ -200,7 +230,7 @@ const goRegister = () =>
             </div>
             <p className="text-white/35 text-base leading-relaxed mt-6 max-w-sm">
               Yaşına, fənninə, hobbinə uyğun suallar.<br />
-              Logi sual verir, Cora hərf verir — sən cavablayırsan.
+              Hər gün yeni suallar — sən cavablayırsan, irəliləyişin yazılır.
             </p>
             <div className="absolute -left-6 top-0 bottom-0 hidden lg:flex flex-col items-center gap-5 pt-4">
               <div className="w-px flex-1" style={{ background: `linear-gradient(to bottom, ${accent.hex}50, transparent)` }} />
@@ -250,7 +280,7 @@ const goRegister = () =>
                 <span className="absolute inset-0 flex items-center justify-center text-white/60 text-xs font-mono">30</span>
               </div>
               <p className="text-white/30 text-xs leading-relaxed">
-                Logi: Bu sualı 847 tələbə cavabladı 🤔
+                Məsləhət: cavabını seçməzdən əvvəl ardıcıllığa diqqət et 🤔
               </p>
             </div>
           </motion.div>
@@ -287,7 +317,7 @@ const goRegister = () =>
                 </motion.div>
               ))}
             </div>
-            <p className="text-white/30 text-sm">Logi: Hazır olun! 3... 2... 1... 🚀</p>
+            <p className="text-white/30 text-sm">Yarış başlayır! 3... 2... 1... 🚀</p>
           </motion.div>
 
           <div className="order-1 lg:order-2">
@@ -506,7 +536,7 @@ const goRegister = () =>
         <motion.span animate={{ y: [0, -10, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           className="text-6xl mb-6">
-          {guide === 'logi' ? '🤖' : guide === 'cora' ? '🪄' : '🤖'}
+          🎓
         </motion.span>
         <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.8 }}

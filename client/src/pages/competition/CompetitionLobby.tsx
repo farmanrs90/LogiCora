@@ -283,19 +283,12 @@ export default function CompetitionLobby() {
 
       <div className="relative z-10 flex flex-col items-center px-4 py-8 gap-8 max-w-xl mx-auto w-full">
 
-        {/* Logi mascot */}
+        {/* Yarış statusu */}
         <motion.div
           className="flex flex-col items-center gap-2"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <motion.span
-            className="text-6xl"
-            animate={{ rotate: [-5, 5, -5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            🤖
-          </motion.span>
           <motion.p
             className="text-white font-bold text-lg text-center"
             animate={{ opacity: [0.7, 1, 0.7] }}

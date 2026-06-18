@@ -314,32 +314,33 @@ function StatusHeader({
 function CompanionGreeting({
   firstName,
   avatarColor,
-  profile,
   daily,
   isGamificationError,
   isDailyError,
 }: {
   firstName: string
   avatarColor: string
-  profile: GamificationProfile
   daily: DailyStatusResponse
   isGamificationError: boolean
   isDailyError: boolean
 }) {
+  const navigate = useNavigate()
   const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
-  const companionName = avatarColor.toLowerCase() === '#3b82f6' ? 'Logi' : 'Cora'
   const companionTone = isDailyError
     ? 'Gündəlik tapşırıq yüklənmədi. Aşağıdakı kartdan yenidən yoxla.'
     : isGamificationError
       ? 'Gamifikasiya məlumatları yüklənmədi. Yenidən yoxla ilə təkrar cəhd et.'
-      : companionName === 'Logi'
-        ? `${remaining} tapşırıq qalır. ${profile.weeklyXP + 40} XP həftəlik temp üçün yaxşı hədəfdir.`
-        : `Bugünkü ritmin sabitdir. Gündəlik sualları tamamla, sonra portfolio və klan xəttini gücləndir.`
+      : remaining > 0
+        ? `${remaining} tapşırıq qalır. Davam et və ardıcıllığını qoru.`
+        : 'Bugünkü suallar tamamlandı. İndi inkişafına və klan xəttinə bax.'
   const priorityText = isDailyError
     ? 'Gündəlik tapşırıq yüklənmədi.'
     : isGamificationError
       ? 'Gamifikasiya məlumatları yüklənmədi.'
       : daily.completed ? 'Seriya qorundu, indi mövqe irəliləyişinə bax.' : 'Gündəlik sualları bitir və XP xəttini qoru.'
+  const dailyCtaLabel = daily.completed
+    ? 'Nəticəyə bax'
+    : daily.answeredCount > 0 ? 'Davam et' : 'Bugünkü quizə başla'
 
   return (
     <motion.section
@@ -347,7 +348,7 @@ function CompanionGreeting({
       transition={motionTransition}
       className="card-glow overflow-hidden"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
           <div
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card border bg-bg-card"
@@ -357,7 +358,7 @@ function CompanionGreeting({
             <Sparkles className="h-5 w-5" style={{ color: avatarColor }} />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-text-secondary">{companionName} xətti</p>
+            <p className="text-xs font-semibold uppercase text-text-secondary">Bugünkü fokus</p>
             <h1 className="text-2xl font-extrabold text-white sm:text-3xl">
               Salam, {firstName}
             </h1>
@@ -365,11 +366,21 @@ function CompanionGreeting({
           </div>
         </div>
 
-        <div className="rounded-card border border-border bg-bg-card px-4 py-3">
-          <p className="text-xs font-semibold uppercase text-text-secondary">Bugünkü prioritet</p>
-          <p className="mt-1 text-sm font-bold text-white">
-            {priorityText}
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch lg:shrink-0">
+          <div className="rounded-card border border-border bg-bg-card px-4 py-3">
+            <p className="text-xs font-semibold uppercase text-text-secondary">Bugünkü prioritet</p>
+            <p className="mt-1 text-sm font-bold text-white">
+              {priorityText}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(APP_ROUTES.DAILY)}
+            className="btn-primary w-full sm:w-auto"
+          >
+            {dailyCtaLabel}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </motion.section>
@@ -514,7 +525,7 @@ function TodaysFocus({
   )
 }
 
-function QuickActions() {
+function QuickActions({ showKids }: { showKids: boolean }) {
   const navigate = useNavigate()
   const actions: Array<{
     title: string
@@ -551,6 +562,15 @@ function QuickActions() {
       path: APP_ROUTES.CLAN_LEADERBOARD,
       tone: 'text-accent-green',
     },
+    ...(showKids
+      ? [{
+          title: 'Uşaq Klubu',
+          caption: 'Yaşa uyğun modul',
+          icon: Sparkles,
+          path: APP_ROUTES.KIDS_HUB,
+          tone: 'text-gold',
+        }]
+      : []),
   ]
 
   return (
@@ -612,9 +632,9 @@ function CoursePreview({ course }: { course: Course | null }) {
         </div>
       ) : (
         <div className="rounded-card border border-border bg-bg-card p-4">
-          <p className="text-sm font-bold text-white">Seçilmiş kurs hazır deyil</p>
+          <p className="text-sm font-bold text-white">Hələ aktiv kurs yoxdur.</p>
           <p className="mt-2 text-sm font-medium leading-6 text-text-secondary">
-            Kurs xətti boş görünür. Kitabxanadan uyğun mövzu seçib irəliləyişini başlada bilərsən.
+            Kitabxanadan uyğun mövzu seçib irəliləyişini başlada bilərsən.
           </p>
           <button
             type="button"
@@ -801,7 +821,7 @@ function SocialFeedPanel({
         </div>
       ) : (
         <div className="rounded-card border border-border bg-bg-card p-4">
-          <p className="text-sm font-bold text-white">Hələ yeni aktivlik yoxdur</p>
+          <p className="text-sm font-bold text-white">Bu gün üçün yeni bildiriş yoxdur.</p>
           <p className="mt-2 text-sm font-medium leading-6 text-text-secondary">
             Gündəlik tapşırıq, yarış və klan nəticələri burada kompakt şəkildə görünəcək.
           </p>
@@ -988,6 +1008,8 @@ export default function StudentDashboard() {
   const notifications = queries.notifications.data ?? []
   const course = queries.courses.data?.[0] ?? null
   const firstName = user?.name || 'Tələbə'
+  const ageGroup = (user as { ageGroup?: string } | null)?.ageGroup ?? ''
+  const showKids = ['3-5', '6-8'].includes(ageGroup)
 
   const rankIndex = user?._id
     ? (queries.leaderboard.data ?? []).findIndex((row) => row.studentId === user._id)
@@ -1011,7 +1033,6 @@ export default function StudentDashboard() {
         <CompanionGreeting
           firstName={firstName}
           avatarColor={avatarColor}
-          profile={profile}
           daily={daily}
           isGamificationError={isGamificationError}
           isDailyError={isDailyError}
@@ -1034,7 +1055,7 @@ export default function StudentDashboard() {
               isDailyError={isDailyError}
               onRetryDaily={retryDaily}
             />
-            <QuickActions />
+            <QuickActions showKids={showKids} />
             <CoursePreview course={course} />
           </main>
 

@@ -141,7 +141,7 @@ function MascotPopup({ correct, xp }: { correct: boolean; xp: number }) {
         backdropFilter: 'blur(12px)',
       }}
     >
-      <span className="text-3xl">{correct ? '🤖' : '🧙‍♀️'}</span>
+      <span className="text-3xl">{correct ? '✅' : '🔁'}</span>
       <div>
         <p className="text-white font-bold text-sm">
           {correct ? 'Əla!' : 'Olur, növbəti dəfə!'}
@@ -170,11 +170,11 @@ function NoHeartsScreen({ gems, onExit, onBuyFreeze, isBuying }: { gems: number;
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' as const }}
         className="text-7xl"
       >
-        🧙‍♀️
+        🌙
       </motion.div>
       <h2 className="text-white font-black text-2xl text-center">Ürəklər tükəndi 💔</h2>
       <p className="text-[#9CA3AF] text-sm text-center max-w-xs">
-        Cora deyir: "Hər çətinlik sizi gücləndirir. Sabah yenidən cəhd et!"
+        Sistem qeydi: "Hər çətinlik səni gücləndirir. Sabah yenidən cəhd et!"
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -238,21 +238,14 @@ function ResultScreen({
         </AnimatePresence>
       </div>
 
-      {/* Mascots */}
-      <div className="flex items-end gap-4">
+      {/* Tamamlanma nişanı (neytral — personaj yoxdur) */}
+      <div className="flex items-end justify-center">
         <motion.span
           className="text-6xl"
           animate={{ y: [0, -14, 0] }}
           transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 0.3 }}
         >
-          🤖
-        </motion.span>
-        <motion.span
-          className="text-6xl"
-          animate={{ y: [0, -14, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, delay: 0.3 }}
-        >
-          🧙‍♀️
+          🏆
         </motion.span>
       </div>
 

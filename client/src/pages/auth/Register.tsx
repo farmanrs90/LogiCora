@@ -220,16 +220,6 @@ export default function Register() {
       <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full opacity-[0.07] blur-3xl pointer-events-none"
         style={{ backgroundColor: guide === 'cora' ? '#9333EA' : '#3B82F6' }} />
 
-      {guide && (
-        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className={`absolute top-4 z-20 flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold ${guide === 'logi' ? 'left-4 border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#3B82F6]' : 'right-4 border-[#9333EA]/30 bg-[#9333EA]/10 text-[#9333EA]'}`}>
-          <motion.span animate={guide === 'logi' ? { y: [0, -4, 0] } : { rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-            {guide === 'logi' ? '🤖' : '🪄'}
-          </motion.span>
-          {guide === 'logi' ? 'Logi səni gözləyir!' : 'Cora səni gözləyir!'}
-        </motion.div>
-      )}
-
       <div className="w-full max-w-lg z-10">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <Link to={APP_ROUTES.HOME} className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9333EA]" aria-label="LogiCora ana səhifə">

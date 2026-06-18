@@ -320,7 +320,7 @@ function ImpactSection({ data, advice }: { data: ImpactBreakdown[]; advice: stri
       </div>
       {/* AI advice */}
       <div className="flex items-start gap-3 p-4 bg-indigo-950/40 border border-indigo-500/20 rounded-xl">
-        <span className="text-2xl shrink-0">🤖</span>
+        <span className="text-2xl shrink-0">💡</span>
         <div>
           <p className="text-xs text-indigo-300 font-semibold mb-1">AI Tövsiyəsi</p>
           <p className="text-sm text-white/70 leading-relaxed">{advice}</p>

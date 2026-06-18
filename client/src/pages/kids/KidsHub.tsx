@@ -60,7 +60,7 @@ export default function KidsHub() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-indigo-700">🎈 Uşaq Klubu</h1>
-            <p className="text-slate-500 mt-1">Logi və Cora ilə öyrən və əylən!</p>
+            <p className="text-slate-500 mt-1">Öyrən və əylən!</p>
           </div>
           <div className="bg-yellow-300 rounded-2xl px-5 py-3 shadow-md text-center">
             <div className="text-2xl font-extrabold text-yellow-800">⭐ {totalXp}</div>

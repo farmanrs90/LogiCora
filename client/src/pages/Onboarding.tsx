@@ -216,24 +216,6 @@ function Step1({ answers, dispatch, onNext }: {
 }) {
   return (
     <div className="flex flex-col items-center gap-10 text-center px-6 max-w-lg mx-auto">
-      {/* Logi mascot */}
-      <motion.div
-        initial={{ x: 120, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' as const }}
-        className="flex flex-col items-center gap-2"
-      >
-        <motion.span
-          className="text-7xl"
-          animate={{ y: [0, -10, 0], rotate: [0, 8, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' as const }}
-          role="img" aria-label="Logi"
-        >
-          🤖
-        </motion.span>
-        <span className="text-xs text-[#3B82F6] font-bold tracking-widest uppercase">Logi</span>
-      </motion.div>
-
       {/* LogiCora logo glow */}
       <motion.h1
         initial={{ opacity: 0, scale: 0.8 }}
@@ -824,12 +806,10 @@ function Step5({ answers, onDone }: {
           >
             <p className="text-[#9CA3AF] text-sm">Bu sənin başlanğıc avatarındır!</p>
 
-            {/* Cora */}
+            {/* Sistem qeydi (neytral — personaj yoxdur) */}
             <div className="flex items-center gap-3 bg-[rgba(147,51,234,0.1)] border border-[rgba(147,51,234,0.25)] rounded-2xl px-5 py-3">
-              <span className="text-3xl" role="img" aria-label="Cora">🧙‍♀️</span>
               <p className="text-[#9CA3AF] text-sm text-left">
-                <span className="text-[#9333EA] font-bold">Cora: </span>
-                Macəran başlayır, {answers.name}! Sənə inanıram! ✨
+                Macəran başlayır, {answers.name}! Uğurlar! ✨
               </p>
             </div>
 

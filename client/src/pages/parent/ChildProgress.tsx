@@ -503,7 +503,7 @@ export default function ChildProgress() {
           </div>
           <div className="flex items-start gap-2 text-xs text-white/40 italic">
             <span className="text-xl shrink-0">🌸</span>
-            Cora deyir: "Hər uşaq unikaldır — bu yalnız tövsiyədir. Övladınızın seçimi həmişə önəmlidir."
+            Qeyd: hər uşaq unikaldır — bu yalnız tövsiyədir. Övladınızın seçimi həmişə önəmlidir.
           </div>
         </div>
 

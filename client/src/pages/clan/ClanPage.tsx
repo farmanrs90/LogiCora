@@ -415,7 +415,7 @@ function EmptyState({ onCreate, onSearch }: {
         transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' as const }}
         className="text-8xl mb-6"
       >
-        🤖
+        🛡️
       </motion.div>
       <h2 className="text-white font-black text-2xl mb-2">Klanın yoxdur!</h2>
       <p className="text-[#9CA3AF] text-sm mb-2 max-w-xs">

@@ -83,18 +83,9 @@ export default function Login() {
           transition={{ delay: 0.18, duration: 0.45 }}
           className="bg-[rgba(255,255,255,0.05)] backdrop-blur-xl border border-[rgba(255,255,255,0.1)] rounded-2xl p-8"
         >
-          <div className="flex items-center gap-3 mb-7">
-            <motion.span
-              className="text-3xl shrink-0" role="img" aria-label="Logi"
-              animate={{ rotate: [0, 12, 0, -8, 0] }}
-              transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' as const }}
-            >
-              🤖
-            </motion.span>
-            <div>
-              <h2 className="text-xl font-bold text-white leading-tight">Xoş gəldin!</h2>
-              <p className="text-[#9CA3AF] text-sm">Hesabına daxil ol</p>
-            </div>
+          <div className="mb-7">
+            <h2 className="text-xl font-bold text-white leading-tight">Xoş gəldin!</h2>
+            <p className="text-[#9CA3AF] text-sm">Hesabına daxil ol</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">

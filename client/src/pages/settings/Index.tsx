@@ -2,10 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { useSelector, useDispatch } from 'react-redux'
-import { setCompanionVisible } from '../../features/theme/themeSlice'
-import { getCompanion, COMPANIONS, setCompanionVisibleLS } from '../../lib/companion'
-import type { RootState, AppDispatch } from '../../app/store'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import { API_ROUTES } from '../../constants'
@@ -66,15 +62,6 @@ export default function Settings() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [local, setLocal] = useState<AccessibilityConfig>(DEFAULT_CONFIG)
-  const dispatch = useDispatch<AppDispatch>()
-  const companionVisible = useSelector((s: RootState) => s.theme.companionVisible)
-  const companion = COMPANIONS[getCompanion()]
-
-  const toggleCompanion = (v: boolean) => {
-    dispatch(setCompanionVisible(v))   // canlı (eyni səhifədə widget dərhal reaksiya verir)
-    setCompanionVisibleLS(v)           // qalıcı (F5-də qalır)
-  }
-
 
   const { data, isLoading } = useQuery<AccessibilityConfig>({
     queryKey: ['accessibility', 'me'],
@@ -149,23 +136,6 @@ export default function Settings() {
             ))}
           </div>
         </section>
-                {/* Köməkçi (Logi/Cora) */}
-        <section className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-          <h2 className="font-semibold mb-1">Köməkçi</h2>
-          <p className="text-white/40 text-xs mb-3">Logi/Cora sənə kömək edən dostundur</p>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-start gap-3 min-w-0">
-              <span className="text-xl shrink-0">{companion.emoji}</span>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{companion.name} görünsün</p>
-                <p className="text-xs text-white/40">Küncdə dayanıb lazım olanda kömək edir</p>
-              </div>
-            </div>
-            <Toggle value={companionVisible} onChange={toggleCompanion} />
-          </div>
-        </section>
-
-
         {/* Toggles */}
         <section className="bg-[#141414] border border-white/10 rounded-2xl p-5">
           <h2 className="font-semibold mb-1">Adaptiv öyrənmə / Əlçatımlılıq</h2>

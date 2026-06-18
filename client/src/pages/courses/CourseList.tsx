@@ -591,18 +591,17 @@ export default function CourseList() {
           style={{ background: `linear-gradient(180deg, ${avatarColor}08 0%, transparent 100%)` }}
         />
         <div className="relative max-w-5xl mx-auto">
-          {/* Logi */}
+          {/* Tövsiyə bandı */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-2 mb-4"
           >
-            <span className="text-2xl">🤖</span>
             <div
               className="px-3 py-1.5 rounded-2xl text-sm text-white/80"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
             >
-              "Bilikini artır, gələcəyini qur!" ✨
+              Biliyini artır, gələcəyini qur! ✨
             </div>
           </motion.div>
 

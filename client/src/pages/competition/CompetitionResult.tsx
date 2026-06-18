@@ -241,8 +241,7 @@ export default function CompetitionResult() {
           className="text-center"
         >
           <div className="flex items-center justify-center gap-3 mb-2">
-            <motion.span className="text-4xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 1.6, repeat: Infinity }}>🤖</motion.span>
-            <motion.span className="text-4xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 1.6, repeat: Infinity, delay: 0.3 }}>🧙‍♀️</motion.span>
+            <motion.span className="text-4xl" animate={{ y: [0, -8, 0] }} transition={{ duration: 1.6, repeat: Infinity }}>🏆</motion.span>
           </div>
           <h1
             className="font-black text-3xl"

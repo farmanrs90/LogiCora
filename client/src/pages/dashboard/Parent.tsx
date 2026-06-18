@@ -573,14 +573,14 @@ export default function ParentDashboard() {
     return (
       <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center p-4">
         <div className="text-center space-y-5 max-w-sm">
-          {/* Cora sad */}
+          {/* Boş hal */}
           <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity }}
             className="text-8xl mx-auto"
           >😔</motion.div>
           <div>
             <h1 className="text-2xl font-bold">Hələ övlad əlavə edilməyib</h1>
             <p className="text-white/50 text-sm mt-2">
-              Cora deyir: "Övladınızın inkişafını birlikdə izləyək!"
+              Sistem qeydi: Övladınızın inkişafını birlikdə izləyək.
             </p>
           </div>
           <button onClick={() => setShowLink(true)}
@@ -609,7 +609,7 @@ export default function ParentDashboard() {
               </span>{' '}👋
             </h1>
             <p className="text-white/40 text-sm mt-0.5">
-              Cora deyir: "Övladınızın bu günkü vəziyyəti:"
+              Övladınızın bu günkü vəziyyəti:
             </p>
           </div>
           <button onClick={() => setShowLink(true)}
@@ -747,7 +747,7 @@ export default function ParentDashboard() {
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">🌟</div>
                     <div className="flex-1">
-                      <p className="text-xs text-amber-400 font-semibold mb-1">Cora — Bu həftənin xülasəsi</p>
+                      <p className="text-xs text-amber-400 font-semibold mb-1">Bu həftənin xülasəsi</p>
                       <p className="text-sm text-white/80 leading-relaxed mb-3">{report.summary}</p>
                       <ul className="space-y-1.5">
                         {report.bullets.map((b, i) => (

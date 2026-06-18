@@ -616,7 +616,7 @@ export default function CompetitionRoom() {
                 animate={{ y: [0, -12, 0] }}
                 transition={{ duration: 1.8, repeat: Infinity }}
               >
-                🤖
+                ⏳
               </motion.span>
               <p className="text-white font-bold text-xl text-center">
                 {isConnected ? 'Sual gəlir...' : 'Yarış serverinə qoşulur...'}

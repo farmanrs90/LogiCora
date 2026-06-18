@@ -362,9 +362,9 @@ function ActiveQuestionView({
           className="rounded-2xl p-5 text-center"
           style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)' }}
         >
-          <p className="text-3xl mb-2">🧙‍♀️</p>
+          <p className="text-3xl mb-2">🔁</p>
           <p className="text-white font-bold">Bu cavab düzgün deyil.</p>
-          <p className="text-[#9CA3AF] text-sm mt-1">Cora deyir: "Daha dərindən düşün!"</p>
+          <p className="text-[#9CA3AF] text-sm mt-1">Məsləhət: daha dərindən düşün!</p>
         </motion.div>
       )}
 
@@ -457,8 +457,7 @@ function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correct
       )}
 
       <div className="flex items-center gap-3">
-        <motion.span className="text-5xl" animate={{ y:[0,-10,0] }} transition={{ duration:1.8, repeat:Infinity }}>🤖</motion.span>
-        <motion.span className="text-5xl" animate={{ y:[0,-10,0] }} transition={{ duration:1.8, repeat:Infinity, delay:0.3 }}>🧙‍♀️</motion.span>
+        <motion.span className="text-5xl" animate={{ y:[0,-10,0] }} transition={{ duration:1.8, repeat:Infinity }}>🏆</motion.span>
       </div>
     </motion.div>
   )
@@ -774,12 +773,12 @@ export default function WeeklyMystery() {
               className="flex items-end justify-center gap-8 lg:gap-16"
             >
               <div className="flex flex-col items-center gap-2 text-center">
-                <motion.span className="text-5xl" animate={{ rotate:[-5,5,-5] }} transition={{ duration:3, repeat:Infinity }}>🤖</motion.span>
-                <p className="text-[#9CA3AF] text-xs max-w-[120px]">"Hazırsan? Bu həftə nə gətirəcəyik..."</p>
+                <motion.span className="text-5xl" animate={{ rotate:[-5,5,-5] }} transition={{ duration:3, repeat:Infinity }}>🔮</motion.span>
+                <p className="text-[#9CA3AF] text-xs max-w-[120px]">Bu həftə yeni sirr hazırlanır...</p>
               </div>
               <div className="flex flex-col items-center gap-2 text-center">
-                <motion.span className="text-5xl" animate={{ rotate:[5,-5,5] }} transition={{ duration:3, repeat:Infinity, delay:0.5 }}>🧙‍♀️</motion.span>
-                <p className="text-[#9CA3AF] text-xs max-w-[120px]">"Yalnız ən güclülər tapa bilər!"</p>
+                <motion.span className="text-5xl" animate={{ rotate:[5,-5,5] }} transition={{ duration:3, repeat:Infinity, delay:0.5 }}>🧩</motion.span>
+                <p className="text-[#9CA3AF] text-xs max-w-[120px]">Yalnız ən güclülər tapa bilər!</p>
               </div>
             </motion.div>
 
@@ -831,8 +830,7 @@ export default function WeeklyMystery() {
                   ✨ Həftənin Sirri Açıldı!
                 </motion.h2>
                 <div className="flex justify-center gap-4 mt-2">
-                  <motion.span className="text-4xl" animate={{ y:[0,-8,0] }} transition={{ duration:1.5, repeat:Infinity }}>🤖</motion.span>
-                  <motion.span className="text-4xl" animate={{ y:[0,-8,0] }} transition={{ duration:1.5, repeat:Infinity, delay:0.3 }}>🧙‍♀️</motion.span>
+                  <motion.span className="text-4xl" animate={{ y:[0,-8,0] }} transition={{ duration:1.5, repeat:Infinity }}>🔮</motion.span>
                 </div>
               </motion.div>
             )}
