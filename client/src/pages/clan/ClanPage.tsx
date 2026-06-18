@@ -455,8 +455,8 @@ function ClanLoadError({ onRetry, onBack }: { onRetry: () => void; onBack: () =>
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center p-6 text-center">
       <div className="text-7xl mb-5">⚠️</div>
-      <h2 className="text-white font-black text-2xl mb-2">Klan yüklənmədi</h2>
-      <p className="text-[#9CA3AF] text-sm mb-8 max-w-xs">Zəhmət olmasa yenidən cəhd edin.</p>
+      <h2 className="text-white font-black text-2xl mb-2">Bu klan mövcud deyil və ya silinib.</h2>
+      <p className="text-[#9CA3AF] text-sm mb-8 max-w-xs">Klan silinmiş ola bilər və ya hazırda yüklənə bilmir.</p>
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <motion.button
           onClick={onRetry}
@@ -614,7 +614,7 @@ export default function ClanPage() {
       queryClient.invalidateQueries({ queryKey: ['clans', 'me'] })
       queryClient.invalidateQueries({ queryKey: ['clan', slug] })
       queryClient.invalidateQueries({ queryKey: ['clan-leaderboard'] })
-      navigate(APP_ROUTES.CLAN('me'))
+      navigate(APP_ROUTES.CLAN('me'), { replace: true })
     },
     onError:    (err: unknown) => toast.error((err as { message?: string })?.message || 'Klan silinmədi.'),
   })
