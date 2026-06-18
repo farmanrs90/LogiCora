@@ -701,6 +701,11 @@ export default function ClanPage() {
   const hasOwnClan = !!myClan?._id
   const winRate  = Math.round((c.wins / Math.max(c.wins + c.losses, 1)) * 100)
 
+  const handleJoinClan = () => {
+    if (!window.confirm('Bu klana qoşulmaq istəyirsiniz?')) return
+    joinMutation.mutate(c._id)
+  }
+
   const battleBarData = battleList.slice(0, 10).map(b => ({
     name: b.opponentName.slice(0, 6),
     Biz:  b.ourScore,
@@ -858,7 +863,7 @@ export default function ClanPage() {
               </button>
             ) : (
               <motion.button
-                onClick={() => joinMutation.mutate(c._id)}
+                onClick={handleJoinClan}
                 disabled={joinMutation.isPending}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
