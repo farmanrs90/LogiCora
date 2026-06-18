@@ -429,8 +429,8 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
 
   return (
     <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
-      <h2 className="font-bold text-sm">♿ Xüsusi Öyrənmə Ehtiyacları</h2>
-      <p className="text-xs text-white/50">Bu məlumat könüllüdür. Sistem avtomatik uyğunlaşacaq.</p>
+      <h2 className="font-bold text-sm">♿ Xüsusi dəstək / Adaptiv öyrənmə</h2>
+      <p className="text-xs text-white/50">Bu məlumat könüllüdür və tibbi diaqnoz deyil. Seçim edildikdə uşağın testləri və Uşaq Klubu daha böyük düymələr və daha sadə görünüşlə göstərilir.</p>
       <div className="flex gap-2 flex-wrap">
         {[['yes', 'Bəli'], ['no', 'Xeyr'], ['prefer_not', 'Cavablamaq istəmirəm']].map(([val, label]) => (
           <button key={val} onClick={() => setAnswer(val as typeof answer)}
@@ -458,7 +458,7 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
               ))}
             </div>
             <p className="text-xs text-indigo-400/80 leading-relaxed">
-              💡 Sistem testi, vizual elementləri və bildiriş tonunu avtomatik uyğunlaşdıracaq
+              💡 Bu rejim böyük düymələr, daha sadə görünüş və azaldılmış vizual yük üçün istifadə olunur. Tam tənzimləmələri Ayarlar səhifəsindən idarə edə bilərsiniz.
             </p>
           </motion.div>
         )}

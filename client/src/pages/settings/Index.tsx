@@ -121,7 +121,7 @@ export default function Settings() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Tənzimləmələr</h1>
-            <p className="text-white/40 text-sm mt-0.5">Əlçatanlıq və ekran tərcihləri</p>
+            <p className="text-white/40 text-sm mt-0.5">Adaptiv öyrənmə və əlçatımlılıq tərcihləri</p>
           </div>
           <button onClick={() => navigate(-1)} className="text-white/40 hover:text-white text-sm">← Geri</button>
         </div>
@@ -168,8 +168,10 @@ export default function Settings() {
 
         {/* Toggles */}
         <section className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-          <h2 className="font-semibold mb-1">Əlçatanlıq</h2>
-          <p className="text-white/40 text-xs mb-3">Hər dəyişiklik dərhal saxlanılır</p>
+          <h2 className="font-semibold mb-1">Adaptiv öyrənmə / Əlçatımlılıq</h2>
+          <p className="text-white/40 text-xs mb-3">
+            Bu rejim böyük düymələr, daha sadə görünüş və azaldılmış vizual yük üçün istifadə olunur. Hər dəyişiklik dərhal saxlanılır.
+          </p>
           <div className="divide-y divide-white/5">
             {TOGGLES.map(t => (
               <div key={t.key} className="flex items-center justify-between gap-4 py-3">
