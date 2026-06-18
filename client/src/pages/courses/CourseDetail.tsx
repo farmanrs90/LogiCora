@@ -522,7 +522,7 @@ function EnrollmentCard({
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                {course.isFree ? 'İndi başla' : 'İndi qoşul'}
+                {course.isFree ? 'Pulsuz qoşul' : 'Kursa yazıl'}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -587,29 +587,8 @@ export default function CourseDetail() {
     enabled: !!id,
   })
 
-  const enrollMutation = useMutation({
-    mutationFn: () => api.post(API_ROUTES.COURSES.ENROLL, { courseId: id }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['course', id] }),
-    onError: () => {
-      // Backend xətası: lokal "uğur" göstərmirik — real vəziyyət dəyişməz qalır.
-      toast.error('Kursa qeydiyyat alınmadı. Zəhmət olmasa yenidən cəhd edin.')
-    },
-  })
-
-  const completeMutation = useMutation({
-    mutationFn: (lessonId: string) =>
-      api.post(API_ROUTES.COURSES.COMPLETE_LESSON(id!), { lessonId }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['course', id] }),
-    onError: () => {
-      // Backend xətası: dərs tamamlanmış kimi göstərmirik — lokal state dəyişməz qalır.
-      toast.error('Dərs tamamlanmadı. Bağlantını yoxlayıb yenidən cəhd edin.')
-    },
-  })
-
-  const handleContinue = () => {
-    if (!course) return
-
-    const allLessons = course.sections.flatMap(section => section.lessons)
+  const openLessonsFlow = (targetCourse: CourseDetailData) => {
+    const allLessons = targetCourse.sections.flatMap(section => section.lessons)
     const nextLesson = allLessons.find(lesson => !lesson.isCompleted) ?? allLessons[0]
 
     if (!nextLesson) {
@@ -632,6 +611,33 @@ export default function CourseDetail() {
           ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 180)
     })
+  }
+
+  const enrollMutation = useMutation({
+    mutationFn: () => api.post(API_ROUTES.COURSES.ENROLL, { courseId: id }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['course', id] })
+      if (course) openLessonsFlow(course)
+    },
+    onError: () => {
+      // Backend xətası: lokal "uğur" göstərmirik — real vəziyyət dəyişməz qalır.
+      toast.error('Kursa qeydiyyat alınmadı. Zəhmət olmasa yenidən cəhd edin.')
+    },
+  })
+
+  const completeMutation = useMutation({
+    mutationFn: (lessonId: string) =>
+      api.post(API_ROUTES.COURSES.COMPLETE_LESSON(id!), { lessonId }).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['course', id] }),
+    onError: () => {
+      // Backend xətası: dərs tamamlanmış kimi göstərmirik — lokal state dəyişməz qalır.
+      toast.error('Dərs tamamlanmadı. Bağlantını yoxlayıb yenidən cəhd edin.')
+    },
+  })
+
+  const handleContinue = () => {
+    if (!course) return
+    openLessonsFlow(course)
   }
 
   const handleCertificate = () => {
