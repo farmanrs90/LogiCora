@@ -1,581 +1,999 @@
-import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-  motion,
-  useTransform,
-  useScroll,
-  AnimatePresence,
-  type Variants,
-} from 'framer-motion'
+  Accessibility,
+  ArrowRight,
+  Award,
+  BarChart3,
+  BookOpen,
+  Brain,
+  Building2,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  ClipboardCheck,
+  Eye,
+  Globe,
+  GraduationCap,
+  LayoutDashboard,
+  Menu,
+  Play,
+  Smile,
+  Swords,
+  Users,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { APP_ROUTES } from '../constants'
-
-// ── Interfaces ────────────────────────────────────────────────────────────────
-
-interface NavLink {
-  label: string
-  href: string
-}
-
-interface QuizAnswer {
-  key: string
-  text: string
-}
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
-const NAV_LINKS: NavLink[] = [
-  { label: 'Ana səhifə',    href: '/' },
-  { label: 'İmkanlar',      href: '#features' },
-  { label: 'Necə işləyir',  href: '#how' },
+interface NavItem { label: string; href: string }
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Ana səhifə', href: '#home' },
+  { label: 'Haqqımızda', href: '#about' },
+  { label: 'İmkanlar', href: '#features' },
+  { label: 'Məqsədimiz', href: '#mission' },
+  { label: 'Blog', href: '#blog' },
+  { label: 'Əlaqə', href: '#contact' },
 ]
 
-const QUIZ_ANSWERS: QuizAnswer[] = [
-  { key: 'A', text: '2, 4, 8, 16...' },
-  { key: 'B', text: '1, 3, 6, 10...' },
-  { key: 'C', text: '5, 10, 20, 35...' },
+// İmkanlar dropdown — hər link real bölmə id-sinə işarə edir (ölü anchor yoxdur)
+const FEATURE_MENU: NavItem[] = [
+  { label: 'Şagird üçün', href: '#users' },
+  { label: 'Müəllim üçün', href: '#teachers' },
+  { label: 'Valideyn üçün', href: '#users' },
+  { label: 'Uşaq Klubu', href: '#features' },
+  { label: 'Adaptiv öyrənmə', href: '#adaptive' },
+  { label: 'Portfolio', href: '#features' },
 ]
 
-// ── Guide accent helpers ──────────────────────────────────────────────────────
+interface Lang { code: string; label: string; ready: boolean }
+const LANGUAGES: Lang[] = [
+  { code: 'az', label: 'Azərbaycan dili', ready: true },
+  { code: 'tr', label: 'Türkçe', ready: false },
+  { code: 'en', label: 'English', ready: false },
+  { code: 'ru', label: 'Русский', ready: false },
+]
 
-type Guide = 'logi' | 'cora' | null
+const ROLES: { icon: LucideIcon; title: string; desc: string; cta: string; to: string }[] = [
+  { icon: GraduationCap, title: 'Şagird', desc: 'Gündəlik quiz, kurslar, yarışlar və ömürlük portfolio ilə öyrən.', cta: 'Başla', to: APP_ROUTES.REGISTER },
+  { icon: Users, title: 'Müəllim', desc: 'Qrup, davamiyyət, tapşırıq və analitikanı bir paneldə idarə et.', cta: 'Başla', to: APP_ROUTES.REGISTER },
+  { icon: Eye, title: 'Valideyn', desc: 'Övladının fəaliyyətini və inkişafını şəffaf izlə.', cta: 'Başla', to: APP_ROUTES.REGISTER },
+  { icon: Building2, title: 'Təhsil mərkəzi / Məktəb', desc: 'Müəllim və şagird axınını vahid sistemdə birləşdir.', cta: 'Daxil ol', to: APP_ROUTES.LOGIN },
+]
 
-function guideAccent(guide: Guide): { text: string; border: string; bg: string; hex: string } {
-  if (guide === 'logi') return {
-    text:   'text-[#3B82F6]',
-    border: 'border-[#3B82F6]/20',
-    bg:     'bg-[#3B82F6]/10',
-    hex:    '#3B82F6',
-  }
-  if (guide === 'cora') return {
-    text:   'text-[#9333EA]',
-    border: 'border-[#9333EA]/20',
-    bg:     'bg-[#9333EA]/10',
-    hex:    '#9333EA',
-  }
-  return {
-    text:   'text-[#0D9488]',
-    border: 'border-[#0D9488]/20',
-    bg:     'bg-[#0D9488]/10',
-    hex:    '#0D9488',
-  }
+const FEATURES: { icon: LucideIcon; title: string; desc: string }[] = [
+  { icon: Brain, title: 'Gündəlik Quiz', desc: 'Hər gün qısa suallar, streak və XP ilə davamlı öyrənmə.' },
+  { icon: BookOpen, title: 'Kurslar', desc: 'Mövzu-əsaslı dərslər və aydın öyrənmə yolu.' },
+  { icon: Award, title: 'Portfolio / Education Passport', desc: 'Təsdiqlənmiş nailiyyətlər ömürlük pasportda toplanır.' },
+  { icon: LayoutDashboard, title: 'Müəllim idarə paneli', desc: 'Qrup, tapşırıq və davamiyyətin tək yerdən idarəsi.' },
+  { icon: Eye, title: 'Valideyn baxışı', desc: 'Övladın irəliləyişinə şəffaf nəzarət.' },
+  { icon: Smile, title: 'Uşaq Klubu', desc: 'Kiçik yaşlar üçün sadə və əlçatan təhsil rejimi.' },
+  { icon: Accessibility, title: 'Adaptiv öyrənmə', desc: 'Böyük düymələr və azaldılmış vizual yük ilə rahat təcrübə.' },
+  { icon: Swords, title: 'Klan və yarışlar', desc: 'Komanda ilə canlı yarışlar və sıralama.' },
+]
+
+interface JourneyStep { title: string; text: string }
+const JOURNEY: JourneyStep[] = [
+  { title: 'Qeydiyyat və rol seçimi', text: 'Şagird, müəllim və ya valideyn kimi qeydiyyatdan keç və öz panelinə daxil ol.' },
+  { title: 'Gündəlik quiz və öyrənmə', text: 'Qısa gündəlik suallar, kurslar və yarışlarla davamlı öyrən.' },
+  { title: 'Müəllim paneli və davamiyyət', text: 'Müəllim qrupu, davamiyyəti və tapşırıqları bir yerdən idarə edir.' },
+  { title: 'Valideyn izləməsi və adaptiv dəstək', text: 'Valideyn inkişafı şəffaf görür; adaptiv rejim əlçatanlığı artırır.' },
+  { title: 'Portfolio / Education Passport', text: 'Bütün nailiyyətlər ömürlük təhsil pasportunda toplanır.' },
+]
+
+const TEACHER_FLOW: { icon: LucideIcon; title: string }[] = [
+  { icon: Users, title: 'Qrup yarat' },
+  { icon: CalendarDays, title: 'Dərs planla' },
+  { icon: ClipboardCheck, title: 'Davamiyyəti izlə' },
+  { icon: BarChart3, title: 'Analitikanı yoxla' },
+  { icon: BookOpen, title: 'Kurs və tapşırıqları idarə et' },
+]
+
+const BLOG_POSTS: { tag: string; title: string; desc: string }[] = [
+  { tag: 'Motivasiya', title: 'Şagird motivasiyası', desc: 'Streak, XP və yarışların öyrənməyə təsiri.' },
+  { tag: 'Valideyn', title: 'Valideyn nəzarəti', desc: 'Övladın inkişafını şəffaf izləmək.' },
+  { tag: 'Əlçatımlılıq', title: 'Adaptiv öyrənmə', desc: 'Daha rahat və əlçatan öyrənmə təcrübəsi.' },
+]
+
+// ── Small helpers ───────────────────────────────────────────────────────────────
+
+function BrandMark({ dark = false }: { dark?: boolean }) {
+  return (
+    <a
+      href="#home"
+      className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+      aria-label="LogiCora ana səhifə"
+    >
+      <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-600 to-blue-500 shadow-sm">
+        <span className="h-2.5 w-2.5 rounded-sm bg-white/90" />
+      </span>
+      <span className="text-xl font-extrabold tracking-tight">
+        <span className={dark ? 'text-white' : 'text-gray-900'}>Logi</span>
+        <span className={dark ? 'text-indigo-400' : 'text-indigo-600'}>Cora</span>
+      </span>
+    </a>
+  )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
+  return (
+    <div className="mx-auto max-w-2xl text-center">
+      <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">{eyebrow}</p>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{title}</h2>
+      {sub && <p className="mt-4 text-base leading-relaxed text-gray-600">{sub}</p>}
+    </div>
+  )
+}
+
+// ── Product preview (CSS-only, illustrative — fake statistika yoxdur) ────────────
+
+function ProductPreview() {
+  return (
+    <div className="relative" aria-hidden="true">
+      <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xl shadow-indigo-100/60">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-gray-900">Tələbə paneli</p>
+          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600">
+            Önizləmə
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {[
+            { label: 'Riyaziyyat', pct: '72%', w: 'w-3/4', color: 'bg-indigo-500' },
+            { label: 'Məntiq', pct: '64%', w: 'w-2/3', color: 'bg-blue-500' },
+          ].map((s) => (
+            <div key={s.label}>
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>{s.label}</span>
+                <span>{s.pct}</span>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
+                <div className={`h-full rounded-full ${s.color} ${s.w}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-gray-100 bg-slate-50 p-3">
+            <p className="text-[10px] font-semibold uppercase text-gray-400">Gündəlik Quiz</p>
+            <p className="mt-1 text-sm font-bold text-gray-900">5 sual hazırdır</p>
+          </div>
+          <div className="rounded-2xl border border-gray-100 bg-slate-50 p-3">
+            <p className="text-[10px] font-semibold uppercase text-gray-400">Səviyyə</p>
+            <p className="mt-1 text-sm font-bold text-gray-900">Davam edir</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute -bottom-5 -left-5 hidden w-40 rotate-[-4deg] rounded-2xl border border-gray-200 bg-white p-3 shadow-lg sm:block">
+        <p className="text-[10px] font-semibold uppercase text-gray-400">Müəllim paneli</p>
+        <p className="mt-1 text-xs font-bold text-gray-900">Qrup və davamiyyət</p>
+      </div>
+      <div className="absolute -right-4 -top-5 hidden w-40 rotate-[4deg] rounded-2xl border border-gray-200 bg-white p-3 shadow-lg sm:block">
+        <p className="text-[10px] font-semibold uppercase text-gray-400">Valideyn baxışı</p>
+        <p className="mt-1 text-xs font-bold text-gray-900">İnkişaf şəffaf</p>
+      </div>
+    </div>
+  )
+}
+
+// ── Journey mockups (CSS-only, illustrativ — fake statistika yoxdur) ─────────────
+
+function JourneyMockup({ step }: { step: number }) {
+  const card = 'rounded-2xl border border-gray-200 bg-white p-5 shadow-md'
+
+  if (step === 0) {
+    return (
+      <div className={card} aria-hidden="true">
+        <p className="text-xs font-semibold uppercase text-gray-400">Rol seçimi</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {['Şagird', 'Müəllim', 'Valideyn'].map((r, i) => (
+            <div key={r} className={`rounded-xl border px-2 py-3 text-center text-xs font-semibold ${i === 0 ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-500'}`}>{r}</div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (step === 1) {
+    return (
+      <div className={card} aria-hidden="true">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-gray-900">Gündəlik Quiz</p>
+          <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600">+XP</span>
+        </div>
+        <div className="mt-3 space-y-2">
+          {['A variantı', 'B variantı', 'C variantı'].map((o, i) => (
+            <div key={o} className={`rounded-xl border px-3 py-2 text-xs ${i === 1 ? 'border-indigo-300 bg-indigo-50 font-semibold text-indigo-700' : 'border-gray-200 text-gray-500'}`}>{o}</div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (step === 2) {
+    return (
+      <div className={card} aria-hidden="true">
+        <p className="text-sm font-bold text-gray-900">Davamiyyət</p>
+        <div className="mt-3 space-y-2">
+          {['Qrup A', 'Qrup B', 'Qrup C'].map((g, i) => (
+            <div key={g} className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600">
+              <span>{g}</span>
+              <span className={`h-2.5 w-2.5 rounded-full ${i === 2 ? 'bg-gray-300' : 'bg-green-500'}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (step === 3) {
+    return (
+      <div className={card} aria-hidden="true">
+        <p className="text-sm font-bold text-gray-900">Valideyn baxışı</p>
+        <div className="mt-3">
+          <p className="text-xs text-gray-500">Həftəlik fəaliyyət</p>
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full w-2/3 rounded-full bg-indigo-500" /></div>
+        </div>
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-xs">
+          <span className="text-gray-600">Adaptiv rejim</span>
+          <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white">Aktiv</span>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className={card} aria-hidden="true">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold text-gray-900">Portfolio</p>
+        <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600">Verified</span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {[{ l: 'Riyaziyyat', w: 'w-3/4' }, { l: 'Məntiq', w: 'w-2/3' }].map((s) => (
+          <div key={s.l}>
+            <p className="text-xs text-gray-500">{s.l}</p>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className={`h-full ${s.w} rounded-full bg-blue-500`} /></div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-1.5">
+        {[0, 1, 2, 3].map((i) => (<span key={i} className="h-5 w-5 rounded-full bg-indigo-100" />))}
+      </div>
+    </div>
+  )
+}
+
+// ── Demo video modal (dürüst — real video yoxdur) ────────────────────────────────
+
+function VideoModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-gray-900/40 px-4 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Demo video"
+    >
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Demo video</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Bağla"
+            className="grid h-9 w-9 place-items-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="mt-5 grid aspect-video place-items-center rounded-2xl border border-dashed border-gray-300 bg-slate-50 px-6 text-center">
+          <p className="text-sm font-medium text-gray-500">Demo video post-demo mərhələsində əlavə ediləcək.</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Language modal (ClassDojo ruhunda — dürüst: yalnız AZ aktiv) ─────────────────
+
+function LanguageModal({
+  lang,
+  onPick,
+  onClose,
+}: {
+  lang: string
+  onPick: (code: string) => void
+  onClose: () => void
+}) {
+  const [note, setNote] = useState<string | null>(null)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-gray-900/40 px-4 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Dil seçimi"
+    >
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Dil seçin</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Bağla"
+            className="grid h-9 w-9 place-items-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          {LANGUAGES.map((l) => {
+            const active = l.code === lang
+            return (
+              <button
+                key={l.code}
+                type="button"
+                onClick={() => (l.ready ? onPick(l.code) : setNote('Bu dil post-demo mərhələsində tamamlanacaq.'))}
+                aria-pressed={active}
+                className={`flex items-center justify-between gap-2 rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  active
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                    : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <span>{l.label}</span>
+                {active ? (
+                  <Check className="h-4 w-4 shrink-0 text-indigo-600" />
+                ) : !l.ready ? (
+                  <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                    Tezliklə
+                  </span>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+
+        {note && <p className="mt-4 text-center text-xs font-medium text-gray-500">{note}</p>}
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Main ────────────────────────────────────────────────────────────────────────
 
 export default function Landing() {
   const navigate = useNavigate()
-  const [searchParams]  = useSearchParams()
-  const { scrollY }     = useScroll()
-  const [mobileOpen, setMobileOpen]       = useState(false)
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
+  const [lang, setLang] = useState('az')
+  const [journeyTab, setJourneyTab] = useState(0)
+  const [videoOpen, setVideoOpen] = useState(false)
 
-  // Logi/Cora avatar seçimi deferred — guide yalnız rəng aksenti üçün URL-dən oxunur (vizual personaj yoxdur)
-  const guide = (searchParams.get('guide') as Guide) ?? null
-  const accent = guideAccent(guide)
+  const pickLang = (code: string) => { setLang(code); setLangOpen(false) }
 
-  const navBg = useTransform(scrollY, [0, 100], ['rgba(13,13,13,0)', 'rgba(13,13,13,0.95)'])
-
-  // Registerə dəvət — guide param varsa rəng üçün saxlanılır
-  const goRegister = () =>
-    navigate(guide ? `${APP_ROUTES.REGISTER}?guide=${guide}` : APP_ROUTES.REGISTER)
-
-
-  const sectionVariants: Variants = {
-    hidden:  { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' as const } },
-  }
-  
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-white text-gray-900">
 
-      {/* ── HERO (neytral — avatar/personaj yoxdur) ─────────────────────────── */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center px-4 text-center overflow-hidden">
-        <div className="pointer-events-none absolute inset-0"
-          style={{ background: `radial-gradient(ellipse 60% 50% at 50% 40%, ${accent.hex}14 0%, transparent 70%)` }} />
-        <motion.span
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          className={`relative ${accent.text} mb-5 text-xs font-semibold uppercase tracking-widest`}>
-          Lifelong Education Passport
-        </motion.span>
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
-          className="relative max-w-4xl text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl md:text-7xl">
-          LogiCora — öyrənməni{' '}
-          <span style={{ color: accent.hex }}>ömürlük portfoliona</span>
-          {' '}çevir
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
-          className="relative mt-6 max-w-2xl text-base text-white/45 sm:text-lg">
-          Məktəb, müəllim, valideyn və şagird üçün vahid öyrənmə platforması.
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
-          className="relative mt-10 flex flex-col items-center gap-3 sm:flex-row">
-          <button onClick={goRegister}
-            className="rounded-full px-8 py-3.5 font-semibold text-white transition-colors"
-            style={{ backgroundColor: accent.hex }}>
-            Başla →
-          </button>
-          <button onClick={() => navigate(APP_ROUTES.LOGIN)}
-            className="rounded-full border border-white/20 px-8 py-3.5 font-semibold text-white/80 transition-colors hover:border-white/40 hover:text-white">
-            Daxil ol
-          </button>
-        </motion.div>
-        <a href="#features" className="relative mt-16 text-sm text-white/30 transition-colors hover:text-white/60">
-          Aşağı keç ↓
-        </a>
-      </section>
+      {/* ── NAVBAR ──────────────────────────────────────────────────────────── */}
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <BrandMark />
 
-      {/* ── FIXED NAVBAR (görünür scroll-dan sonra) ─────────────────────────── */}
-      <motion.nav
-        style={{ backgroundColor: navBg }}
-        className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/[0.06] backdrop-blur-xl pointer-events-none"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-4 sm:px-6 lg:px-8 pointer-events-auto">
-          <span className="font-bold text-white text-xl select-none">LogiCora</span>
+          {/* Desktop nav */}
+          <ul className="hidden items-center gap-1 lg:flex">
+            {NAV_ITEMS.map((item) =>
+              item.label === 'İmkanlar' ? (
+                <li key={item.label} className="group relative">
+                  <a
+                    href={item.href}
+                    className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    İmkanlar
+                    <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" aria-hidden="true" />
+                  </a>
+                  {/* Hover/focus dropdown */}
+                  <div className="invisible absolute left-0 top-full w-60 pt-2 opacity-0 transition-all group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-xl">
+                      {FEATURE_MENU.map((f) => (
+                        <a
+                          key={f.label}
+                          href={f.href}
+                          className="block rounded-xl px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        >
+                          {f.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </li>
+              ) : (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              )
+            )}
+          </ul>
 
-          <div className="hidden md:flex items-center gap-8">
-            {NAV_LINKS.map((link) => (
-              <a key={link.label} href={link.href}
-                className={`text-white/50 hover:${accent.text} transition-colors duration-200 text-sm`}>
-                {link.label}
-              </a>
-            ))}
-          </div>
-
-          <div className="hidden md:flex items-center gap-3">
-            <button onClick={() => navigate(APP_ROUTES.LOGIN)}
-              className="border border-white/20 text-white/70 hover:text-white hover:border-white/40 rounded-full px-5 py-2 text-sm transition-all duration-200">
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setLangOpen(true)}
+              className="hidden items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:flex"
+              aria-label="Dil seçimi"
+            >
+              <Globe className="h-4 w-4" aria-hidden="true" />
+              {lang.toUpperCase()}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(APP_ROUTES.LOGIN)}
+              className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:block"
+            >
               Daxil ol
             </button>
-            <motion.button
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
-              onClick={goRegister}
-              className="text-white rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200"
-              style={{ backgroundColor: accent.hex }}
+            <button
+              type="button"
+              onClick={() => navigate(APP_ROUTES.REGISTER)}
+              className="hidden rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:block"
             >
-              Başla →
-            </motion.button>
+              Qeydiyyat
+            </button>
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="grid h-10 w-10 place-items-center rounded-lg text-gray-700 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:hidden"
+              aria-label="Menyu aç"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
+        </nav>
+      </header>
 
-          <button className="md:hidden flex flex-col gap-1.5 p-2"
-            onClick={() => setMobileOpen(true)} aria-label="Menyu aç">
-            <span className="w-6 h-px bg-white/60" />
-            <span className="w-6 h-px bg-white/60" />
-            <span className="w-4 h-px bg-white/60" />
-          </button>
-        </div>
-      </motion.nav>
-
-      {/* Mobile overlay */}
+      {/* ── MOBILE DRAWER ───────────────────────────────────────────────────── */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-[#0D0D0D] flex flex-col items-center justify-center gap-8">
-            <button className="absolute top-5 right-6 text-white/50 hover:text-white text-2xl"
-              onClick={() => setMobileOpen(false)}>✕</button>
-            {NAV_LINKS.map((link) => (
-              <a key={link.label} href={link.href} onClick={() => setMobileOpen(false)}
-                className={`text-white/60 hover:${accent.text} text-2xl font-semibold transition-colors`}>
-                {link.label}
-              </a>
-            ))}
-            <div className="flex flex-col gap-3 mt-4 w-48">
-              <button onClick={() => { navigate(APP_ROUTES.LOGIN); setMobileOpen(false) }}
-                className="border border-white/20 text-white/70 rounded-full px-5 py-3 text-base">
-                Daxil ol
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-white lg:hidden"
+          >
+            <div className="flex h-16 items-center justify-between border-b border-gray-200 px-4">
+              <BrandMark />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-lg text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                aria-label="Menyu bağla"
+              >
+                <X className="h-6 w-6" />
               </button>
-              <button onClick={goRegister}
-                className="text-white rounded-full px-5 py-3 text-base font-semibold"
-                style={{ backgroundColor: accent.hex }}>
-                Başla →
-              </button>
+            </div>
+
+            <div className="space-y-1 overflow-y-auto px-4 py-4" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
+              {NAV_ITEMS.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-xl px-3 py-3 text-base font-semibold text-gray-800 hover:bg-gray-50"
+                >
+                  {item.label}
+                </a>
+              ))}
+
+              <p className="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-widest text-gray-400">İmkanlar</p>
+              {FEATURE_MENU.map((f) => (
+                <a
+                  key={f.label}
+                  href={f.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-xl px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                >
+                  {f.label}
+                </a>
+              ))}
+
+              <div className="space-y-2 pt-5">
+                <button
+                  type="button"
+                  onClick={() => { setMobileOpen(false); navigate(APP_ROUTES.REGISTER) }}
+                  className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                >
+                  Qeydiyyat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMobileOpen(false); navigate(APP_ROUTES.LOGIN) }}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                >
+                  Daxil ol
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMobileOpen(false); setLangOpen(true) }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  <Globe className="h-4 w-4" aria-hidden="true" /> Dil: {lang.toUpperCase()}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── SECTION 1 — Günlük öyrənmə ─────────────────────────────────────── */}
-      <motion.section
-        id="features"
-        variants={sectionVariants} initial="hidden" whileInView="visible"
-        viewport={{ once: true, margin: '-100px' }}
-        className="min-h-screen flex items-center py-20 px-4 sm:px-8 lg:px-16"
-      >
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      {/* ── LANGUAGE MODAL ──────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {langOpen && <LanguageModal lang={lang} onPick={pickLang} onClose={() => setLangOpen(false)} />}
+      </AnimatePresence>
 
-          <div className="relative">
-            <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-6`}>
-              Günlük öyrənmə
-            </p>
-            <div className="space-y-1">
-              {[
-                { text: 'Hər gün',          cls: 'text-white/30' },
-                { text: '5 sual.',          cls: 'text-white/60' },
-                { text: 'Streak qır,',      cls: 'text-white/80' },
-                { text: 'dünya sarsılsın.', cls: accent.text     },
-              ].map((line, i) => (
-                <motion.p key={line.text}
-                  initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className={`text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight ${line.cls}`}>
-                  {line.text}
-                </motion.p>
-              ))}
-            </div>
-            <p className="text-white/35 text-base leading-relaxed mt-6 max-w-sm">
-              Yaşına, fənninə, hobbinə uyğun suallar.<br />
-              Hər gün yeni suallar — sən cavablayırsan, irəliləyişin yazılır.
-            </p>
-            <div className="absolute -left-6 top-0 bottom-0 hidden lg:flex flex-col items-center gap-5 pt-4">
-              <div className="w-px flex-1" style={{ background: `linear-gradient(to bottom, ${accent.hex}50, transparent)` }} />
-              {[0, 1, 2].map((i) => (
-                <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: accent.hex }}
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }} />
+      {/* ── DEMO VIDEO MODAL ────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {videoOpen && <VideoModal onClose={() => setVideoOpen(false)} />}
+      </AnimatePresence>
+
+      <main className="pt-16">
+
+        {/* ── HERO ──────────────────────────────────────────────────────────── */}
+        <section id="home" className="scroll-mt-20 bg-gradient-to-b from-indigo-50/60 to-white">
+          <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                Lifelong Education Passport
+              </span>
+              <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl">
+                Təhsilin bütün yolunu{' '}
+                <span className="text-indigo-600">bir platformada</span> birləşdirin
+              </h1>
+              <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-600">
+                LogiCora şagird, müəllim və valideyn üçün gündəlik öyrənmə, kurslar, yarışlar,
+                portfolio və adaptiv öyrənməni vahid sistemdə birləşdirir.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={() => navigate(APP_ROUTES.REGISTER)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                >
+                  Pulsuz başla <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(APP_ROUTES.LOGIN)}
+                  className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-6 py-3.5 text-base font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  Daxil ol
+                </button>
+                <a
+                  href="#self-test"
+                  className="inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-base font-semibold text-indigo-600 transition-colors hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  Özünü sına
+                </a>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
+              <ProductPreview />
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── ROLE-BASED ENTRY ──────────────────────────────────────────────── */}
+        <section id="users" className="scroll-mt-20 py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow="Kim üçün?" title="Hər iştirakçı üçün doğru başlanğıc" sub="Şagird, müəllim, valideyn və məktəblər üçün vahid öyrənmə məkanı." />
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {ROLES.map((r) => (
+                <div key={r.title} className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <r.icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-4 text-lg font-bold text-gray-900">{r.title}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-600">{r.desc}</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(r.to)}
+                    className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
+                  >
+                    {r.cta} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
+        </section>
 
-          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
-            className={`bg-[#0a1628] border ${accent.border} rounded-2xl p-6 max-w-sm mx-auto w-full`}>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-white/80 font-semibold">Günün sualı 🧠</p>
-              <span className="bg-orange-400/10 border border-orange-400/20 text-orange-400 text-xs rounded-full px-2 py-0.5">
-                🔥 23 gün
-              </span>
-            </div>
-            <p className="text-white/60 text-sm mb-4 leading-relaxed">
-              Hansı riyazi ardıcıllıq düzgündür?
-            </p>
-            <div className="flex flex-col gap-2 mb-5">
-              {QUIZ_ANSWERS.map((a) => (
-                <motion.button key={a.key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                  onClick={() => setSelectedAnswer(a.key)}
-                  className={`text-left px-4 py-2.5 rounded-xl border text-sm transition-all ${
-                    selectedAnswer === a.key
-                      ? `${accent.bg} ${accent.border} ${accent.text}`
-                      : 'bg-white/[0.03] border-white/[0.08] text-white/60 hover:border-white/20'
-                  }`}>
-                  {a.key}. {a.text}
-                </motion.button>
+        {/* ── FEATURES ──────────────────────────────────────────────────────── */}
+        <section id="features" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow="İmkanlar" title="Öyrənməni gücləndirən alətlər" sub="Gündəlik öyrənmədən portfolioya qədər tam ekosistem." />
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {FEATURES.map((f) => (
+                <div key={f.title} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                    <f.icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-4 text-base font-bold text-gray-900">{f.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-600">{f.desc}</p>
+                </div>
               ))}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 flex-shrink-0">
-                <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
-                  <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                  <motion.circle cx="20" cy="20" r="16" fill="none"
-                    stroke={accent.hex} strokeWidth="3" strokeLinecap="round"
-                    strokeDasharray="100.5"
-                    initial={{ strokeDashoffset: 0 }} animate={{ strokeDashoffset: 100.5 }}
-                    transition={{ duration: 30, ease: 'linear', repeat: Infinity }} />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-white/60 text-xs font-mono">30</span>
+          </div>
+        </section>
+
+        {/* ── PRODUCT JOURNEY (tablı axın — Miro canvas ruhunda) ────────────── */}
+        <section
+          id="how"
+          className="scroll-mt-20 py-20 sm:py-24"
+          style={{
+            backgroundColor: '#F8FAFC',
+            backgroundImage: 'radial-gradient(rgba(99,102,241,0.12) 1px, transparent 1px)',
+            backgroundSize: '22px 22px',
+          }}
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow="Necə işləyir?" title="LogiCora necə işləyir?" sub="Şagird, müəllim və valideyn üçün öyrənmə axını bir yerdə görünür." />
+
+            {/* Tabs */}
+            <div className="mt-10 flex flex-wrap justify-center gap-2">
+              {JOURNEY.map((s, i) => (
+                <button
+                  key={s.title}
+                  type="button"
+                  onClick={() => setJourneyTab(i)}
+                  aria-pressed={journeyTab === i}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    journeyTab === i
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'border border-gray-200 bg-white text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {i + 1}. {s.title}
+                </button>
+              ))}
+            </div>
+
+            {/* Active slide */}
+            <div className="mt-10 grid items-center gap-10 rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur sm:p-10 lg:grid-cols-2">
+              <div>
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-sm font-bold text-white">{journeyTab + 1}</span>
+                <h3 className="mt-4 text-2xl font-bold text-gray-900">{JOURNEY[journeyTab].title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-gray-600">{JOURNEY[journeyTab].text}</p>
               </div>
-              <p className="text-white/30 text-xs leading-relaxed">
-                Məsləhət: cavabını seçməzdən əvvəl ardıcıllığa diqqət et 🤔
+              <JourneyMockup step={journeyTab} />
+            </div>
+
+            {/* Demo video card (honest) */}
+            <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+              <p className="text-sm font-bold text-gray-900">Demo video</p>
+              <button
+                type="button"
+                onClick={() => setVideoOpen(true)}
+                aria-label="Demo videonu aç"
+                className="mx-auto mt-4 grid h-14 w-14 place-items-center rounded-full bg-indigo-600 text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                <Play className="h-6 w-6" aria-hidden="true" />
+              </button>
+              <p className="mt-4 text-xs text-gray-500">Demo video post-demo mərhələsində əlavə ediləcək.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── ADAPTIVE / INCLUSIVE ──────────────────────────────────────────── */}
+        <section id="adaptive" className="scroll-mt-20 bg-gradient-to-b from-white to-indigo-50/60 py-20 sm:py-24">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Əlçatımlılıq</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Hər uşaq üçün daha əlçatan öyrənmə</h2>
+              <p className="mt-4 text-base leading-relaxed text-gray-600">
+                Adaptiv öyrənmə rejimi böyük düymələr, sadə görünüş və azaldılmış vizual yük ilə
+                daha rahat öyrənmə təcrübəsi yaratmağa kömək edir.
               </p>
             </div>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* ── SECTION 2 — Canlı yarışlar ─────────────────────────────────────── */}
-      <motion.section
-        variants={sectionVariants} initial="hidden" whileInView="visible"
-        viewport={{ once: true, margin: '-100px' }}
-        className="min-h-screen flex items-center py-20 px-4 sm:px-8 lg:px-16"
-      >
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
-            className="bg-[#0a1628] border border-cyan-400/20 rounded-2xl p-6 max-w-sm mx-auto w-full order-2 lg:order-1">
-            <p className="text-5xl font-mono text-cyan-400 font-bold tracking-widest mb-2"
-              style={{ textShadow: '0 0 30px rgba(34,211,238,0.4)' }}>4829</p>
-            <div className="flex items-center gap-2 mb-5">
-              <span className="text-white/40 text-sm">12 iştirakçı</span>
-              {[0, 1, 2].map((i) => (
-                <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-cyan-400"
-                  animate={{ opacity: [0, 1, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }} />
-              ))}
-            </div>
-            <div className="grid grid-cols-4 gap-2 mb-5">
-              {['🦁', '🐯', '🦊', '🐺', '🦅', '🐉', '🦋', '🐬'].map((e, i) => (
-                <motion.div key={i}
-                  initial={{ scale: 0, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }}
-                  viewport={{ once: true }} transition={{ duration: 0.3, delay: i * 0.08 }}
-                  className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-lg">
-                  {e}
-                </motion.div>
-              ))}
-            </div>
-            <p className="text-white/30 text-sm">Yarış başlayır! 3... 2... 1... 🚀</p>
-          </motion.div>
-
-          <div className="order-1 lg:order-2">
-            <p className="text-cyan-400 text-xs tracking-widest font-semibold uppercase mb-6">
-              Real-time yarışlar
-            </p>
-            <div className="space-y-1">
+            <div className="grid gap-4 sm:grid-cols-2">
               {[
-                { text: 'PIN yaz.',      cls: 'text-white/30'  },
-                { text: '30 saniyədə',   cls: 'text-cyan-400'  },
-                { text: 'yarışa başla.', cls: 'text-white/80'  },
-              ].map((line, i) => (
-                <motion.p key={line.text}
-                  initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className={`text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight ${line.cls}`}>
-                  {line.text}
-                </motion.p>
+                { icon: Accessibility, title: 'Sadə interfeys', desc: 'Böyük düymələr və azaldılmış vizual yük.' },
+                { icon: Users, title: 'Müəllim dəstəyi', desc: 'Müəllim tempə uyğun istiqamət verir.' },
+                { icon: Eye, title: 'Valideyn görünürlüyü', desc: 'İnkişaf şəffaf izlənir.' },
+                { icon: Smile, title: 'Rahat təcrübə', desc: 'Stresiz, addım-addım öyrənmə.' },
+              ].map((c) => (
+                <div key={c.title} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <c.icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-3 text-sm font-bold text-gray-900">{c.title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-600">{c.desc}</p>
+                </div>
               ))}
             </div>
-            <p className="text-white/35 text-base leading-relaxed mt-6 max-w-sm">
-              Kahoot kimi — amma avatarın,<br />Elo reytinqin, klan şərəfin var.
-            </p>
           </div>
-        </div>
-      </motion.section>
+        </section>
 
-      {/* ── SECTION 3 — Portfolio ───────────────────────────────────────────── */}
-      <motion.section
-        variants={sectionVariants} initial="hidden" whileInView="visible"
-        viewport={{ once: true, margin: '-100px' }}
-        className="min-h-screen flex items-center py-20 px-4 sm:px-8 lg:px-16"
-      >
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-          <div>
-            <p className="text-purple-400 text-xs tracking-widest font-semibold uppercase mb-6">
-              Rəqəmsal portfolio
-            </p>
-            <div className="space-y-1">
-              {[
-                { text: 'Hər addımın', cls: 'text-white/30'   },
-                { text: 'izi —',       cls: 'text-purple-400' },
-                { text: '3 yaşdan',    cls: 'text-white/60'   },
-                { text: 'karyeraya.',  cls: 'text-white/90'   },
-              ].map((line, i) => (
-                <motion.p key={line.text}
-                  initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className={`text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight ${line.cls}`}>
-                  {line.text}
-                </motion.p>
-              ))}
+        {/* ── TEACHER WORKFLOW (split) ──────────────────────────────────────── */}
+        <section id="teachers" className="scroll-mt-20 py-20 sm:py-24">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Müəllimlər üçün</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Sinifdən analitikaya — vahid axın</h2>
+              <p className="mt-4 text-base leading-relaxed text-gray-600">Müəllim qrup, davamiyyət, kurs və analitikanı bir paneldən idarə edir.</p>
+              <ul className="mt-6 space-y-3">
+                {TEACHER_FLOW.map((t) => (
+                  <li key={t.title} className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                      <t.icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="text-sm font-medium text-gray-800">{t.title}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="text-white/35 text-base leading-relaxed mt-6 max-w-sm">
-              Hər kurs, hər yarış, hər badge — portfolionda.<br />
-              İşəgötürən görür, universitet seçir,<br />
-              heç kim sənin biliyini inkar edə bilməz.
-            </p>
-          </div>
 
-          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}
-            className="bg-[#0a1628] border border-purple-400/20 rounded-2xl p-6 max-w-sm mx-auto w-full">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-12 h-12 rounded-full bg-purple-400/10 border border-purple-400/20 flex items-center justify-center text-2xl">👤</div>
-              <div>
-                <p className="text-white/80 font-semibold">Əli Həsənov</p>
-                <p className="text-white/40 text-sm">Level 8 · Diamond 💎</p>
+            {/* CSS mockup */}
+            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-md" aria-hidden="true">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-gray-900">Müəllim paneli</p>
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">Önizləmə</span>
+              </div>
+              <div className="mt-4 space-y-2">
+                {['Ayan M.', 'Kənan R.', 'Leyla H.'].map((s, i) => (
+                  <div key={s} className="flex items-center justify-between rounded-xl border border-gray-100 bg-slate-50 px-3 py-2 text-xs text-gray-600">
+                    <span>{s}</span>
+                    <span className={`h-2.5 w-2.5 rounded-full ${i === 1 ? 'bg-gray-300' : 'bg-green-500'}`} />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4">
+                <p className="text-xs text-gray-500">Qrup fəallığı</p>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full w-3/4 rounded-full bg-blue-500" /></div>
               </div>
             </div>
-            <div className="space-y-3 mb-5">
-              {[
-                { label: 'Riyaziyyat', pct: 87, color: 'bg-purple-400' },
-                { label: 'Məntiq',     pct: 92, color: 'bg-[#0D9488]'  },
-              ].map((skill) => (
-                <div key={skill.label}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-white/50">{skill.label}</span>
-                    <span className="text-white/40">{skill.pct}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.05]">
-                    <motion.div initial={{ width: '0%' }}
-                      whileInView={{ width: `${skill.pct}%` }} viewport={{ once: true }}
-                      transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
-                      className={`h-full rounded-full ${skill.color}`} />
-                  </div>
+          </div>
+        </section>
+
+        {/* ── STUDENT GROWTH (split) ────────────────────────────────────────── */}
+        <section id="growth" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+            {/* CSS mockup */}
+            <div className="order-2 rounded-3xl border border-gray-200 bg-white p-5 shadow-md lg:order-1" aria-hidden="true">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-gray-900">Şagird inkişafı</p>
+                <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600">Önizləmə</span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-gray-100 bg-slate-50 p-3">
+                  <p className="text-[10px] font-semibold uppercase text-gray-400">Gündəlik Quiz</p>
+                  <p className="mt-1 text-sm font-bold text-gray-900">Hazırdır</p>
                 </div>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2 mb-5">
-              {['🏆','⭐','🎯','🔥','💎','🎖️','🧠','🚀','✨','👑','🌟','🎪'].map((badge, i) => (
-                <motion.span key={i} initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }} viewport={{ once: true }}
-                  transition={{ duration: 0.25, delay: i * 0.05 }} className="text-lg">
-                  {badge}
-                </motion.span>
-              ))}
-            </div>
-            <div className="flex items-center justify-between bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2">
-              <span className="text-white/30 text-xs font-mono">logicora.az/p/ali</span>
-              <span className="text-[#0D9488] text-xs font-semibold">✓ Verified</span>
-            </div>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* ── ROLLAR — kim üçün? ──────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-8 lg:px-16">
-        <div className="max-w-7xl mx-auto">
-          <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-3 text-center`}>
-            Kim üçün?
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
-            Bir platforma — bütün təhsil iştirakçıları
-          </h2>
-          <p className="text-white/40 text-center max-w-2xl mx-auto mb-12">
-            Şagird, müəllim, valideyn və uşaqlar üçün vahid öyrənmə məkanı — ömürlük təhsil pasportu.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { icon: '🎓', title: 'Şagird',      desc: 'Gündəlik suallar, yarışlar, XP və ömürlük portfolio.' },
-              { icon: '👩‍🏫', title: 'Müəllim',     desc: 'Sinif, qrup, davamiyyət və analitika — bir paneldə.' },
-              { icon: '👨‍👩‍👧', title: 'Valideyn',    desc: 'Övladının fəaliyyəti və inkişafı şəffaf görünür.' },
-              { icon: '🧸', title: 'Uşaq Klubu',  desc: 'Kiçik yaşlar üçün böyük düymələr və sadə təhsil.' },
-            ].map((r) => (
-              <motion.div key={r.title}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ duration: 0.5 }}
-                className="bg-[#0a1628] border border-white/[0.08] rounded-2xl p-6 hover:border-white/20 transition-colors">
-                <div className="text-3xl mb-3">{r.icon}</div>
-                <p className="text-white font-semibold mb-1">{r.title}</p>
-                <p className="text-white/40 text-sm leading-relaxed">{r.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FUNKSİYALAR ─────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-8 lg:px-16 bg-white/[0.015]">
-        <div className="max-w-7xl mx-auto">
-          <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-3 text-center`}>
-            Nə təklif edir?
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
-            Öyrənməni gücləndirən alətlər
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { icon: '🧠', title: 'Gündəlik Quiz',    desc: 'Hər gün 5 sual, streak və XP ilə davamlı öyrənmə.' },
-              { icon: '📚', title: 'Kurslar',          desc: 'Mövzu-əsaslı dərslər və öyrənmə yolu.' },
-              { icon: '🏅', title: 'Portfolio',        desc: 'Təsdiqlənmiş nailiyyətlər — Education Passport.' },
-              { icon: '🗂️', title: 'Müəllim CRM',      desc: 'Şagird, qrup və davamiyyətin idarəsi.' },
-              { icon: '👁️', title: 'Valideyn baxışı',  desc: 'Övladın irəliləyişinə şəffaf nəzarət.' },
-              { icon: '♿', title: 'Adaptiv öyrənmə',   desc: 'Böyük düymələr və əlçatan (accessibility) rejim.' },
-            ].map((f) => (
-              <motion.div key={f.title}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ duration: 0.5 }}
-                className="bg-[#0a1628] border border-white/[0.08] rounded-2xl p-6 hover:border-white/20 transition-colors">
-                <div className="text-2xl mb-3">{f.icon}</div>
-                <p className="text-white font-semibold mb-1">{f.title}</p>
-                <p className="text-white/40 text-sm leading-relaxed">{f.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── NECƏ İŞLƏYİR ────────────────────────────────────────────────────── */}
-      <section id="how" className="py-20 px-4 sm:px-8 lg:px-16">
-        <div className="max-w-5xl mx-auto">
-          <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-3 text-center`}>
-            Necə işləyir?
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
-            Üç sadə addım
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[
-              { n: '1', title: 'Qeydiyyat',                desc: 'Rolunu seç və hesabını yarat.' },
-              { n: '2', title: 'Öyrənmə və fəaliyyət',     desc: 'Suallar, kurslar və yarışlarla irəlilə.' },
-              { n: '3', title: 'Portfolio və inkişaf izi', desc: 'Nailiyyətlərin ömürlük pasportunda toplanır.' },
-            ].map((s) => (
-              <motion.div key={s.n}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ duration: 0.5 }}
-                className="bg-[#0a1628] border border-white/[0.08] rounded-2xl p-6 text-center">
-                <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center font-bold mb-4"
-                  style={{ backgroundColor: `${accent.hex}1a`, color: accent.hex, border: `1px solid ${accent.hex}40` }}>
-                  {s.n}
+                <div className="rounded-2xl border border-gray-100 bg-slate-50 p-3">
+                  <p className="text-[10px] font-semibold uppercase text-gray-400">Səviyyə</p>
+                  <p className="mt-1 text-sm font-bold text-gray-900">Artır</p>
                 </div>
-                <p className="text-white font-semibold mb-1">{s.title}</p>
-                <p className="text-white/40 text-sm leading-relaxed">{s.desc}</p>
-              </motion.div>
-            ))}
+              </div>
+              <div className="mt-3">
+                <p className="text-xs text-gray-500">Portfolio irəliləyişi</p>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full w-2/3 rounded-full bg-indigo-500" /></div>
+              </div>
+            </div>
+
+            <div className="order-1 lg:order-2">
+              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Şagird üçün</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Hər addımda görünən inkişaf</h2>
+              <p className="mt-4 text-base leading-relaxed text-gray-600">
+                Gündəlik quiz, XP və səviyyə ilə motivasiya, nailiyyətlər isə portfolioda toplanır.
+                İrəliləyiş ümumi göstərilir — uydurma rəqəm yoxdur.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-gray-700">
+                <li className="flex items-center gap-2"><Brain className="h-4 w-4 text-indigo-600" aria-hidden="true" /> Gündəlik quiz və streak</li>
+                <li className="flex items-center gap-2"><BarChart3 className="h-4 w-4 text-indigo-600" aria-hidden="true" /> XP və səviyyə ilə irəliləyiş</li>
+                <li className="flex items-center gap-2"><Award className="h-4 w-4 text-indigo-600" aria-hidden="true" /> Portfolio / Education Passport</li>
+              </ul>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── DÜRÜST YOL XƏRİTƏSİ ─────────────────────────────────────────────── */}
-      <section className="px-4 sm:px-8 lg:px-16 pb-4">
-        <div className="max-w-5xl mx-auto bg-[#0a1628] border border-white/[0.08] rounded-2xl px-6 py-5 flex items-start gap-3">
-          <span className="text-xl shrink-0">🛠️</span>
-          <p className="text-white/45 text-sm leading-relaxed">
-            <span className="text-white/70 font-semibold">Diplom demo + MVP.</span>{' '}
-            AI tövsiyələr, video məzmun və geniş məktəb paneli post-demo mərhələsində genişləndiriləcək.
-          </p>
-        </div>
-      </section>
-
-      {/* ── CTA ─────────────────────────────────────────────────────────────── */}
-      <section className="min-h-[60vh] flex flex-col items-center justify-center px-6 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(ellipse 60% 40% at 50% 50%, ${accent.hex}10 0%, transparent 70%)` }} />
-        <motion.span animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-6xl mb-6">
-          🎓
-        </motion.span>
-        <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} transition={{ duration: 0.8 }}
-          className="text-4xl sm:text-5xl md:text-7xl font-bold text-center leading-tight tracking-tight">
-          Gələcəyini{' '}
-          <span style={{ color: accent.hex }}>bu gün</span>
-          {' '}qur.
-        </motion.h2>
-        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-          viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-white/30 mt-4 text-lg text-center">
-          Məktəb, müəllim, valideyn və şagird üçün vahid öyrənmə platforması.
-        </motion.p>
-        <motion.button
-          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }}
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
-          onClick={goRegister}
-          className="mt-10 text-white rounded-full px-10 py-4 font-semibold text-lg transition-colors duration-200"
-          style={{ backgroundColor: accent.hex }}>
-          Pulsuz qeydiyyat →
-        </motion.button>
-        <motion.span animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-          className="text-6xl mt-6">✨</motion.span>
-      </section>
-
-      {/* ── FOOTER ──────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/[0.06] py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <p className="text-white/25 text-sm">
-            © 2026 LogiCora — Azərbaycan təhsil platforması · Diplom demo + MVP
-          </p>
-          <div className="flex gap-6">
-            {['Məxfilik', 'Şərtlər'].map((item) => (
-              <span key={item} className="text-white/25 text-sm cursor-default">
-                {item} · Tezliklə
+        {/* ── SELF TEST (honest preview) ────────────────────────────────────── */}
+        <section id="self-test" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 mx-auto">
+                <Brain className="h-6 w-6" aria-hidden="true" />
               </span>
-            ))}
+              <h2 className="mt-5 text-2xl font-bold text-gray-900">Özünü sına</h2>
+              <p className="mt-3 text-base leading-relaxed text-gray-600">
+                Qeydiyyatdan sonra gündəlik quizlə səviyyəni yoxla. Genişləndirilmiş demo mini-test
+                post-demo mərhələsində əlavə olunacaq.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate(APP_ROUTES.REGISTER)}
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                Qeydiyyatdan keç <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* ── ABOUT ─────────────────────────────────────────────────────────── */}
+        <section id="about" className="scroll-mt-20 py-20 sm:py-24">
+          <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+            <SectionHead eyebrow="Haqqımızda" title="LogiCora nədir?" sub="LogiCora şagird, müəllim və valideyni vahid öyrənmə sistemində birləşdirən təhsil platformasıdır. Məqsəd təkcə kurslar deyil — şagirdin bütün öyrənmə tarixini bir yerdə saxlamaqdır." />
+          </div>
+        </section>
+
+        {/* ── MISSION ───────────────────────────────────────────────────────── */}
+        <section id="mission" className="scroll-mt-20 bg-gray-900 py-20 text-white sm:py-24">
+          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-300">Məqsədimiz</p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Ömürlük təhsil pasportu</h2>
+            <p className="mt-5 text-base leading-relaxed text-gray-300">
+              Şagird-mərkəzli öyrənmə tarixi, müəllim və valideyn üçün şəffaf görünürlük və
+              milli miqyaslı potensial — hamısı bir platformada. Hər addım portfolioda toplanır
+              və gələcəkdə öyrənənin yanında qalır.
+            </p>
+            <div className="mt-8">
+              <button
+                type="button"
+                onClick={() => navigate(APP_ROUTES.REGISTER)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+              >
+                Pulsuz başla <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* ── BLOG (preview — honest, route yoxdur → Tezliklə) ──────────────── */}
+        <section id="blog" className="scroll-mt-20 py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow="Blog" title="Öyrənmə haqqında qeydlər" sub="Bu bölmə post-demo mərhələsində məqalələrlə genişləndiriləcək." />
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {BLOG_POSTS.map((b) => (
+                <div key={b.title} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">{b.tag}</span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">Tezliklə</span>
+                  </div>
+                  <h3 className="mt-4 text-base font-bold text-gray-900">{b.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-600">{b.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── CONTACT (honest — fake form yoxdur) ───────────────────────────── */}
+        <section id="contact" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
+          <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+            <SectionHead eyebrow="Əlaqə" title="Bizimlə əlaqə saxlayın" sub="Demo və əməkdaşlıq üçün əlaqə bölməsi post-demo mərhələsində genişləndiriləcək." />
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => navigate(APP_ROUTES.REGISTER)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                Qeydiyyatla başla <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(APP_ROUTES.LOGIN)}
+                className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                Daxil ol
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* ── FOOTER (geniş, tünd navy — dürüst) ──────────────────────────────── */}
+      <footer className="bg-gray-900 py-14 text-gray-300">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-10 lg:grid-cols-12">
+            <div className="lg:col-span-3">
+              <BrandMark dark />
+              <p className="mt-4 max-w-xs text-sm text-gray-400">
+                Öyrənmə, inkişaf və portfolio üçün vahid təhsil platforması.
+              </p>
+            </div>
+
+            <div className="grid gap-8 sm:grid-cols-3 lg:col-span-9 lg:grid-cols-5">
+              <div>
+                <p className="text-sm font-bold text-white">Platforma</p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li><a href="#home" className="text-gray-400 transition-colors hover:text-white">Ana səhifə</a></li>
+                  <li><a href="#about" className="text-gray-400 transition-colors hover:text-white">Haqqımızda</a></li>
+                  <li><a href="#mission" className="text-gray-400 transition-colors hover:text-white">Məqsədimiz</a></li>
+                  <li><a href="#how" className="text-gray-400 transition-colors hover:text-white">Necə işləyir</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-white">İmkanlar</p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li><a href="#users" className="text-gray-400 transition-colors hover:text-white">Şagird üçün</a></li>
+                  <li><a href="#teachers" className="text-gray-400 transition-colors hover:text-white">Müəllim üçün</a></li>
+                  <li><a href="#users" className="text-gray-400 transition-colors hover:text-white">Valideyn üçün</a></li>
+                  <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Uşaq Klubu</a></li>
+                  <li><a href="#adaptive" className="text-gray-400 transition-colors hover:text-white">Adaptiv öyrənmə</a></li>
+                  <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Portfolio</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-white">Resurslar</p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li><a href="#blog" className="text-gray-400 transition-colors hover:text-white">Blog</a></li>
+                  <li><a href="#self-test" className="text-gray-400 transition-colors hover:text-white">Özünü sına</a></li>
+                  <li><a href="#how" className="text-gray-400 transition-colors hover:text-white">Demo</a></li>
+                  <li><span className="text-gray-500">Roadmap · Tezliklə</span></li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-white">Hesab</p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li><button type="button" onClick={() => navigate(APP_ROUTES.LOGIN)} className="text-gray-400 transition-colors hover:text-white">Daxil ol</button></li>
+                  <li><button type="button" onClick={() => navigate(APP_ROUTES.REGISTER)} className="text-gray-400 transition-colors hover:text-white">Qeydiyyat</button></li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-white">Hüquqi</p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li><span className="text-gray-500">Məxfilik · Tezliklə</span></li>
+                  <li><span className="text-gray-500">Şərtlər · Tezliklə</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 border-t border-white/10 pt-6">
+            <p className="text-sm text-gray-400">© 2026 LogiCora — Azərbaycan təhsil platforması</p>
           </div>
         </div>
       </footer>
