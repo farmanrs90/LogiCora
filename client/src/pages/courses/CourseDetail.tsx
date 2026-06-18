@@ -317,14 +317,21 @@ function SectionAccordion({
   section,
   isEnrolled,
   onComplete,
+  focusLessonId,
 }: {
   section: Section
   isEnrolled: boolean
   onComplete: (lessonId: string) => void
+  focusLessonId?: string | null
 }) {
   const [open, setOpen] = useState(false)
   const total = section.lessons.reduce((s, l) => s + l.duration, 0)
   const completed = section.lessons.filter(l => l.isCompleted).length
+  const hasFocusedLesson = Boolean(focusLessonId && section.lessons.some(lesson => lesson.id === focusLessonId))
+
+  useEffect(() => {
+    if (hasFocusedLesson) setOpen(true)
+  }, [hasFocusedLesson])
 
   return (
     <div className="border border-white/10 rounded-xl overflow-hidden">
@@ -362,7 +369,10 @@ function SectionAccordion({
             {section.lessons.map(lesson => (
               <div
                 key={lesson.id}
-                className="flex items-center gap-3 px-4 py-3 border-t border-white/5 hover:bg-white/3"
+                id={`course-lesson-${lesson.id}`}
+                className={`flex items-center gap-3 px-4 py-3 border-t border-white/5 hover:bg-white/3 ${
+                  lesson.id === focusLessonId ? 'bg-indigo-500/10' : ''
+                }`}
               >
                 {/* Status icon */}
                 {lesson.isCompleted ? (
@@ -551,6 +561,7 @@ export default function CourseDetail() {
   const [activeTab, setActiveTab] = useState<Tab>('Kurs haqqında')
   const [showAllLearn, setShowAllLearn] = useState(false)
   const [showAllSections, setShowAllSections] = useState(false)
+  const [focusedLessonId, setFocusedLessonId] = useState<string | null>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [isCardSticky, setIsCardSticky] = useState(false)
@@ -596,9 +607,30 @@ export default function CourseDetail() {
   })
 
   const handleContinue = () => {
+    if (!course) return
+
+    const allLessons = course.sections.flatMap(section => section.lessons)
+    const nextLesson = allLessons.find(lesson => !lesson.isCompleted) ?? allLessons[0]
+
+    if (!nextLesson) {
+      setFocusedLessonId(null)
+      setActiveTab('Dərslər')
+      toast.error('Bu kurs üçün dərslər hələ əlavə edilməyib.')
+      requestAnimationFrame(() => {
+        tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+      return
+    }
+
+    setFocusedLessonId(nextLesson.id)
+    setShowAllSections(true)
     setActiveTab('Dərslər')
     requestAnimationFrame(() => {
       tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      window.setTimeout(() => {
+        document.getElementById(`course-lesson-${nextLesson.id}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 180)
     })
   }
 
@@ -849,14 +881,21 @@ export default function CourseDetail() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      {displayedSections.map(section => (
-                        <SectionAccordion
-                          key={section.id}
-                          section={section}
-                          isEnrolled={course.isEnrolled}
-                          onComplete={(lessonId) => completeMutation.mutate(lessonId)}
-                        />
-                      ))}
+                      {totalLessons > 0 ? (
+                        displayedSections.map(section => (
+                          <SectionAccordion
+                            key={section.id}
+                            section={section}
+                            isEnrolled={course.isEnrolled}
+                            onComplete={(lessonId) => completeMutation.mutate(lessonId)}
+                            focusLessonId={focusedLessonId}
+                          />
+                        ))
+                      ) : (
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-white/60">
+                          Bu kurs üçün dərslər hələ əlavə edilməyib.
+                        </div>
+                      )}
                     </div>
                     {course.sections.length > 3 && (
                       <button
