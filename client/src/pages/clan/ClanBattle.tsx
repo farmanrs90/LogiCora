@@ -191,14 +191,14 @@ function BattleEndScreen({
               WebkitTextFillColor: 'transparent',
             }}
           >
-            {isWin ? 'Klan Qalibdir!' : isDraw ? 'Bərabər Nəticə!' : 'Növbəti Döyüşdə!'}
+            {isWin ? 'Klan Qalibdir!' : isDraw ? 'Bərabər Nəticə!' : 'Növbəti Yarışda!'}
           </h1>
           <p className="text-[#9CA3AF] text-sm">
             {isWin
               ? `+500 Klan XP qazandınız! 🎉`
               : isDraw
-              ? 'Hər iki klan yaxşı döyüşdü!'
-              : 'Növbəti döyüşdə daha güclü olacaqsınız!'}
+              ? 'Hər iki klan yaxşı yarışdı!'
+              : 'Növbəti yarışda daha güclü olacaqsınız!'}
           </p>
         </div>
 
@@ -342,7 +342,7 @@ export default function ClanBattle() {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-6 text-center">
         <div className="text-6xl">⚔️</div>
-        <p className="text-white font-bold text-lg">Klan döyüşü yüklənmədi.</p>
+        <p className="text-white font-bold text-lg">Klan yarışı yüklənmədi.</p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => refetch()}
@@ -368,7 +368,7 @@ export default function ClanBattle() {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-6 text-center">
         <div className="text-6xl">🏳️</div>
-        <p className="text-white font-bold text-lg">Bu döyüş mövcud deyil və ya artıq bitib.</p>
+        <p className="text-white font-bold text-lg">Bu yarış mövcud deyil və ya artıq bitib.</p>
         <button
           onClick={() => navigate(APP_ROUTES.CLAN(slug!))}
           className="px-5 py-3 rounded-2xl font-bold text-white"

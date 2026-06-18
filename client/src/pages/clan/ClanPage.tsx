@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
@@ -251,19 +251,19 @@ function MemberCard({ m, rank, onChallenge }: {
             exit={{ opacity: 0, y: 8 }}
             className="flex gap-2 mt-3"
           >
-            <Link
-              to={APP_ROUTES.PORTFOLIO(m.userId)}
+            <button
+              onClick={() => toast('Bu tələbənin profili paylaşım üçün aktiv deyil.', { id: 'profile-private', icon: 'ℹ️' })}
               className="flex-1 py-1.5 rounded-xl text-center text-xs font-bold text-white transition-colors"
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
             >
               Profil gör
-            </Link>
+            </button>
             <button
               onClick={() => onChallenge(m.userId)}
               className="flex-1 py-1.5 rounded-xl text-xs font-bold text-white transition-colors"
               style={{ background: 'rgba(147,51,234,0.2)', border: '1px solid rgba(147,51,234,0.4)' }}
             >
-              ⚔️ 1v1 Çağır
+              ⚔️ 1v1 sual yarışı
             </button>
           </motion.div>
         )}
@@ -430,7 +430,7 @@ function EmptyState({ onCreate, onSearch }: {
         Hələ bir klana üzv deyilsən.
       </p>
       <p className="text-red-400 text-sm font-bold mb-8">
-        ⚠️ Klan olmadan döyüşlər buraxılır!
+        ⚠️ Klan olmadan yarışlar buraxılır!
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -494,10 +494,10 @@ function ClanLoadError({ onRetry, onBack }: { onRetry: () => void; onBack: () =>
 type TabKey = 'members' | 'battles' | 'stats' | 'challenge'
 
 const TABS: { key: TabKey; label: string; emoji: string }[] = [
-  { key: 'members',   label: 'Üzvlər',    emoji: '👥' },
-  { key: 'battles',   label: 'Döyüşlər',  emoji: '⚔️' },
-  { key: 'stats',     label: 'Statistika', emoji: '📊' },
-  { key: 'challenge', label: 'Meydan Oxu', emoji: '🥊' },
+  { key: 'members',   label: 'Üzvlər',           emoji: '👥' },
+  { key: 'battles',   label: 'Yarış nəticələri', emoji: '⚔️' },
+  { key: 'stats',     label: 'Statistika',       emoji: '📊' },
+  { key: 'challenge', label: 'Rəqib seç',        emoji: '🥊' },
 ]
 
 // ── Main ───────────────────────────────────────────────────────────────────
@@ -510,7 +510,6 @@ export default function ClanPage() {
 
   const [tab,          setTab]          = useState<TabKey>('members')
   const [showCreate,   setShowCreate]   = useState(false)
-  const [_showJoin,    setShowJoin]     = useState(false)
   const [searchQuery,  setSearchQuery]  = useState('')
   const [activeBattle, setActiveBattle] = useState<string | null>(null)
 
@@ -523,6 +522,15 @@ export default function ClanPage() {
     queryFn:  () => api.get<{ data: ClanData | null }>(API_ROUTES.CLANS.BY_SLUG(slug!))
                       .then(r => r.data.data),
     enabled:  !!slug,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  // İstifadəçinin öz klanı (varsa). Başqa klana baxarkən "artıq klandasan" vəziyyətini
+  // honest göstərmək üçün lazımdır — yoxsa join CTA yanlış primary kimi görünür.
+  const { data: myClan } = useQuery<{ _id?: string; slug?: string } | null>({
+    queryKey: ['clans', 'me'],
+    queryFn:  () => api.get<{ data: { _id?: string; slug?: string } | null }>(API_ROUTES.CLANS.BY_SLUG('me'))
+                      .then(r => r.data.data),
     staleTime: 1000 * 60 * 2,
   })
 
@@ -588,14 +596,22 @@ export default function ClanPage() {
 
   const joinMutation = useMutation({
     mutationFn: (id: string) => api.post(API_ROUTES.CLANS.JOIN(id)),
-    onSuccess: () => { toast.success('Klana uğurla qoşuldun! 🎉'); queryClient.invalidateQueries({ queryKey: ['clan', slug] }) },
-    onError:   () => toast.error('Klana qoşularkən xəta baş verdi.'),
+    onSuccess: () => { toast.success('Klana uğurla qoşuldun! 🎉'); queryClient.invalidateQueries({ queryKey: ['clan', slug] }); queryClient.invalidateQueries({ queryKey: ['clans', 'me'] }) },
+    // Backend xətasını honest göstər (məs. "Artıq bir klana üzvsünüz.") — success kimi göstərmirik.
+    onError:   (err: unknown) => toast.error((err as { message?: string })?.message || 'Klana qoşulmaq alınmadı.'),
   })
 
   const leaveMutation = useMutation({
-    mutationFn: () => api.post(API_ROUTES.CLANS.LEAVE),
-    onSuccess:  () => { toast.success('Klandan ayrıldın.'); navigate(APP_ROUTES.DASHBOARD.STUDENT) },
-    onError:    () => toast.error('Xəta baş verdi.'),
+    // Backend müqaviləsi: DELETE /clans/leave (əvvəl səhvən POST idi → 404/xəta).
+    mutationFn: () => api.delete(API_ROUTES.CLANS.LEAVE),
+    onSuccess:  () => {
+      toast.success('Klandan ayrıldın.')
+      queryClient.invalidateQueries({ queryKey: ['clans', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['clan', slug] })
+      navigate(APP_ROUTES.CLAN('me'))
+    },
+    // Backend xətasını honest göstər (məs. lider çıxa bilməz) — success kimi göstərmirik.
+    onError:    (err: unknown) => toast.error((err as { message?: string })?.message || 'Klandan ayrılmaq alınmadı.'),
   })
 
   const createMutation = useMutation({
@@ -624,7 +640,7 @@ export default function ClanPage() {
   if (!slug && !clanLoading) {
     return (
       <>
-        <EmptyState onCreate={() => setShowCreate(true)} onSearch={() => setShowJoin(true)} />
+        <EmptyState onCreate={() => setShowCreate(true)} onSearch={() => navigate(APP_ROUTES.CLAN_LEADERBOARD)} />
         <AnimatePresence>
           {showCreate && (
             <CreateClanModal
@@ -653,7 +669,19 @@ export default function ClanPage() {
 
   // Klan yoxdur (öz klanın yoxdur və ya slug tapılmadı) → empty state, fake clan yox.
   if (!clan) {
-    return <EmptyState onCreate={() => setShowCreate(true)} onSearch={() => setShowJoin(true)} />
+    return (
+      <>
+        <EmptyState onCreate={() => setShowCreate(true)} onSearch={() => navigate(APP_ROUTES.CLAN_LEADERBOARD)} />
+        <AnimatePresence>
+          {showCreate && (
+            <CreateClanModal
+              onClose={() => setShowCreate(false)}
+              onSubmit={data => createMutation.mutate(data)}
+            />
+          )}
+        </AnimatePresence>
+      </>
+    )
   }
 
   const c          = clan
@@ -662,8 +690,10 @@ export default function ClanPage() {
   const clanStats  = stats ?? null
 
   const sortedMembers = [...memberList].sort((a, b) => b.weeklyXP - a.weeklyXP)
-  const isMember = memberList.some(m => m.userId === user?._id)
+  const isViewingOwnClan = !!myClan?._id && myClan._id === c._id
+  const isMember = isViewingOwnClan || memberList.some(m => m.userId === user?._id)
   const isLeader = memberList.find(m => m.userId === user?._id)?.role === 'leader'
+  const hasOwnClan = !!myClan?._id
   const winRate  = Math.round((c.wins / Math.max(c.wins + c.losses, 1)) * 100)
 
   const battleBarData = battleList.slice(0, 10).map(b => ({
@@ -714,7 +744,7 @@ export default function ClanPage() {
               transition={{ delay: 0.2 }}
               className="text-[#9CA3AF] text-sm mt-1"
             >
-              🏫 {c.schoolName} · 📍 {c.city} · ⚔️ {c.totalBattles} döyüş
+              🏫 {c.schoolName} · 📍 {c.city} · ⚔️ {c.totalBattles} yarış
             </motion.p>
 
             {/* Rank badge */}
@@ -738,19 +768,22 @@ export default function ClanPage() {
             className="grid grid-cols-3 gap-3 mb-6"
           >
             {[
-              { label: 'Üzv',        value: memberList.length, emoji: '👥' },
-              { label: 'Ümumi XP',   value: <><XPNumber value={c.totalXP} /> XP</>,  emoji: '⭐' },
-              { label: 'Qalibiyyət', value: `${winRate}%`,    emoji: '🏆' },
+              { label: 'Üzv',        value: memberList.length, emoji: '👥', tab: 'members' as TabKey },
+              { label: 'Ümumi XP',   value: <><XPNumber value={c.totalXP} /> XP</>,  emoji: '⭐', tab: 'stats' as TabKey },
+              { label: 'Qalibiyyət', value: `${winRate}%`,    emoji: '🏆', tab: 'battles' as TabKey },
             ].map(s => (
-              <div
+              <button
                 key={s.label}
-                className="flex flex-col items-center p-3 rounded-2xl"
+                type="button"
+                onClick={() => setTab(s.tab)}
+                aria-label={`${s.label} bölməsinə keç`}
+                className="flex flex-col items-center p-3 rounded-2xl transition-colors hover:bg-white/[0.09] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                 style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${c.color}20` }}
               >
                 <span className="text-lg">{s.emoji}</span>
                 <span className="font-black text-white text-sm mt-1">{s.value}</span>
                 <span className="text-[#9CA3AF] text-[10px]">{s.label}</span>
-              </div>
+              </button>
             ))}
           </motion.div>
 
@@ -775,7 +808,36 @@ export default function ClanPage() {
             transition={{ delay: 0.45 }}
             className="flex gap-3"
           >
-            {!isMember ? (
+            {isMember ? (
+              <>
+                {isLeader && (
+                  <motion.button
+                    onClick={() => setTab('challenge')}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex-1 py-3.5 rounded-2xl font-bold text-white text-sm"
+                    style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)', boxShadow: '0 4px 16px rgba(147,51,234,0.4)' }}
+                  >
+                    ⚔️ Klan yarışına çağır
+                  </motion.button>
+                )}
+                <button
+                  onClick={() => { if (window.confirm('Klandan ayrılmaq istəyirsiniz?')) leaveMutation.mutate() }}
+                  disabled={leaveMutation.isPending}
+                  className="px-5 py-3.5 rounded-2xl font-bold text-red-400 text-sm border border-red-500/20 hover:bg-red-500/10 transition-colors disabled:opacity-60"
+                >
+                  {leaveMutation.isPending ? 'Ayrılır...' : 'Ayrıl'}
+                </button>
+              </>
+            ) : hasOwnClan ? (
+              // İstifadəçi artıq başqa klandadır → join primary deyil (backend onsuz da rədd edir); honest yönləndirmə.
+              <button
+                onClick={() => navigate(APP_ROUTES.CLAN('me'))}
+                className="flex-1 py-3.5 rounded-2xl font-bold text-white text-sm border border-white/15 hover:bg-white/5 transition-colors"
+              >
+                Sən artıq klandasan — Mənim klanıma get →
+              </button>
+            ) : (
               <motion.button
                 onClick={() => joinMutation.mutate(c._id)}
                 disabled={joinMutation.isPending}
@@ -786,27 +848,6 @@ export default function ClanPage() {
               >
                 {joinMutation.isPending ? 'Qoşulur...' : '➕ Klana Qoşul'}
               </motion.button>
-            ) : (
-              <>
-                {isLeader && (
-                  <motion.button
-                    onClick={() => setTab('challenge')}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex-1 py-3.5 rounded-2xl font-bold text-white text-sm"
-                    style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)', boxShadow: '0 4px 16px rgba(147,51,234,0.4)' }}
-                  >
-                    ⚔️ Döyüşə Çağır
-                  </motion.button>
-                )}
-                <button
-                  onClick={() => leaveMutation.mutate()}
-                  disabled={leaveMutation.isPending}
-                  className="px-5 py-3.5 rounded-2xl font-bold text-red-400 text-sm border border-red-500/20 hover:bg-red-500/10 transition-colors disabled:opacity-60"
-                >
-                  Ayrıl
-                </button>
-              </>
             )}
           </motion.div>
         </div>
@@ -866,7 +907,7 @@ export default function ClanPage() {
                       key={m.studentId}
                       m={m}
                       rank={i + 1}
-                      onChallenge={userId => navigate(`/competition/new?opponent=${userId}`)}
+                      onChallenge={() => toast('1v1 sual yarışı tezliklə əlavə olunacaq.', { id: 'clan-1v1-soon', icon: '⚔️' })}
                     />
                   ))}
                 </div>
@@ -894,7 +935,7 @@ export default function ClanPage() {
                     className="rounded-2xl p-4 mb-5"
                     style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
                   >
-                    <p className="text-white font-bold text-sm mb-3">📊 Son 10 Döyüş — Xal Müqayisəsi</p>
+                    <p className="text-white font-bold text-sm mb-3">📊 Son 10 Yarış — Xal Müqayisəsi</p>
                     <ResponsiveContainer width="100%" height={160}>
                       <BarChart data={battleBarData} margin={{ top: 2, right: 4, bottom: 0, left: -20 }}>
                         <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -964,7 +1005,7 @@ export default function ClanPage() {
               ) : (
                 <div className="text-center py-12">
                   <div className="text-5xl mb-3">⚔️</div>
-                  <p className="text-[#9CA3AF] text-sm">Hələ döyüş tarixçəsi yoxdur.</p>
+                  <p className="text-[#9CA3AF] text-sm">Bu klanın hələ yarış nəticəsi yoxdur.</p>
                   <button onClick={() => refetchBattles()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
                 </div>
               )
@@ -1060,7 +1101,7 @@ export default function ClanPage() {
               ) : (
                 <div className="text-center py-12">
                   <div className="text-5xl mb-3">📊</div>
-                  <p className="text-[#9CA3AF] text-sm">Hələ statistika yoxdur.</p>
+                  <p className="text-[#9CA3AF] text-sm">Statistika üçün hələ kifayət qədər real məlumat yoxdur.</p>
                   <button onClick={() => refetchStats()} className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Yenidən yoxla</button>
                 </div>
               )
@@ -1079,7 +1120,7 @@ export default function ClanPage() {
                   >
                     <motion.span className="text-2xl" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1, repeat: Infinity }}>⚔️</motion.span>
                     <div>
-                      <p className="text-[#EAB308] font-bold text-sm">Mövcud döyüş davam edir!</p>
+                      <p className="text-[#EAB308] font-bold text-sm">Mövcud yarış davam edir!</p>
                       <p className="text-[#9CA3AF] text-xs">vs. {ongoingBattle.opponentName} — Davam et →</p>
                     </div>
                   </motion.div>
@@ -1143,7 +1184,7 @@ export default function ClanPage() {
                           className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-60"
                           style={{ background: 'linear-gradient(135deg, #9333EA, #6366F1)' }}
                         >
-                          {challengeMutation.isPending && activeBattle === r._id ? '...' : 'Meydan oxu'}
+                          {challengeMutation.isPending && activeBattle === r._id ? '...' : 'Yarışa dəvət'}
                         </motion.button>
                       </motion.div>
                     ))}
@@ -1161,7 +1202,7 @@ export default function ClanPage() {
                 {searchQuery.length >= 2 && !searchLoading && !searchError && searchResults?.length === 0 && (
                   <div className="text-center py-10">
                     <div className="text-4xl mb-3">🤷</div>
-                    <p className="text-[#9CA3AF] text-sm">Uyğun klan tapılmadı.</p>
+                    <p className="text-[#9CA3AF] text-sm">Bu ada uyğun klan tapılmadı.</p>
                   </div>
                 )}
 
