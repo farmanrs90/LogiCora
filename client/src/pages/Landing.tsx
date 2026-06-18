@@ -21,6 +21,7 @@ import {
   Play,
   Smile,
   Swords,
+  Target,
   Users,
   X,
   type LucideIcon,
@@ -93,10 +94,35 @@ const TEACHER_FLOW: { icon: LucideIcon; title: string }[] = [
   { icon: BookOpen, title: 'Kurs və tapşırıqları idarə et' },
 ]
 
-const BLOG_POSTS: { tag: string; title: string; desc: string }[] = [
-  { tag: 'Motivasiya', title: 'Şagird motivasiyası', desc: 'Streak, XP və yarışların öyrənməyə təsiri.' },
-  { tag: 'Valideyn', title: 'Valideyn nəzarəti', desc: 'Övladın inkişafını şəffaf izləmək.' },
-  { tag: 'Əlçatımlılıq', title: 'Adaptiv öyrənmə', desc: 'Daha rahat və əlçatan öyrənmə təcrübəsi.' },
+const BLOG_POSTS: { tag: string; title: string; desc: string; grad: string }[] = [
+  { tag: 'Motivasiya', title: 'Şagird motivasiyası', desc: 'Streak, XP və yarışların öyrənməyə təsiri.', grad: 'from-indigo-500 to-blue-500' },
+  { tag: 'Valideyn', title: 'Valideyn nəzarəti', desc: 'Övladın inkişafını şəffaf izləmək.', grad: 'from-purple-500 to-indigo-500' },
+  { tag: 'Əlçatanlıq', title: 'Adaptiv öyrənmə', desc: 'Daha rahat və əlçatan öyrənmə təcrübəsi.', grad: 'from-blue-500 to-cyan-500' },
+  { tag: 'Müəllim', title: 'Müəllim üçün rəqəmsal sinif', desc: 'Qrup, davamiyyət və analitikanı bir yerdə idarə et.', grad: 'from-emerald-500 to-teal-500' },
+]
+
+// Yaş mərhələləri — 3 yaşdan ömür boyu (fake data yoxdur)
+const AGE_STAGES: { age: string; title: string; desc: string }[] = [
+  { age: '3–5', title: 'Erkən öyrənmə', desc: 'Oyun əsaslı ilk addımlar.' },
+  { age: '6–8', title: 'Uşaq Klubu', desc: 'Sadə və əlçatan təhsil rejimi.' },
+  { age: '9–14', title: 'Məktəb və günlük quiz', desc: 'Gündəlik suallar və kurslar.' },
+  { age: '15–18', title: 'Bacarıqlar və portfolio', desc: 'Nailiyyətlər portfolioda toplanır.' },
+  { age: '18+', title: 'Education Passport', desc: 'Sertifikatlar və CV əvəzi təhsil izi.' },
+]
+
+// Demo mini-test — lokal, backend yoxdur, nəticə saxlanmır, XP verilmir
+interface SelfTestQuestion { q: string; options: string[]; correct: number }
+const SELF_TEST: SelfTestQuestion[] = [
+  { q: 'Ardıcıllığı tamamla: 2, 4, 8, 16, ?', options: ['24', '32', '30', '20'], correct: 1 },
+  { q: 'Ardıcıllığı tamamla: 5, 10, 15, 20, ?', options: ['25', '30', '24', '22'], correct: 0 },
+  { q: '"Böyük" sözünün antonimi hansıdır?', options: ['Kiçik', 'Geniş', 'Uzun', 'Ağır'], correct: 0 },
+  { q: 'Hansı ədəd cütdür?', options: ['7', '9', '12', '15'], correct: 2 },
+  { q: '3 alma + 4 alma neçə alma edir?', options: ['6', '7', '8', '5'], correct: 1 },
+  { q: 'Hərf ardıcıllığı: A, C, E, G, ?', options: ['H', 'I', 'J', 'F'], correct: 1 },
+  { q: '100 − 45 = ?', options: ['55', '65', '45', '50'], correct: 0 },
+  { q: '"Sürətli" sözünün sinonimi hansıdır?', options: ['Yavaş', 'Cəld', 'Ağır', 'Sakit'], correct: 1 },
+  { q: 'Bir həftədə neçə gün var?', options: ['5', '6', '7', '8'], correct: 2 },
+  { q: 'Bütün quşlar uçur. Sərçə quşdur. Onda sərçə...', options: ['Uçur', 'Üzür', 'Qaçır', 'Yatır'], correct: 0 },
 ]
 
 // ── Small helpers ───────────────────────────────────────────────────────────────
@@ -308,6 +334,87 @@ function VideoModal({ onClose }: { onClose: () => void }) {
         </div>
       </motion.div>
     </motion.div>
+  )
+}
+
+// ── Demo mini-test (10 sual, lokal — backend/XP/saxlama yoxdur) ──────────────────
+
+function SelfTest() {
+  const navigate = useNavigate()
+  const [idx, setIdx] = useState(0)
+  const [score, setScore] = useState(0)
+  const [done, setDone] = useState(false)
+
+  const answer = (i: number) => {
+    const next = score + (i === SELF_TEST[idx].correct ? 1 : 0)
+    setScore(next)
+    if (idx + 1 >= SELF_TEST.length) setDone(true)
+    else setIdx(idx + 1)
+  }
+
+  const restart = () => { setIdx(0); setScore(0); setDone(false) }
+
+  if (done) {
+    const level = score <= 3 ? 'Başlanğıc' : score <= 7 ? 'İnkişaf edir' : 'Güclü nəticə'
+    return (
+      <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Demo mini-test nəticəsi</p>
+        <p className="mt-4 text-4xl font-extrabold text-gray-900">{score}/10</p>
+        <p className="mt-1 text-sm text-gray-500">düzgün cavab</p>
+        <span className="mt-4 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-sm font-semibold text-indigo-700">
+          Səviyyə: {level}
+        </span>
+        <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-gray-600">
+          Daha çox sual və gündəlik inkişaf üçün qeydiyyatdan keç.
+        </p>
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => navigate(APP_ROUTES.REGISTER)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          >
+            Qeydiyyatdan keç <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={restart}
+            className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            Yenidən başla
+          </button>
+        </div>
+        <p className="mt-5 text-xs text-gray-400">Nəticə hesabda saxlanmır.</p>
+      </div>
+    )
+  }
+
+  const cur = SELF_TEST[idx]
+  const pct = ((idx) / SELF_TEST.length) * 100
+  return (
+    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="flex items-center justify-between">
+        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">Demo mini-test</span>
+        <span className="text-sm font-semibold text-gray-500">{idx + 1}/{SELF_TEST.length}</span>
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-100">
+        <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${pct}%` }} />
+      </div>
+
+      <h3 className="mt-6 text-lg font-bold text-gray-900">{cur.q}</h3>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {cur.options.map((o, i) => (
+          <button
+            key={o}
+            type="button"
+            onClick={() => answer(i)}
+            className="rounded-xl border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-800 transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            {o}
+          </button>
+        ))}
+      </div>
+      <p className="mt-5 text-xs text-gray-400">Bu lokal demo testdir — nəticə hesabda saxlanmır.</p>
+    </div>
   )
 }
 
@@ -589,8 +696,8 @@ export default function Landing() {
                 <span className="text-indigo-600">bir platformada</span> birləşdirin
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-600">
-                LogiCora şagird, müəllim və valideyn üçün gündəlik öyrənmə, kurslar, yarışlar,
-                portfolio və adaptiv öyrənməni vahid sistemdə birləşdirir.
+                <span className="font-semibold text-gray-900">3 yaşdan başlayaraq ömür boyu öyrənmə izi.</span>{' '}
+                Uşaq Klubu, məktəb, kurslar, yarışlar, portfolio və gələcək karyera izi bir profildə.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <button
@@ -619,6 +726,28 @@ export default function Landing() {
             <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
               <ProductPreview />
             </motion.div>
+          </div>
+        </section>
+
+        {/* ── AGE / LIFECYCLE STRIP ─────────────────────────────────────────── */}
+        <section id="lifecycle" className="scroll-mt-20 border-y border-gray-100 bg-white py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">3 yaşdan ömür boyu</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Bir profildə bütün təhsil yolu</h2>
+            </div>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              {AGE_STAGES.map((s, i) => (
+                <div key={s.age} className="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <span className="inline-flex rounded-full bg-indigo-600 px-3 py-1 text-xs font-bold text-white">{s.age}</span>
+                  <h3 className="mt-3 text-sm font-bold text-gray-900">{s.title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-600">{s.desc}</p>
+                  {i < AGE_STAGES.length - 1 && (
+                    <span className="absolute right-3 top-1/2 hidden -translate-y-1/2 text-gray-300 lg:block" aria-hidden="true">→</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -727,19 +856,19 @@ export default function Landing() {
         <section id="adaptive" className="scroll-mt-20 bg-gradient-to-b from-white to-indigo-50/60 py-20 sm:py-24">
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Əlçatımlılıq</p>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Hər uşaq üçün daha əlçatan öyrənmə</h2>
+              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Xüsusi dəstək · Əlçatanlıq</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Hər uşaq eyni şəkildə öyrənmir</h2>
               <p className="mt-4 text-base leading-relaxed text-gray-600">
-                Adaptiv öyrənmə rejimi böyük düymələr, sadə görünüş və azaldılmış vizual yük ilə
-                daha rahat öyrənmə təcrübəsi yaratmağa kömək edir.
+                LogiCora böyük düymələr, sadə görünüş, azaldılmış vizual yük və valideyn/müəllim
+                dəstəyi ilə daha əlçatan öyrənmə təcrübəsi yaradır.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {[
                 { icon: Accessibility, title: 'Sadə interfeys', desc: 'Böyük düymələr və azaldılmış vizual yük.' },
+                { icon: Target, title: 'Fokus rejimi', desc: 'Diqqəti yayındıran elementlər azaldılır.' },
                 { icon: Users, title: 'Müəllim dəstəyi', desc: 'Müəllim tempə uyğun istiqamət verir.' },
                 { icon: Eye, title: 'Valideyn görünürlüyü', desc: 'İnkişaf şəffaf izlənir.' },
-                { icon: Smile, title: 'Rahat təcrübə', desc: 'Stresiz, addım-addım öyrənmə.' },
               ].map((c) => (
                 <div key={c.title} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -835,25 +964,12 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ── SELF TEST (honest preview) ────────────────────────────────────── */}
+        {/* ── SELF TEST (real 10 suallıq lokal demo) ────────────────────────── */}
         <section id="self-test" className="scroll-mt-20 bg-slate-50 py-20 sm:py-24">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 mx-auto">
-                <Brain className="h-6 w-6" aria-hidden="true" />
-              </span>
-              <h2 className="mt-5 text-2xl font-bold text-gray-900">Özünü sına</h2>
-              <p className="mt-3 text-base leading-relaxed text-gray-600">
-                Qeydiyyatdan sonra gündəlik quizlə səviyyəni yoxla. Genişləndirilmiş demo mini-test
-                post-demo mərhələsində əlavə olunacaq.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate(APP_ROUTES.REGISTER)}
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-              >
-                Qeydiyyatdan keç <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </button>
+            <SectionHead eyebrow="Özünü sına" title="10 suallıq demo mini-test" sub="Məntiq və ümumi bacarıq sualları. Login tələb olunmur, nəticə hesabda saxlanmır." />
+            <div className="mt-10">
+              <SelfTest />
             </div>
           </div>
         </section>
@@ -891,15 +1007,19 @@ export default function Landing() {
         <section id="blog" className="scroll-mt-20 py-20 sm:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHead eyebrow="Blog" title="Öyrənmə haqqında qeydlər" sub="Bu bölmə post-demo mərhələsində məqalələrlə genişləndiriləcək." />
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {BLOG_POSTS.map((b) => (
-                <div key={b.title} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">{b.tag}</span>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">Tezliklə</span>
+                <div key={b.title} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                  {/* Vizual başlıq (CSS gradient — şəkil yoxdur) */}
+                  <div className={`relative flex h-28 items-end bg-gradient-to-br ${b.grad} p-4`}>
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
+                    <span className="relative rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur">{b.tag}</span>
+                    <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-gray-600">Tezliklə</span>
                   </div>
-                  <h3 className="mt-4 text-base font-bold text-gray-900">{b.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-600">{b.desc}</p>
+                  <div className="p-5">
+                    <h3 className="text-base font-bold text-gray-900">{b.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600">{b.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -933,67 +1053,85 @@ export default function Landing() {
       {/* ── FOOTER (geniş, tünd navy — dürüst) ──────────────────────────────── */}
       <footer className="bg-gray-900 py-14 text-gray-300">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-12">
-            <div className="lg:col-span-3">
-              <BrandMark dark />
-              <p className="mt-4 max-w-xs text-sm text-gray-400">
-                Öyrənmə, inkişaf və portfolio üçün vahid təhsil platforması.
-              </p>
+          <div className="max-w-md">
+            <BrandMark dark />
+            <p className="mt-4 text-sm text-gray-400">
+              Öyrənmə, inkişaf və portfolio üçün vahid təhsil platforması.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-6">
+            <div>
+              <p className="text-sm font-bold text-white">Platforma</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><a href="#home" className="text-gray-400 transition-colors hover:text-white">Ana səhifə</a></li>
+                <li><a href="#about" className="text-gray-400 transition-colors hover:text-white">Haqqımızda</a></li>
+                <li><a href="#mission" className="text-gray-400 transition-colors hover:text-white">Məqsədimiz</a></li>
+                <li><a href="#how" className="text-gray-400 transition-colors hover:text-white">Necə işləyir</a></li>
+              </ul>
             </div>
 
-            <div className="grid gap-8 sm:grid-cols-3 lg:col-span-9 lg:grid-cols-5">
-              <div>
-                <p className="text-sm font-bold text-white">Platforma</p>
-                <ul className="mt-3 space-y-2 text-sm">
-                  <li><a href="#home" className="text-gray-400 transition-colors hover:text-white">Ana səhifə</a></li>
-                  <li><a href="#about" className="text-gray-400 transition-colors hover:text-white">Haqqımızda</a></li>
-                  <li><a href="#mission" className="text-gray-400 transition-colors hover:text-white">Məqsədimiz</a></li>
-                  <li><a href="#how" className="text-gray-400 transition-colors hover:text-white">Necə işləyir</a></li>
-                </ul>
-              </div>
+            <div>
+              <p className="text-sm font-bold text-white">İstifadəçilər</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><a href="#users" className="text-gray-400 transition-colors hover:text-white">Şagirdlər</a></li>
+                <li><a href="#teachers" className="text-gray-400 transition-colors hover:text-white">Müəllimlər</a></li>
+                <li><a href="#users" className="text-gray-400 transition-colors hover:text-white">Valideynlər</a></li>
+                <li><a href="#users" className="text-gray-400 transition-colors hover:text-white">Təhsil mərkəzləri</a></li>
+              </ul>
+            </div>
 
-              <div>
-                <p className="text-sm font-bold text-white">İmkanlar</p>
-                <ul className="mt-3 space-y-2 text-sm">
-                  <li><a href="#users" className="text-gray-400 transition-colors hover:text-white">Şagird üçün</a></li>
-                  <li><a href="#teachers" className="text-gray-400 transition-colors hover:text-white">Müəllim üçün</a></li>
-                  <li><a href="#users" className="text-gray-400 transition-colors hover:text-white">Valideyn üçün</a></li>
-                  <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Uşaq Klubu</a></li>
-                  <li><a href="#adaptive" className="text-gray-400 transition-colors hover:text-white">Adaptiv öyrənmə</a></li>
-                  <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Portfolio</a></li>
-                </ul>
-              </div>
+            <div>
+              <p className="text-sm font-bold text-white">İmkanlar</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Gündəlik Quiz</a></li>
+                <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Portfolio</a></li>
+                <li><a href="#adaptive" className="text-gray-400 transition-colors hover:text-white">Adaptiv öyrənmə</a></li>
+                <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Uşaq Klubu</a></li>
+                <li><a href="#features" className="text-gray-400 transition-colors hover:text-white">Klan və yarışlar</a></li>
+              </ul>
+            </div>
 
-              <div>
-                <p className="text-sm font-bold text-white">Resurslar</p>
-                <ul className="mt-3 space-y-2 text-sm">
-                  <li><a href="#blog" className="text-gray-400 transition-colors hover:text-white">Blog</a></li>
-                  <li><a href="#self-test" className="text-gray-400 transition-colors hover:text-white">Özünü sına</a></li>
-                  <li><a href="#how" className="text-gray-400 transition-colors hover:text-white">Demo</a></li>
-                  <li><span className="text-gray-500">Roadmap · Tezliklə</span></li>
-                </ul>
-              </div>
+            <div>
+              <p className="text-sm font-bold text-white">Resurslar</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><span className="text-gray-500">Blog · Tezliklə</span></li>
+                <li><a href="#self-test" className="text-gray-400 transition-colors hover:text-white">Özünü sına</a></li>
+                <li><span className="text-gray-500">Demo video · Tezliklə</span></li>
+                <li><span className="text-gray-500">Roadmap · Tezliklə</span></li>
+              </ul>
+            </div>
 
-              <div>
-                <p className="text-sm font-bold text-white">Hesab</p>
-                <ul className="mt-3 space-y-2 text-sm">
-                  <li><button type="button" onClick={() => navigate(APP_ROUTES.LOGIN)} className="text-gray-400 transition-colors hover:text-white">Daxil ol</button></li>
-                  <li><button type="button" onClick={() => navigate(APP_ROUTES.REGISTER)} className="text-gray-400 transition-colors hover:text-white">Qeydiyyat</button></li>
-                </ul>
-              </div>
+            <div>
+              <p className="text-sm font-bold text-white">Hesab</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><button type="button" onClick={() => navigate(APP_ROUTES.LOGIN)} className="text-gray-400 transition-colors hover:text-white">Daxil ol</button></li>
+                <li><button type="button" onClick={() => navigate(APP_ROUTES.REGISTER)} className="text-gray-400 transition-colors hover:text-white">Qeydiyyat</button></li>
+              </ul>
+            </div>
 
-              <div>
-                <p className="text-sm font-bold text-white">Hüquqi</p>
-                <ul className="mt-3 space-y-2 text-sm">
-                  <li><span className="text-gray-500">Məxfilik · Tezliklə</span></li>
-                  <li><span className="text-gray-500">Şərtlər · Tezliklə</span></li>
-                </ul>
-              </div>
+            <div>
+              <p className="text-sm font-bold text-white">Hüquqi</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><span className="text-gray-500">Məxfilik · Tezliklə</span></li>
+                <li><span className="text-gray-500">Şərtlər · Tezliklə</span></li>
+              </ul>
             </div>
           </div>
 
-          <div className="mt-12 border-t border-white/10 pt-6">
+          <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center">
             <p className="text-sm text-gray-400">© 2026 LogiCora — Azərbaycan təhsil platforması</p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setLangOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                aria-label="Dil seçimi"
+              >
+                <Globe className="h-4 w-4" aria-hidden="true" /> {lang.toUpperCase()}
+              </button>
+              <span className="text-xs text-gray-500">AZ · TR · EN · RU</span>
+            </div>
           </div>
         </div>
       </footer>
