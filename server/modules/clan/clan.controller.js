@@ -15,6 +15,11 @@ const leaveClan = async (req, res) => {
   res.status(200).json({ success: true, data: result, message: 'Klandan çıxdınız.' });
 };
 
+const deleteClan = async (req, res) => {
+  const result = await clanService.deleteClan(req.user._id, req.params.id);
+  res.status(200).json({ success: true, data: result, message: 'Klan silindi.' });
+};
+
 const challengeClan = async (req, res) => {
   const battle = await clanService.challengeClan(req.user._id, req.params.id);
   res.status(201).json({ success: true, data: battle, message: 'Meydan oxundu.' });
@@ -63,6 +68,7 @@ module.exports = {
   createClan,
   joinClan,
   leaveClan,
+  deleteClan,
   challengeClan,
   finishBattle,
   getLeaderboard,

@@ -50,6 +50,14 @@ router.delete(
   clanController.leaveClan
 );
 
+// Klanı sil — yalnız lider. /leave-dən SONRA olmalıdır ki, "leave" :id kimi tutulmasın.
+router.delete(
+  '/:id',
+  authenticate,
+  checkRole('student'),
+  clanController.deleteClan
+);
+
 router.post(
   '/:id/challenge',
   authenticate,

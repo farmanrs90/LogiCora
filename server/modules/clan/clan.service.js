@@ -124,6 +124,43 @@ const leaveClan = async (userId) => {
   return clan;
 };
 
+// Klanı sil — yalnız lider. Üzvlük clan.members-də saxlanır, ona görə klanı silmək
+// bütün üzvlükləri təmiz silir. Aktiv yarış varsa təhlükəsiz silmək olmaz (rəqibin
+// activeBattle/ClanBattle dangling qalardı) → honest 400 atırıq, hack etmirik.
+const deleteClan = async (userId, clanId) => {
+  const student = await Student.findOne({ userId });
+  if (!student) {
+    const error = new Error('Tələbə profili tapılmadı.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const clan = await Clan.findById(clanId);
+  if (!clan) {
+    const error = new Error('Klan tapılmadı.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const isLeader = clan.members.some(
+    (m) => m.studentId.toString() === student._id.toString() && m.role === 'leader'
+  );
+  if (!isLeader) {
+    const error = new Error('Yalnız klan lideri klanı silə bilər.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (clan.activeBattle) {
+    const error = new Error('Klanın aktiv yarışı var. Silmədən əvvəl onu tamamlayın.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await clan.deleteOne();
+  return { message: 'Klan silindi.' };
+};
+
 const challengeClan = async (userId, challengedClanId) => {
   const student = await Student.findOne({ userId });
   if (!student) {
@@ -437,6 +474,7 @@ module.exports = {
   createClan,
   joinClan,
   leaveClan,
+  deleteClan,
   challengeClan,
   finishBattle,
   getLeaderboard,

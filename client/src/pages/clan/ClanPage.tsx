@@ -163,10 +163,9 @@ function ClanEmblemDisplay({ color, emoji, size = 96 }: { color: string; emoji: 
 
 // ── Member card ────────────────────────────────────────────────────────────
 
-function MemberCard({ m, rank, onChallenge }: {
+function MemberCard({ m, rank }: {
   m:           ClanMemberFull
   rank:        number
-  onChallenge: (id: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
   const rankMedals = ['🥇', '🥈', '🥉']
@@ -257,13 +256,6 @@ function MemberCard({ m, rank, onChallenge }: {
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
             >
               Profil gör
-            </button>
-            <button
-              onClick={() => onChallenge(m.userId)}
-              className="flex-1 py-1.5 rounded-xl text-xs font-bold text-white transition-colors"
-              style={{ background: 'rgba(147,51,234,0.2)', border: '1px solid rgba(147,51,234,0.4)' }}
-            >
-              ⚔️ 1v1 sual yarışı
             </button>
           </motion.div>
         )}
@@ -450,7 +442,7 @@ function EmptyState({ onCreate, onSearch }: {
           className="w-full py-4 rounded-2xl font-bold text-white text-base"
           style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
         >
-          🔍 Klana Qoşul
+          🔍 Klanları kəşf et
         </motion.button>
       </div>
     </div>
@@ -612,6 +604,19 @@ export default function ClanPage() {
     },
     // Backend xətasını honest göstər (məs. lider çıxa bilməz) — success kimi göstərmirik.
     onError:    (err: unknown) => toast.error((err as { message?: string })?.message || 'Klandan ayrılmaq alınmadı.'),
+  })
+
+  // Lider "Ayrıl" → klanı sil (backend: DELETE /clans/:id, yalnız lider). İkiqat təsdiq frontend-də.
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete(`/clans/${clan?._id}`),
+    onSuccess:  () => {
+      toast.success('Klan silindi.')
+      queryClient.invalidateQueries({ queryKey: ['clans', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['clan', slug] })
+      queryClient.invalidateQueries({ queryKey: ['clan-leaderboard'] })
+      navigate(APP_ROUTES.CLAN('me'))
+    },
+    onError:    (err: unknown) => toast.error((err as { message?: string })?.message || 'Klan silinmədi.'),
   })
 
   const createMutation = useMutation({
@@ -822,11 +827,25 @@ export default function ClanPage() {
                   </motion.button>
                 )}
                 <button
-                  onClick={() => { if (window.confirm('Klandan ayrılmaq istəyirsiniz?')) leaveMutation.mutate() }}
-                  disabled={leaveMutation.isPending}
+                  onClick={() => navigate(APP_ROUTES.CLAN_LEADERBOARD)}
+                  className="px-5 py-3.5 rounded-2xl font-bold text-white/80 text-sm border border-white/15 hover:bg-white/5 transition-colors"
+                >
+                  🔍 Klanları kəşf et
+                </button>
+                <button
+                  onClick={() => {
+                    if (isLeader) {
+                      if (!window.confirm('Siz klan liderisiniz. Klandan ayrılmaq əvəzinə klanı silmək istəyirsiniz?')) return
+                      if (!window.confirm('Bu əməliyyat geri qaytarılmır. Klan silinsin?')) return
+                      deleteMutation.mutate()
+                    } else if (window.confirm('Klandan ayrılmaq istəyirsiniz?')) {
+                      leaveMutation.mutate()
+                    }
+                  }}
+                  disabled={leaveMutation.isPending || deleteMutation.isPending}
                   className="px-5 py-3.5 rounded-2xl font-bold text-red-400 text-sm border border-red-500/20 hover:bg-red-500/10 transition-colors disabled:opacity-60"
                 >
-                  {leaveMutation.isPending ? 'Ayrılır...' : 'Ayrıl'}
+                  {deleteMutation.isPending ? 'Silinir...' : leaveMutation.isPending ? 'Ayrılır...' : (isLeader ? 'Klanı sil' : 'Ayrıl')}
                 </button>
               </>
             ) : hasOwnClan ? (
@@ -907,7 +926,6 @@ export default function ClanPage() {
                       key={m.studentId}
                       m={m}
                       rank={i + 1}
-                      onChallenge={() => toast('1v1 sual yarışı tezliklə əlavə olunacaq.', { id: 'clan-1v1-soon', icon: '⚔️' })}
                     />
                   ))}
                 </div>
