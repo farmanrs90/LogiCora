@@ -363,7 +363,9 @@ export default function DailyQuiz() {
     queryKey: ['daily', 'questions'],
     queryFn: () => questionService.fetchDaily(ageGroup),
     enabled: canFetchDailyQuestions,
-    staleTime: 1000 * 60 * 5,
+    // staleTime 0: hər girişdə təzə sual dəsti gəlsin. Backend artıq bu gün cavablanmış
+    // sualları çıxarır; köhnə cache re-serve etsə, onlara cavab "artıq cavab verilmişdir" 400 verirdi.
+    staleTime: 0,
     retry: false,
     retryOnMount: false,
     refetchOnWindowFocus: false,
@@ -410,6 +412,7 @@ export default function DailyQuiz() {
   const [earnedBadge, setEarnedBadge] = useState<{ name: string; emoji: string } | undefined>()
   const [answeredCount, setAnsweredCount] = useState(0)
   const [revealedAnswer, setRevealedAnswer] = useState('')   // ← YENİ: serverdən gələn düzgün cavab
+  const [submitError, setSubmitError] = useState(false)      // submit 400/şəbəkə xətası → taymeri dayandır, spam-ın qarşısını al
 
 
   const startTimeRef = useRef<number>(Date.now())
@@ -448,14 +451,15 @@ export default function DailyQuiz() {
     setSelectedAnswer(null)
     setIsAnswered(false)
     setRevealedAnswer('')
+    setSubmitError(false)
     startTimeRef.current = Date.now()
   }, [currentIndex, current])
 
   // Countdown timer
   const handleTimeUp = useCallback(() => {
-    if (isAnswered || phase !== 'question' || mutation.isPending) return
+    if (isAnswered || phase !== 'question' || mutation.isPending || submitError) return
     handleAnswer('__timeout__') // boş cavab backend-də 400 verir, sentinel göndəririk
-  }, [isAnswered, mutation.isPending, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAnswered, mutation.isPending, phase, submitError]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useInterval(
     () => {
@@ -464,7 +468,7 @@ export default function DailyQuiz() {
         return t - 1
       })
     },
-    phase === 'question' && !isAnswered ? 1000 : null,
+    phase === 'question' && !isAnswered && !submitError ? 1000 : null,
   )
 
   // Handle answer submission
@@ -484,6 +488,7 @@ export default function DailyQuiz() {
       return
     }
 
+    setSubmitError(false) // yeni cəhd → əvvəlki xəta kilidini sıfırla
     const responseTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
 
     try {
@@ -531,8 +536,15 @@ export default function DailyQuiz() {
         }, 400)
       }, 1400)
 
-    } catch {
-      toast.error('Cavab göndərilmədi. Yenidən cəhd edin.')
+    } catch (err) {
+      // Backend xətasını DÜRÜST göstər (məs. "Bu suala bu gün artıq cavab vermişsiniz").
+      // Sabit id ilə tək toast → spam yoxdur. Eyni sualda qalırıq, cavablanmış kimi işarələnmir.
+      const backendMessage =
+        err && typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string'
+          ? (err as { message: string }).message
+          : ''
+      toast.error(backendMessage || 'Cavab göndərilmədi. Yenidən cəhd edin.', { id: 'daily-answer-error' })
+      setSubmitError(true) // taymeri dayandırır → avtomatik təkrar POST/toast spam-ının qarşısını alır
       setSelectedAnswer(null)
       setIsAnswered(false)
       setShowMascot(false)
