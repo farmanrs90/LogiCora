@@ -37,7 +37,8 @@ export const kidsService = {
     return res.data.data
   },
 
-  // Quiz sualına cavab ver → doğru/səhv + XP
+  // Quiz sualına cavab ver → doğru/səhv + XP (səhv cavaba XP verilmir)
+  // Qeyd: suallar real DB/seed məzmunudur. AI əsaslı sual yaratma post-demo mərhələsində əlavə ediləcək.
   async answer(id: string, questionIndex: number, answer: number): Promise<KidsAnswerResult> {
     const res = await api.post<{ data: KidsAnswerResult }>(
       API_ROUTES.KIDS.ANSWER(id),

@@ -102,6 +102,9 @@ export default function VideoPlayer() {
         } else {
           toast.success('Doğru! ✓')
         }
+      } else {
+        // Səhv cavab: XP YOXDUR (backend 0 qaytarır, progress yazılmır) — yalnız honest həvəsləndirmə.
+        toast('Olur, növbəti dəfə! 💪', { icon: '🙂' })
       }
     },
   })

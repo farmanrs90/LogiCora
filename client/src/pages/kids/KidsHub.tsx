@@ -119,7 +119,11 @@ export default function KidsHub() {
             <p className="text-slate-500 font-bold">
               {videos.length > 0
                 ? 'Bütün videoları bitirdin! Afərin 👏'
-                : 'Bu filtrə uyğun video yoxdur'}
+                : age
+                  ? 'Bu yaş qrupu üçün video hələ əlavə edilməyib.'
+                  : category
+                    ? 'Bu kateqoriya üçün video hələ əlavə edilməyib.'
+                    : 'Hələ video əlavə edilməyib.'}
             </p>
           </div>
         ) : (
