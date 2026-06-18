@@ -519,7 +519,7 @@ export default function ClanPage() {
 
   // İstifadəçinin öz klanı (varsa). Başqa klana baxarkən "artıq klandasan" vəziyyətini
   // honest göstərmək üçün lazımdır — yoxsa join CTA yanlış primary kimi görünür.
-  const { data: myClan } = useQuery<{ _id?: string; slug?: string } | null>({
+  const { data: myClan, isLoading: myClanLoading } = useQuery<{ _id?: string; slug?: string } | null>({
     queryKey: ['clans', 'me'],
     queryFn:  () => api.get<{ data: { _id?: string; slug?: string } | null }>(API_ROUTES.CLANS.BY_SLUG('me'))
                       .then(r => r.data.data),
@@ -699,6 +699,8 @@ export default function ClanPage() {
   const isMember = isViewingOwnClan || memberList.some(m => m.userId === user?._id)
   const isLeader = memberList.find(m => m.userId === user?._id)?.role === 'leader'
   const hasOwnClan = !!myClan?._id
+  const isInAnotherClan = hasOwnClan && !isViewingOwnClan
+  const canJoinClan = !myClanLoading && !membersLoading && !hasOwnClan && !isMember
   const winRate  = Math.round((c.wins / Math.max(c.wins + c.losses, 1)) * 100)
 
   const handleJoinClan = () => {
@@ -853,7 +855,7 @@ export default function ClanPage() {
                   {deleteMutation.isPending ? 'Silinir...' : leaveMutation.isPending ? 'Ayrılır...' : (isLeader ? 'Klanı sil' : 'Ayrıl')}
                 </button>
               </>
-            ) : hasOwnClan ? (
+            ) : isInAnotherClan ? (
               // İstifadəçi artıq başqa klandadır → join primary deyil (backend onsuz da rədd edir); honest yönləndirmə.
               <button
                 onClick={() => navigate(APP_ROUTES.CLAN('me'))}
@@ -861,7 +863,7 @@ export default function ClanPage() {
               >
                 Sən artıq klandasan — Mənim klanıma get →
               </button>
-            ) : (
+            ) : canJoinClan ? (
               <motion.button
                 onClick={handleJoinClan}
                 disabled={joinMutation.isPending}
@@ -872,7 +874,7 @@ export default function ClanPage() {
               >
                 {joinMutation.isPending ? 'Qoşulur...' : '➕ Klana Qoşul'}
               </motion.button>
-            )}
+            ) : null}
           </motion.div>
         </div>
       </div>
