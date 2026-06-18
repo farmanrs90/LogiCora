@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -109,7 +109,7 @@ function MetricCard({ metric, delay }: { metric: MetricCard; delay: number }) {
   const isUp = metric.trend >= 0
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-      className="bg-[#141414] border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-colors"
+      className="bg-[#141414] border border-white/10 rounded-2xl p-5"
     >
       <p className="text-xs text-white/50 mb-2">{metric.label}</p>
       <p className="text-3xl font-bold mb-1">{metric.value}</p>
@@ -127,7 +127,7 @@ function MetricCard({ metric, delay }: { metric: MetricCard; delay: number }) {
 
 function StudentRow({ student, rank, isWeak }: { student: StudentProgress; rank?: number; isWeak?: boolean }) {
   return (
-    <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl hover:border-white/15 transition-colors">
+    <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl">
       {rank && (
         <span className={`text-sm font-bold w-6 text-center shrink-0 ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-slate-300' : rank === 3 ? 'text-amber-600' : 'text-white/40'}`}>
           {rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : `#${rank}`}
@@ -151,9 +151,9 @@ function StudentRow({ student, rank, isWeak }: { student: StudentProgress; rank?
             <p className="text-xs text-rose-400">{student.attendancePct}% davamiyyət</p>
             <p className="text-xs text-white/30">{student.lastSeen}</p>
           </div>
-          <button className="text-xs text-amber-400 border border-amber-400/30 px-2 py-1 rounded-lg hover:bg-amber-400/10 transition-colors">
+          <Link to={APP_ROUTES.CHAT} className="text-xs text-amber-400 border border-amber-400/30 px-2 py-1 rounded-lg hover:bg-amber-400/10 transition-colors">
             Mesaj
-          </button>
+          </Link>
         </div>
       )}
     </div>
@@ -276,7 +276,10 @@ function StorefrontSection({ data }: { data: StorefrontPerf }) {
             <p className="text-sm font-semibold text-indigo-300">Featured müəllim ol</p>
             <p className="text-xs text-white/50 mt-0.5">Ana səhifədə öncül göstərilin, 3× daha çox görünüş qazanın</p>
           </div>
-          <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors shrink-0 ml-4">
+          <button
+            onClick={() => toast('Featured müəllim funksiyası tezliklə əlavə olunacaq.', { icon: '🔜' })}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors shrink-0 ml-4"
+          >
             Featured ol
           </button>
         </div>
@@ -381,8 +384,8 @@ export default function TeacherAnalytics() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white">
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

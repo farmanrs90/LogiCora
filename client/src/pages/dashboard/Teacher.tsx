@@ -136,7 +136,7 @@ function StatCard({
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-[#141414] border border-white/10 rounded-2xl p-5 flex flex-col gap-3 hover:border-white/20 transition-colors"
+      className="bg-[#141414] border border-white/10 rounded-2xl p-5 flex flex-col gap-3"
     >
       <div className="flex items-start justify-between">
         <p className="text-xs text-white/50 font-medium">{title}</p>
@@ -165,7 +165,7 @@ function ImpactGauge({ score }: { score?: number | null }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-[#141414] border border-white/10 rounded-2xl p-5 flex flex-col gap-2 hover:border-white/20 transition-colors"
+      className="bg-[#141414] border border-white/10 rounded-2xl p-5 flex flex-col gap-2"
     >
       <div className="flex items-start justify-between">
         <p className="text-xs text-white/50 font-medium">Impact Score</p>
@@ -264,7 +264,7 @@ function RecentStudents({ students }: { students: RecentStudent[] }) {
         {displayed.map((s, i) => (
           <motion.div key={s.id}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.06 }}
-            className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl hover:border-white/15 transition-colors"
+            className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl"
           >
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold shrink-0">
               {s.name[0]}
@@ -382,8 +382,8 @@ export default function TeacherDashboard() {
   const courseList = courses ?? []
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white">
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
