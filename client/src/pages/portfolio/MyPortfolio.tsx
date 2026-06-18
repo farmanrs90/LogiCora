@@ -469,7 +469,7 @@ function TimelineView({ portfolio }: { portfolio: MyPortfolioData }) {
           {filtered.length === 0 && (
             <div className="text-center py-16 text-white/40">
               <div className="text-4xl mb-2">📭</div>
-              Bu kateqoriyada hələ nailiyyət yoxdur
+              {filter === 'all' ? 'Hələ portfolio hadisəsi yoxdur' : 'Bu kateqoriyada hələ nailiyyət yoxdur'}
             </div>
           )}
         </div>
@@ -489,6 +489,11 @@ function WeakCountdown({ until }: { until: string }) {
       ⚡ {days} gün sonra yenilənir
     </span>
   )
+}
+
+// Bölmə boş olduqda — dürüst empty state (fake nailiyyət göstərilmir).
+function SectionEmpty({ text }: { text: string }) {
+  return <p className="py-4 text-center text-sm text-white/40">{text}</p>
 }
 
 function LinkedInView({
@@ -613,6 +618,9 @@ function LinkedInView({
             <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
               <h2 className="font-bold mb-4">Bacarıqlar</h2>
               <div className="space-y-3">
+                {portfolio.skills.length === 0 && (
+                  <SectionEmpty text="Hələ bacarıq məlumatı yoxdur." />
+                )}
                 {portfolio.skills.map(s => {
                   const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF', worldName: s.subject }
                   return (
@@ -641,6 +649,9 @@ function LinkedInView({
             <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
               <h2 className="font-bold mb-4">Nailiyyət Nişanları</h2>
               <div className="flex flex-wrap gap-3">
+                {portfolio.badges.length === 0 && (
+                  <SectionEmpty text="Hələ mükafat əlavə edilməyib." />
+                )}
                 {portfolio.badges.map((badge, i) => (
                   <div
                     key={badge.id}
@@ -701,37 +712,49 @@ function LinkedInView({
                 </div>
               </div>
             )}
+            {portfolio.certificates.length === 0 && (
+              <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+                <h2 className="font-bold mb-4">Kurs Sertifikatları</h2>
+                <SectionEmpty text="Hələ sertifikat yoxdur." />
+              </div>
+            )}
 
             {/* Yarış tarixi + chart */}
             <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
               <h2 className="font-bold mb-4">Yarış Tarixi</h2>
-              <div className="space-y-3 mb-5">
-                {portfolio.competitions.map((comp, i) => (
-                  <motion.div key={comp.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
-                    className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${comp.rank === 1 ? 'bg-yellow-400/20' : comp.rank <= 3 ? 'bg-slate-400/20' : 'bg-white/10'
-                      }`}>
-                      {comp.rank <= 3 ? ['🥇', '🥈', '🥉'][comp.rank - 1] : `#${comp.rank}`}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{comp.title}</p>
-                      <p className="text-xs text-white/40">{comp.totalParticipants} iştirakçı · {fmtDate(comp.date)}</p>
-                    </div>
-                    <span className="text-sm font-bold text-white/70 shrink-0">{comp.score} xal</span>
-                  </motion.div>
-                ))}
-              </div>
-              {/* Score chart */}
-              <div className="h-36">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} />
-                    <Line type="monotone" dataKey="xal" stroke="#818CF8" strokeWidth={2} dot={{ fill: '#818CF8', r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {portfolio.competitions.length === 0 ? (
+                <SectionEmpty text="Hələ yarış nəticəsi yoxdur." />
+              ) : (
+                <>
+                  <div className="space-y-3 mb-5">
+                    {portfolio.competitions.map((comp, i) => (
+                      <motion.div key={comp.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
+                        className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${comp.rank === 1 ? 'bg-yellow-400/20' : comp.rank <= 3 ? 'bg-slate-400/20' : 'bg-white/10'
+                          }`}>
+                          {comp.rank <= 3 ? ['🥇', '🥈', '🥉'][comp.rank - 1] : `#${comp.rank}`}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{comp.title}</p>
+                          <p className="text-xs text-white/40">{comp.totalParticipants} iştirakçı · {fmtDate(comp.date)}</p>
+                        </div>
+                        <span className="text-sm font-bold text-white/70 shrink-0">{comp.score} xal</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                  {/* Score chart */}
+                  <div className="h-36">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
+                        <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} />
+                        <Line type="monotone" dataKey="xal" stroke="#818CF8" strokeWidth={2} dot={{ fill: '#818CF8', r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Peşə Kompas */}
@@ -743,6 +766,9 @@ function LinkedInView({
               </div>
               <p className="text-xs text-white/50 mb-4">Sənin profilinə görə tövsiyə olunan sahələr:</p>
               <div className="space-y-3">
+                {portfolio.careerSuggestions.length === 0 && (
+                  <SectionEmpty text="Karyera tövsiyələri hələ hazır deyil." />
+                )}
                 {portfolio.careerSuggestions.map((career, i) => (
                   <motion.div key={career.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                     className="bg-white/5 border border-white/10 rounded-xl p-4">

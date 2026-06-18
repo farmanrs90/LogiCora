@@ -142,6 +142,11 @@ function Stars({ count, size = 14 }: { count: number; size?: number }) {
   )
 }
 
+// Bölmə boş olduqda — dürüst empty state (fake nailiyyət göstərilmir).
+function SectionEmpty({ text }: { text: string }) {
+  return <p className="py-4 text-center text-sm text-white/40">{text}</p>
+}
+
 // ── Meta tags (OG) ────────────────────────────────────────────────────────────
 
 function setMetaTags(portfolio: PublicPortfolioData) {
@@ -245,6 +250,9 @@ function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
       {/* Skills as world cards */}
       <div className="max-w-xl mx-auto px-4">
         <h2 className="text-lg font-bold text-center mb-4">🗺️ Bacarıq Dünyaları</h2>
+        {portfolio.skills.length === 0 && (
+          <SectionEmpty text="Hələ bacarıq məlumatı yoxdur." />
+        )}
         <div className="grid grid-cols-2 gap-4">
           {portfolio.skills.map((skill, i) => {
             const meta = SUBJECT_META[skill.subject] ?? { emoji: '📖', color: '#9CA3AF' }
@@ -268,6 +276,9 @@ function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
       {/* Badges */}
       <div className="max-w-xl mx-auto px-4 mt-8">
         <h2 className="text-lg font-bold text-center mb-4">🎖️ Nailiyyətlər</h2>
+        {portfolio.badges.length === 0 && (
+          <SectionEmpty text="Hələ mükafat əlavə edilməyib." />
+        )}
         <div className="flex flex-wrap justify-center gap-3">
           {portfolio.badges.map((badge, i) => (
             <motion.div key={badge.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.08 }}
@@ -354,6 +365,9 @@ function TeenPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
       <div className="max-w-2xl mx-auto px-4 relative">
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/10 -translate-x-1/2" />
         <div className="space-y-4 relative">
+          {portfolio.timeline.length === 0 && (
+            <SectionEmpty text="Hələ portfolio hadisəsi yoxdur." />
+          )}
           {portfolio.timeline.map((ev, i) => (
             <TimelineItem key={ev.id} event={ev} index={i} />
           ))}
@@ -419,6 +433,9 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
         <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
           <h2 className="font-bold mb-4">Bacarıqlar</h2>
           <div className="space-y-3">
+            {portfolio.skills.filter(s => !s.isWeak).length === 0 && (
+              <SectionEmpty text="Hələ bacarıq məlumatı yoxdur." />
+            )}
             {portfolio.skills.filter(s => !s.isWeak).map(s => {
               const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF' }
               return (
@@ -448,6 +465,9 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
           <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
             <h2 className="font-bold mb-4">Nişanlar</h2>
             <div className="flex flex-wrap gap-3">
+              {portfolio.badges.length === 0 && (
+                <SectionEmpty text="Hələ mükafat əlavə edilməyib." />
+              )}
               {portfolio.badges.map((badge, i) => (
                 <motion.div key={badge.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07 }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${RARITY_COLORS[badge.rarity]}`}
