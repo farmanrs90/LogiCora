@@ -702,6 +702,7 @@ function DataTile({ label, value, detail }: { label: string; value: string; deta
 }
 
 function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
+  const navigate = useNavigate()
   const topClan = clans[0] ?? null
 
   return (
@@ -712,7 +713,11 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
       </div>
 
       {topClan ? (
-        <div className="rounded-card border border-border bg-bg-card p-4">
+        <button
+          type="button"
+          onClick={() => navigate(APP_ROUTES.CLAN(topClan.slug))}
+          className="group block w-full rounded-card border border-border bg-bg-card p-4 text-left transition-colors hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-bold text-white">{topClan.name}</p>
@@ -728,7 +733,11 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
             <DataTile label="Toplam XP" value={formatNumber(topClan.totalXP)} detail="Klan gücü" />
             <DataTile label="Həftəlik XP" value={formatNumber(topClan.weeklyXP)} detail="Temp" />
           </div>
-        </div>
+          <span className="mt-4 flex items-center gap-2 text-sm font-bold text-white">
+            Klan səhifəsinə bax
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+          </span>
+        </button>
       ) : (
         <div className="rounded-card border border-border bg-bg-card p-4">
           <p className="text-sm font-bold text-white">Klan sıralaması boşdur</p>
@@ -737,6 +746,23 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
           </p>
         </div>
       )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => navigate(APP_ROUTES.CLAN('me'))}
+          className="btn-outline w-full"
+        >
+          Mənim klanım
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(APP_ROUTES.CLAN_LEADERBOARD)}
+          className="btn-outline w-full"
+        >
+          Tam sıralama
+        </button>
+      </div>
     </motion.section>
   )
 }
