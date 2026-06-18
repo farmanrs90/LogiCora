@@ -69,9 +69,11 @@ export default function Login() {
           transition={{ delay: 0.1, duration: 0.4 }}
           className="text-center mb-8"
         >
-          <h1 className="text-5xl font-black bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">
-            LogiCora
-          </h1>
+          <Link to={APP_ROUTES.HOME} className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9333EA]" aria-label="LogiCora ana səhifə">
+            <h1 className="text-5xl font-black bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">
+              LogiCora
+            </h1>
+          </Link>
           <p className="text-[#9CA3AF] mt-2 text-sm">Bilikdə güc, gələcəkdə iz.</p>
         </motion.div>
 

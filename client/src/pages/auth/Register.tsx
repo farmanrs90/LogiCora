@@ -232,7 +232,9 @@ export default function Register() {
 
       <div className="w-full max-w-lg z-10">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
-          <h1 className="text-4xl font-black bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">LogiCora</h1>
+          <Link to={APP_ROUTES.HOME} className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9333EA]" aria-label="LogiCora ana səhifə">
+            <h1 className="text-4xl font-black bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">LogiCora</h1>
+          </Link>
           <p className="text-[#9CA3AF] text-sm mt-1">{stepTitles[step]}</p>
         </motion.div>
 
