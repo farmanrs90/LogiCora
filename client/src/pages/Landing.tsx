@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { type Companion } from '../lib/companion'
 
 import {
   motion,
   useTransform,
-  useInView,
   useScroll,
   AnimatePresence,
   type Variants,
@@ -20,14 +19,6 @@ interface NavLink {
   href: string
 }
 
-interface StatItem {
-  value: string
-  numericTarget: number
-  suffix: string
-  label: string
-  color: string
-}
-
 interface QuizAnswer {
   key: string
   text: string
@@ -36,23 +27,15 @@ interface QuizAnswer {
 // ── Static data ───────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
-  { label: 'Ana səhifə', href: '/' },
-  { label: 'Haqqında',   href: '#features' },
-  { label: 'Kurslar',    href: '#courses'  },
-  { label: 'Qiymət',     href: '#pricing'  },
+  { label: 'Ana səhifə',    href: '/' },
+  { label: 'İmkanlar',      href: '#features' },
+  { label: 'Necə işləyir',  href: '#how' },
 ]
 
 const QUIZ_ANSWERS: QuizAnswer[] = [
   { key: 'A', text: '2, 4, 8, 16...' },
   { key: 'B', text: '1, 3, 6, 10...' },
   { key: 'C', text: '5, 10, 20, 35...' },
-]
-
-const STATS: StatItem[] = [
-  { value: '1 000+',  numericTarget: 1000,  suffix: '+', label: 'Aktiv tələbə',     color: 'text-[#0D9488]'  },
-  { value: '50+',     numericTarget: 50,    suffix: '+', label: 'Fənn & kurs',      color: 'text-purple-400' },
-  { value: '10 000+', numericTarget: 10000, suffix: '+', label: 'Cavablanmış sual', color: 'text-cyan-400'   },
-  { value: '25+',     numericTarget: 25,    suffix: '+', label: 'Oyun-əsaslı alət', color: 'text-orange-400' },
 ]
 
 // ── Guide accent helpers ──────────────────────────────────────────────────────
@@ -78,32 +61,6 @@ function guideAccent(guide: Guide): { text: string; border: string; bg: string; 
     bg:     'bg-[#0D9488]/10',
     hex:    '#0D9488',
   }
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function CountUp({ target, suffix, color }: { target: number; suffix: string; color: string }) {
-  const ref     = useRef<HTMLSpanElement>(null)
-  const inView  = useInView(ref, { once: true })
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    if (!inView) return
-    let v = 0
-    const inc = target / 60
-    const iv = setInterval(() => {
-      v += inc
-      if (v >= target) { setCount(target); clearInterval(iv) }
-      else setCount(Math.floor(v))
-    }, 2000 / 60)
-    return () => clearInterval(iv)
-  }, [inView, target])
-
-  return (
-    <span ref={ref} className={`text-5xl font-bold ${color}`}>
-      {target >= 1000 ? count.toLocaleString('az-AZ') : count}{suffix}
-    </span>
-  )
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -437,20 +394,108 @@ const goRegister = () =>
         </div>
       </motion.section>
 
-      {/* ── STATS ───────────────────────────────────────────────────────────── */}
-      <section className="py-24 px-4 sm:px-8 text-center">
-        <p className="text-white/20 text-sm tracking-widest uppercase mb-4">Rəqəmlərlə LogiCora</p>
-        <div className="w-16 h-px bg-white/10 mx-auto mb-12" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-          {STATS.map((stat) => (
-            <motion.div key={stat.label}
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }} transition={{ duration: 0.6 }}
-              className="flex flex-col items-center">
-              <CountUp target={stat.numericTarget} suffix={stat.suffix} color={stat.color} />
-              <p className="text-white/40 text-sm mt-2">{stat.label}</p>
-            </motion.div>
-          ))}
+      {/* ── ROLLAR — kim üçün? ──────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-8 lg:px-16">
+        <div className="max-w-7xl mx-auto">
+          <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-3 text-center`}>
+            Kim üçün?
+          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
+            Bir platforma — bütün təhsil iştirakçıları
+          </h2>
+          <p className="text-white/40 text-center max-w-2xl mx-auto mb-12">
+            Şagird, müəllim, valideyn və uşaqlar üçün vahid öyrənmə məkanı — ömürlük təhsil pasportu.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: '🎓', title: 'Şagird',      desc: 'Gündəlik suallar, yarışlar, XP və ömürlük portfolio.' },
+              { icon: '👩‍🏫', title: 'Müəllim',     desc: 'Sinif, qrup, davamiyyət və analitika — bir paneldə.' },
+              { icon: '👨‍👩‍👧', title: 'Valideyn',    desc: 'Övladının fəaliyyəti və inkişafı şəffaf görünür.' },
+              { icon: '🧸', title: 'Uşaq Klubu',  desc: 'Kiçik yaşlar üçün böyük düymələr və sadə təhsil.' },
+            ].map((r) => (
+              <motion.div key={r.title}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ duration: 0.5 }}
+                className="bg-[#0a1628] border border-white/[0.08] rounded-2xl p-6 hover:border-white/20 transition-colors">
+                <div className="text-3xl mb-3">{r.icon}</div>
+                <p className="text-white font-semibold mb-1">{r.title}</p>
+                <p className="text-white/40 text-sm leading-relaxed">{r.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FUNKSİYALAR ─────────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-8 lg:px-16 bg-white/[0.015]">
+        <div className="max-w-7xl mx-auto">
+          <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-3 text-center`}>
+            Nə təklif edir?
+          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
+            Öyrənməni gücləndirən alətlər
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: '🧠', title: 'Gündəlik Quiz',    desc: 'Hər gün 5 sual, streak və XP ilə davamlı öyrənmə.' },
+              { icon: '📚', title: 'Kurslar',          desc: 'Mövzu-əsaslı dərslər və öyrənmə yolu.' },
+              { icon: '🏅', title: 'Portfolio',        desc: 'Təsdiqlənmiş nailiyyətlər — Education Passport.' },
+              { icon: '🗂️', title: 'Müəllim CRM',      desc: 'Şagird, qrup və davamiyyətin idarəsi.' },
+              { icon: '👁️', title: 'Valideyn baxışı',  desc: 'Övladın irəliləyişinə şəffaf nəzarət.' },
+              { icon: '♿', title: 'Adaptiv öyrənmə',   desc: 'Böyük düymələr və əlçatan (accessibility) rejim.' },
+            ].map((f) => (
+              <motion.div key={f.title}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ duration: 0.5 }}
+                className="bg-[#0a1628] border border-white/[0.08] rounded-2xl p-6 hover:border-white/20 transition-colors">
+                <div className="text-2xl mb-3">{f.icon}</div>
+                <p className="text-white font-semibold mb-1">{f.title}</p>
+                <p className="text-white/40 text-sm leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── NECƏ İŞLƏYİR ────────────────────────────────────────────────────── */}
+      <section id="how" className="py-20 px-4 sm:px-8 lg:px-16">
+        <div className="max-w-5xl mx-auto">
+          <p className={`${accent.text} text-xs tracking-widest font-semibold uppercase mb-3 text-center`}>
+            Necə işləyir?
+          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
+            Üç sadə addım
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              { n: '1', title: 'Qeydiyyat',                desc: 'Rolunu seç və hesabını yarat.' },
+              { n: '2', title: 'Öyrənmə və fəaliyyət',     desc: 'Suallar, kurslar və yarışlarla irəlilə.' },
+              { n: '3', title: 'Portfolio və inkişaf izi', desc: 'Nailiyyətlərin ömürlük pasportunda toplanır.' },
+            ].map((s) => (
+              <motion.div key={s.n}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ duration: 0.5 }}
+                className="bg-[#0a1628] border border-white/[0.08] rounded-2xl p-6 text-center">
+                <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center font-bold mb-4"
+                  style={{ backgroundColor: `${accent.hex}1a`, color: accent.hex, border: `1px solid ${accent.hex}40` }}>
+                  {s.n}
+                </div>
+                <p className="text-white font-semibold mb-1">{s.title}</p>
+                <p className="text-white/40 text-sm leading-relaxed">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── DÜRÜST YOL XƏRİTƏSİ ─────────────────────────────────────────────── */}
+      <section className="px-4 sm:px-8 lg:px-16 pb-4">
+        <div className="max-w-5xl mx-auto bg-[#0a1628] border border-white/[0.08] rounded-2xl px-6 py-5 flex items-start gap-3">
+          <span className="text-xl shrink-0">🛠️</span>
+          <p className="text-white/45 text-sm leading-relaxed">
+            <span className="text-white/70 font-semibold">Diplom demo + MVP.</span>{' '}
+            AI tövsiyələr, video məzmun və geniş məktəb paneli post-demo mərhələsində genişləndiriləcək.
+          </p>
         </div>
       </section>
 
@@ -473,7 +518,7 @@ const goRegister = () =>
         <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
           viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }}
           className="text-white/30 mt-4 text-lg text-center">
-          Minlərlə Azərbaycan tələbəsi artıq öyrənir.
+          Məktəb, müəllim, valideyn və şagird üçün vahid öyrənmə platforması.
         </motion.p>
         <motion.button
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
@@ -493,7 +538,7 @@ const goRegister = () =>
       <footer className="border-t border-white/[0.06] py-8 px-6">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <p className="text-white/25 text-sm">
-            © 2026 LogiCora — Azərbaycan Milli Təhsil Platforması
+            © 2026 LogiCora — Azərbaycan təhsil platforması · Diplom demo + MVP
           </p>
           <div className="flex gap-6">
             {['Məxfilik', 'Şərtlər'].map((item) => (
