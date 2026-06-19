@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Check } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useDispatch } from 'react-redux'
@@ -12,6 +12,22 @@ import { APP_ROUTES } from '../../constants'
 import { loginSchema, type LoginValues } from '../../schemas/auth'
 import type { AppDispatch } from '../../app/store'
 import type { ApiError } from '../../types'
+
+// Dəyər paneli — fake statistika yoxdur, yalnız real platforma dəyərləri
+const VALUE_POINTS = [
+  'Şagird, müəllim və valideyn üçün vahid platforma',
+  'Portfolio, gündəlik quiz və adaptiv öyrənmə',
+  'Yarışlar, kurslar və Education Passport',
+]
+
+// Light input/label stilləri (qlobal .input/.label dark olduğu üçün burada inline)
+const labelCls = 'block text-sm font-medium text-gray-700 mb-1.5'
+const inputCls = (err?: boolean) =>
+  `w-full rounded-xl border bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus-visible:outline-none focus-visible:ring-2 ${
+    err
+      ? 'border-red-400 focus-visible:ring-red-400'
+      : 'border-gray-300 hover:border-gray-400 focus-visible:border-indigo-500 focus-visible:ring-indigo-500'
+  }`
 
 export default function Login() {
   const dispatch = useDispatch<AppDispatch>()
@@ -52,59 +68,99 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="flex min-h-screen bg-white text-gray-900">
 
-      <div className="absolute -top-24 -left-16 w-96 h-96 rounded-full bg-[#3B82F6] opacity-[0.07] blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-16 w-96 h-96 rounded-full bg-[#9333EA] opacity-[0.07] blur-3xl pointer-events-none" />
+      {/* ── Value panel (desktop) ─────────────────────────────────────────── */}
+      <aside className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-600 to-blue-600 p-12 text-white lg:flex">
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '16px 16px' }}
+          aria-hidden="true"
+        />
 
-      <motion.div
-        initial={{ opacity: 0, y: 28 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' as const }}
-        className="w-full max-w-md z-10"
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="text-center mb-8"
-        >
-          <Link to={APP_ROUTES.HOME} className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9333EA]" aria-label="LogiCora ana səhifə">
-            <h1 className="text-5xl font-black bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">
-              LogiCora
-            </h1>
+        {/* Brand */}
+        <div className="relative">
+          <Link
+            to={APP_ROUTES.HOME}
+            className="inline-flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            aria-label="LogiCora ana səhifə"
+          >
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/15 backdrop-blur">
+              <span className="h-3 w-3 rounded-sm bg-white" />
+            </span>
+            <span className="text-2xl font-extrabold tracking-tight">LogiCora</span>
           </Link>
-          <p className="text-[#9CA3AF] mt-2 text-sm">Bilikdə güc, gələcəkdə iz.</p>
-        </motion.div>
+        </div>
 
+        {/* Value props */}
+        <div className="relative">
+          <h2 className="text-3xl font-bold leading-tight">3 yaşdan ömür boyu öyrənmə izi</h2>
+          <p className="mt-4 max-w-md leading-relaxed text-indigo-100">
+            LogiCora təhsilin bütün yolunu bir profildə birləşdirir.
+          </p>
+          <ul className="mt-8 space-y-4">
+            {VALUE_POINTS.map((p) => (
+              <li key={p} className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/20">
+                  <Check className="h-3 w-3" aria-hidden="true" />
+                </span>
+                <span className="text-sm leading-relaxed text-indigo-50">{p}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="relative text-sm text-indigo-100/80">Bilikdə güc, gələcəkdə iz.</p>
+      </aside>
+
+      {/* ── Form side ─────────────────────────────────────────────────────── */}
+      <main className="flex w-full flex-col items-center justify-center px-4 py-10 sm:px-6 lg:w-1/2">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.45 }}
-          className="bg-[rgba(255,255,255,0.05)] backdrop-blur-xl border border-[rgba(255,255,255,0.1)] rounded-2xl p-8"
+          transition={{ duration: 0.45, ease: 'easeOut' as const }}
+          className="w-full max-w-md"
         >
+          {/* Mobile brand */}
+          <div className="mb-8 text-center lg:hidden">
+            <Link
+              to={APP_ROUTES.HOME}
+              className="inline-flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              aria-label="LogiCora ana səhifə"
+            >
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-600 to-blue-500 shadow-sm">
+                <span className="h-2.5 w-2.5 rounded-sm bg-white/90" />
+              </span>
+              <span className="text-xl font-extrabold tracking-tight">
+                <span className="text-gray-900">Logi</span>
+                <span className="text-indigo-600">Cora</span>
+              </span>
+            </Link>
+            <p className="mt-2 text-sm text-gray-500">Bilikdə güc, gələcəkdə iz.</p>
+          </div>
+
           <div className="mb-7">
-            <h2 className="text-xl font-bold text-white leading-tight">Xoş gəldin!</h2>
-            <p className="text-[#9CA3AF] text-sm">Hesabına daxil ol</p>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Yenidən xoş gəldin</h1>
+            <p className="mt-1 text-sm text-gray-500">Hesabına daxil ol</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="label">Email</label>
+              <label htmlFor="email" className={labelCls}>Email</label>
               <input
                 id="email"
                 type="email"
                 placeholder="məsələn: ad@mail.com"
-                className={`input focus:ring-2 ${errors.email ? 'border-[#EF4444] focus:ring-[#EF4444]' : 'focus:ring-[#06B6D4]'}`}
+                className={inputCls(!!errors.email)}
                 aria-invalid={!!errors.email}
                 {...emailReg}
                 onChange={(e) => { e.target.value = e.target.value.replace(/\s/g, '').toLowerCase(); emailReg.onChange(e) }}
               />
               {errors.email && (
                 <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                  className="text-[#EF4444] text-xs mt-1.5" role="alert">
+                  className="mt-1.5 text-xs text-red-500" role="alert">
                   {errors.email.message}
                 </motion.p>
               )}
@@ -112,13 +168,13 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="label">Şifrə</label>
+              <label htmlFor="password" className={labelCls}>Şifrə</label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPass ? 'text' : 'password'}
                   placeholder="Şifrəni yaz"
-                  className={`input pr-12 focus:ring-2 ${errors.password ? 'border-[#EF4444] focus:ring-[#EF4444]' : 'focus:ring-[#06B6D4]'}`}
+                  className={`${inputCls(!!errors.password)} pr-12`}
                   aria-invalid={!!errors.password}
                   {...passwordReg}
                   onChange={(e) => { e.target.value = e.target.value.replace(/\s/g, ''); passwordReg.onChange(e) }}
@@ -126,7 +182,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
                   aria-label={showPass ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
                 >
                   {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -134,37 +190,35 @@ export default function Login() {
               </div>
               {errors.password && (
                 <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                  className="text-[#EF4444] text-xs mt-1.5" role="alert">
+                  className="mt-1.5 text-xs text-red-500" role="alert">
                   {errors.password.message}
                 </motion.p>
               )}
             </div>
+
             <div className="flex justify-end -mt-2">
               <button
                 type="button"
                 onClick={() => toast('Şifrə bərpası tezliklə əlavə olunacaq 🔑', { icon: '🔜' })}
-                className="text-xs text-[#9CA3AF] hover:text-[#06B6D4] transition-colors"
+                className="rounded text-xs font-medium text-gray-500 transition-colors hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 Şifrəni unutdum?
               </button>
             </div>
+
             <motion.button
               type="submit"
               disabled={isSubmitting}
-              whileHover={!isSubmitting ? { scale: 1.015 } : {}}
-              whileTap={!isSubmitting ? { scale: 0.985 } : {}}
-              className="w-full py-3 rounded-[var(--radius-btn)] font-bold text-white text-base
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         shadow-[0_4px_24px_rgba(147,51,234,0.3)] transition-shadow
-                         hover:shadow-[0_4px_32px_rgba(147,51,234,0.5)]"
-              style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #9333EA 100%)' }}
+              whileHover={!isSubmitting ? { scale: 1.01 } : {}}
+              whileTap={!isSubmitting ? { scale: 0.99 } : {}}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <motion.span
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' as const }}
-                    className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                    className="inline-block h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
                   />
                   Giriş edilir...
                 </span>
@@ -172,32 +226,33 @@ export default function Login() {
             </motion.button>
           </form>
 
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-[rgba(255,255,255,0.08)]" />
-            <span className="text-[#6B7280] text-xs tracking-widest">yaxud</span>
-            <div className="flex-1 h-px bg-[rgba(255,255,255,0.08)]" />
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs tracking-widest text-gray-400">yaxud</span>
+            <div className="h-px flex-1 bg-gray-200" />
           </div>
 
           <button
             type="button"
             onClick={() => toast('Google giriş tezliklə əlavə olunacaq 🔜', { icon: '🌐' })}
-            className="w-full py-3 rounded-[var(--radius-btn)] border border-[rgba(255,255,255,0.12)]
-                       bg-[rgba(255,255,255,0.04)] text-white font-medium text-sm
-                       hover:bg-[rgba(255,255,255,0.08)] transition-colors flex items-center justify-center gap-3 relative"
+            className="relative flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
-            <span className="text-xl" role="img" aria-label="Google">🌐</span>
+            <span className="text-lg" role="img" aria-label="Google">🌐</span>
             Google ilə daxil ol
-            <span className="absolute right-3 text-[10px] text-[#6B7280] border border-[#6B7280]/40 rounded-full px-2 py-0.5">tezliklə</span>
+            <span className="absolute right-3 rounded-full border border-gray-300 px-2 py-0.5 text-[10px] text-gray-400">tezliklə</span>
           </button>
 
-          <p className="text-center text-sm text-[#9CA3AF] mt-6">
+          <p className="mt-6 text-center text-sm text-gray-500">
             Hesabın yoxdur?{' '}
-            <Link to={APP_ROUTES.REGISTER} className="text-[#9333EA] font-semibold hover:text-[#a855f7] transition-colors">
+            <Link
+              to={APP_ROUTES.REGISTER}
+              className="rounded font-semibold text-indigo-600 transition-colors hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
               Qeydiyyat
             </Link>
           </p>
         </motion.div>
-      </motion.div>
+      </main>
     </div>
   )
 }
