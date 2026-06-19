@@ -23,6 +23,10 @@ import FormatE from '../../features/quiz/formats/FormatE'
 
 type Phase = 'question' | 'feedback' | 'result' | 'no_hearts' | 'completed'
 
+// Aktiv sual səhnəsi premium soft-navy qalır (Format komponentləri ağ mətnlidir,
+// yəni light fonda görünməz olardı). Tamamlanma/limit/ürək/yükləmə ekranları light.
+const QUIZ_STAGE_BG = 'linear-gradient(180deg, #0E1525 0%, #0B111E 100%)'
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function isChildAge(ag?: AgeGroup) {
@@ -54,7 +58,7 @@ function getQuestionId(question: Question | undefined): string {
 function ConfettiPiece({ i }: { i: number }) {
   const angle = (i / 20) * 2 * Math.PI
   const dist = 120 + Math.random() * 80
-  const colors = ['#9333EA', '#3B82F6', '#58CC02', '#F97316', '#EC4899', '#EAB308']
+  const colors = ['#7C3AED', '#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#0EA5E9']
   const color = colors[i % colors.length]
   return (
     <motion.div
@@ -111,7 +115,7 @@ function XPCoins({ visible, amount }: { visible: boolean; amount: number }) {
             </motion.div>
           ))}
           <motion.div
-            className="fixed z-50 top-[72px] left-4 text-[#EAB308] font-black text-lg pointer-events-none"
+            className="fixed z-50 top-[72px] left-4 text-[#F59E0B] font-black text-lg pointer-events-none"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.3, 1, 0.8] }}
             exit={{}}
@@ -125,9 +129,9 @@ function XPCoins({ visible, amount }: { visible: boolean; amount: number }) {
   )
 }
 
-// ── Mascot popup ──────────────────────────────────────────────────────────
+// ── Feedback popup (düzgün/yanlış — personaj/avatar deyil) ──────────────────
 
-function MascotPopup({ correct, xp }: { correct: boolean; xp: number }) {
+function FeedbackPopup({ correct, xp }: { correct: boolean; xp: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.7, y: 20 }}
@@ -136,8 +140,8 @@ function MascotPopup({ correct, xp }: { correct: boolean; xp: number }) {
       className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3
                  px-5 py-3 rounded-2xl shadow-2xl"
       style={{
-        background: correct ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-        border: `1px solid ${correct ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)'}`,
+        background: correct ? 'rgba(16,185,129,0.18)' : 'rgba(244,63,94,0.18)',
+        border: `1px solid ${correct ? 'rgba(16,185,129,0.55)' : 'rgba(244,63,94,0.55)'}`,
         backdropFilter: 'blur(12px)',
       }}
     >
@@ -147,14 +151,14 @@ function MascotPopup({ correct, xp }: { correct: boolean; xp: number }) {
           {correct ? 'Əla!' : 'Olur, növbəti dəfə!'}
         </p>
         {correct && (
-          <p className="text-[#22C55E] text-xs font-semibold">+{xp} XP qazandın</p>
+          <p className="text-[#34D399] text-xs font-semibold">+{xp} XP qazandın</p>
         )}
       </div>
     </motion.div>
   )
 }
 
-// ── No Hearts overlay ─────────────────────────────────────────────────────
+// ── No Hearts screen (light premium) ────────────────────────────────────────
 
 function NoHeartsScreen({ gems, onExit, onBuyFreeze, isBuying }: { gems: number; onExit: () => void; onBuyFreeze: () => void; isBuying: boolean }) {
   const navigate = useNavigate()
@@ -162,50 +166,55 @@ function NoHeartsScreen({ gems, onExit, onBuyFreeze, isBuying }: { gems: number;
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-6"
-      style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-slate-50"
     >
       <motion.div
-        animate={{ y: [0, -12, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' as const }}
-        className="text-7xl"
+        initial={{ opacity: 0, y: 16, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="w-full max-w-sm rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-xl"
       >
-        🌙
-      </motion.div>
-      <h2 className="text-white font-black text-2xl text-center">Ürəklər tükəndi 💔</h2>
-      <p className="text-[#9CA3AF] text-sm text-center max-w-xs">
-        Sistem qeydi: "Hər çətinlik səni gücləndirir. Sabah yenidən cəhd et!"
-      </p>
+        <motion.div
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' as const }}
+          className="text-6xl"
+        >
+          🌙
+        </motion.div>
+        <h2 className="mt-4 text-xl font-bold text-gray-900">Ürəklər tükəndi 💔</h2>
+        <p className="mt-2 text-sm leading-relaxed text-gray-500">
+          Hər çətinlik səni gücləndirir. Sabah yenidən cəhd et!
+        </p>
 
-      <div className="flex flex-col gap-3 w-full max-w-xs">
-        {gems >= 50 && (
+        <div className="mt-6 flex flex-col gap-3">
+          {gems >= 50 && (
+            <button
+              disabled={isBuying}
+              className="w-full rounded-xl px-5 py-3 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+              style={{ background: 'linear-gradient(135deg, #06B6D4, #4F46E5)' }}
+              onClick={onBuyFreeze}
+            >
+              {isBuying ? 'Alınır...' : '💎 50 gem ilə Streak Freeze al'}
+            </button>
+          )}
           <button
-            disabled={isBuying}
-            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', boxShadow: '0 4px 16px rgba(6,182,212,0.4)' }}
-            onClick={onBuyFreeze}
+            onClick={onExit}
+            className="w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
-            {isBuying ? 'Alınır...' : '💎 50 gem ilə Streak Freeze al'}
+            Sabah davam et
           </button>
-        )}
-        <button
-          onClick={onExit}
-          className="w-full py-3.5 rounded-2xl font-bold text-[#9CA3AF] text-sm border border-[rgba(255,255,255,0.1)]"
-        >
-          Sabah davam et
-        </button>
-        <button
-          onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
-          className="text-[#9CA3AF] text-xs text-center"
-        >
-          Dashboarda qayıt
-        </button>
-      </div>
+          <button
+            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+            className="text-xs font-medium text-gray-500 transition-colors hover:text-gray-700"
+          >
+            Dashboarda qayıt
+          </button>
+        </div>
+      </motion.div>
     </motion.div>
   )
 }
 
-// ── Result screen ─────────────────────────────────────────────────────────
+// ── Result screen (light premium) ───────────────────────────────────────────
 
 function ResultScreen({
   answered, total, xp, streak, badge, onDashboard,
@@ -228,8 +237,7 @@ function ResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-6 px-6"
-      style={{ background: '#0D0D0D' }}
+      className="fixed inset-0 z-40 flex items-center justify-center px-4 bg-slate-50"
     >
       {/* Confetti */}
       <div className="fixed inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
@@ -238,74 +246,77 @@ function ResultScreen({
         </AnimatePresence>
       </div>
 
-      {/* Tamamlanma nişanı (neytral — personaj yoxdur) */}
-      <div className="flex items-end justify-center">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: 'easeOut' as const }}
+        className="relative w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-xl"
+      >
+        {/* Tamamlanma nişanı (neytral — personaj yoxdur) */}
         <motion.span
-          className="text-6xl"
-          animate={{ y: [0, -14, 0] }}
+          className="inline-block text-6xl"
+          animate={{ y: [0, -12, 0] }}
           transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 0.3 }}
         >
           🏆
         </motion.span>
-      </div>
 
-      <h2 className="text-white font-black text-3xl text-center">Təbrik edirik! 🎉</h2>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-gray-900">Təbrik edirik! 🎉</h2>
 
-      {/* XP big number */}
-      <motion.div
-        initial={{ scale: 0.4, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 200, delay: 0.3 }}
-        className="flex flex-col items-center"
-      >
-        <span className="text-6xl font-black" style={{ color: '#EAB308' }}>
-          +<XPCountUp target={xp} />
-        </span>
-        <span className="text-[#9CA3AF] text-sm">XP qazandın</span>
+        {/* XP big number */}
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 200, delay: 0.25 }}
+          className="mt-5 flex flex-col items-center"
+        >
+          <span className="text-5xl font-black text-amber-500">
+            +<XPCountUp target={xp} />
+          </span>
+          <span className="mt-1 text-sm text-gray-500">XP qazandın</span>
+        </motion.div>
+
+        {/* Stats */}
+        <div className="mt-6 flex items-center justify-center gap-6">
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-black tabular-nums text-gray-900">{answered}/{total}</span>
+            <span className="text-xs text-gray-500">sual</span>
+          </div>
+          <div className="h-8 w-px bg-gray-200" />
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-black text-orange-500">🔥 {streak}</span>
+            <span className="text-xs text-gray-500">gün sıra</span>
+          </div>
+        </div>
+
+        {/* Badge */}
+        <AnimatePresence>
+          {badge && (
+            <motion.div
+              initial={{ rotateY: 90, opacity: 0 }}
+              animate={{ rotateY: 0, opacity: 1 }}
+              transition={{ delay: 0.9, duration: 0.5 }}
+              className="mx-auto mt-6 flex w-fit flex-col items-center gap-1.5 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4"
+            >
+              <span className="text-4xl">{badge.emoji}</span>
+              <span className="text-sm font-bold text-gray-900">{badge.name}</span>
+              <span className="text-xs text-amber-600">Yeni badge!</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          onClick={onDashboard}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="mt-7 w-full rounded-xl bg-indigo-600 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+        >
+          Dashboarda qayıt
+        </motion.button>
       </motion.div>
-
-      {/* Stats */}
-      <div className="flex items-center gap-6">
-        <div className="flex flex-col items-center">
-          <span className="text-white font-black text-xl">{answered}/{total}</span>
-          <span className="text-[#9CA3AF] text-xs">sual</span>
-        </div>
-        <div className="w-px h-8 bg-[rgba(255,255,255,0.1)]" />
-        <div className="flex flex-col items-center">
-          <span className="text-xl font-black" style={{ color: '#F97316' }}>🔥 {streak}</span>
-          <span className="text-[#9CA3AF] text-xs">gün sıra</span>
-        </div>
-      </div>
-
-      {/* Badge */}
-      <AnimatePresence>
-        {badge && (
-          <motion.div
-            initial={{ rotateY: 90, opacity: 0 }}
-            animate={{ rotateY: 0, opacity: 1 }}
-            transition={{ delay: 1, duration: 0.5 }}
-            className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl"
-            style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)' }}
-          >
-            <span className="text-4xl">{badge.emoji}</span>
-            <span className="text-white font-bold text-sm">{badge.name}</span>
-            <span className="text-[#9CA3AF] text-xs">Yeni badge!</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <motion.button
-        onClick={onDashboard}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-        className="w-full max-w-xs py-4 rounded-2xl font-black text-white text-base"
-        style={{ background: 'linear-gradient(135deg, #9333EA, #3B82F6)', boxShadow: '0 4px 20px rgba(147,51,234,0.4)' }}
-      >
-        Dashboarda qayıt
-      </motion.button>
     </motion.div>
   )
 }
@@ -546,48 +557,47 @@ export default function DailyQuiz() {
     }
   }
 
-  // ── Render: loading ────────────────────────────────────────────────────
+  // ── Render: loading (light premium) ──────────────────────────────────────
 
   if (isDailyStatusLoading || isDailyStatusFetching || (canFetchDailyQuestions && isQuestionsLoading)) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-6">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' as const }}
           className="w-14 h-14 rounded-full border-4 border-t-transparent"
-          style={{ borderColor: `${avatarColor} ${avatarColor}40 ${avatarColor}40 ${avatarColor}40` }}
+          style={{ borderColor: `${avatarColor} ${avatarColor}33 ${avatarColor}33 ${avatarColor}33` }}
         />
-        <p className="text-[#9CA3AF] text-sm">Suallar yüklənir...</p>
+        <p className="text-gray-500 text-sm">Suallar yüklənir...</p>
       </div>
     )
   }
 
-  // ── Render: boş / xəta (sonsuz loading-in qarşısını alır) ───────────────
+  // ── Render: boş / xəta / gündəlik limit (light premium) ──────────────────
   if (isDailyStatusError || dailyCompleted || isQuestionsError || !questions || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center gap-5 px-4 text-center">
-        <div className="text-6xl">🧩</div>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6 px-4 text-center">
+        <div className="grid h-16 w-16 place-items-center rounded-2xl border border-indigo-100 bg-indigo-50 text-3xl">🧩</div>
         <div>
-          <h2 className="text-white font-bold text-xl mb-1">
+          <h2 className="text-xl font-bold text-gray-900">
             {dailyCompleted ? 'Gündəlik limit tamamlandı' : 'Bugünkü suallar hazır deyil'}
           </h2>
-          <p className="text-[#9CA3AF] text-sm max-w-sm">
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-gray-500">
             {dailyCompleted
               ? 'Bugünkü suallar tamamlanıb. Paneldən digər fəaliyyətlərə davam edə bilərsən.'
               : 'Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.'}
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={handleRetryDaily}
-            className="px-5 py-2.5 rounded-2xl text-sm font-bold text-white"
-            style={{ background: `linear-gradient(135deg, ${avatarColor}, #9333EA)` }}
+            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
           >
             Yenidən cəhd et
           </button>
           <button
             onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
-            className="px-5 py-2.5 rounded-2xl text-sm font-bold text-[#9CA3AF] border border-white/10 hover:text-white transition-colors"
+            className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             Panelə qayıt
           </button>
@@ -624,52 +634,52 @@ export default function DailyQuiz() {
     )
   }
 
-  // ── Render: question ───────────────────────────────────────────────────
+  // ── Render: question (premium soft-navy focus stage) ─────────────────────
 
   const timerPct = totalTime > 0 ? timeLeft / totalTime : 0
   const timerColor = timerPct > 0.5 ? '#22C55E' : timerPct > 0.25 ? '#EAB308' : '#EF4444'
   const answerControlsLocked = isAnswered || mutation.isPending
+  const progressPct = totalQuestions > 0 ? (currentIndex / totalQuestions) * 100 : 0
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: QUIZ_STAGE_BG }}>
       {/* ── Header ── */}
-      <div
-        className="shrink-0 px-4 lg:px-6 py-3 flex items-center gap-3 border-b"
-        style={{ borderColor: 'rgba(255,255,255,0.06)' }}
-      >
+      <div className="shrink-0 px-4 lg:px-6 py-3 flex items-center gap-2 sm:gap-3 border-b border-white/10">
         <button
           onClick={handleExitQuiz}
-          className="shrink-0 px-3 py-2 rounded-xl text-xs font-bold text-[#9CA3AF] border border-white/10 hover:text-white hover:border-white/20 transition-colors"
+          className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
         >
           <span className="hidden sm:inline">Panelə qayıt</span>
           <span className="sm:hidden">Çıxış</span>
         </button>
 
         {/* XP earned today */}
-        <div className="flex items-center gap-1.5 min-w-[72px]">
-          <span className="text-base">⭐</span>
-          <span className="font-bold text-sm" style={{ color: avatarColor }}>{totalXP} XP</span>
+        <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5">
+          <span className="text-sm leading-none">⭐</span>
+          <span className="text-sm font-bold tabular-nums" style={{ color: avatarColor }}>{totalXP}</span>
+          <span className="text-[10px] text-slate-400">XP</span>
         </div>
 
         {/* Progress bar */}
-        <div className="flex-1 flex flex-col gap-1">
-          <div className="flex justify-between items-center">
-            <span className="text-[#9CA3AF] text-[10px]">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium text-slate-400">Sual</span>
+            <span className="text-[10px] font-semibold tabular-nums text-slate-300">
               {currentIndex + 1}/{totalQuestions}
             </span>
           </div>
-          <div className="h-2.5 bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden">
+          <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
             <motion.div
               className="h-full rounded-full"
               style={{ backgroundColor: avatarColor }}
-              animate={{ width: `${((currentIndex) / totalQuestions) * 100}%` }}
+              animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.5, ease: 'easeOut' as const }}
             />
           </div>
         </div>
 
         {/* Hearts */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-0.5">
           {[...Array(5)].map((_, i) => (
             <motion.span
               key={i}
@@ -688,7 +698,7 @@ export default function DailyQuiz() {
             style={{
               border: `2px solid ${timerColor}`,
               color: timerColor,
-              backgroundColor: `${timerColor}15`,
+              backgroundColor: `${timerColor}1f`,
             }}
           >
             {timeLeft}
@@ -697,7 +707,7 @@ export default function DailyQuiz() {
       </div>
 
       {/* ── Question area ── */}
-      <div className="flex-1 flex items-center justify-center py-6 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center py-6 px-2 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={`${currentIndex}-${format}`}
@@ -766,9 +776,9 @@ export default function DailyQuiz() {
         </AnimatePresence>
       </div>
 
-      {/* ── Mascot popup ── */}
+      {/* ── Feedback popup ── */}
       <AnimatePresence>
-        {showMascot && <MascotPopup correct={mascotCorrect} xp={lastXP} />}
+        {showMascot && <FeedbackPopup correct={mascotCorrect} xp={lastXP} />}
       </AnimatePresence>
 
       {/* ── XP coins ── */}
@@ -777,7 +787,7 @@ export default function DailyQuiz() {
       {/* ── Age hint for children ── */}
       {isChild && !answerControlsLocked && (
         <div className="shrink-0 px-4 pb-4 text-center">
-          <p className="text-[#9CA3AF] text-xs">Cavabını seç 👆</p>
+          <p className="text-slate-400 text-xs">Cavabını seç 👆</p>
         </div>
       )}
     </div>
