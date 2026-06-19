@@ -148,8 +148,6 @@ const FOCUS_ACCENTS: Record<'emerald' | 'amber' | 'violet', FocusAccent> = {
 
 // ── Reusable light stillər ──────────────────────────────────────────────────
 
-const PRIMARY_BTN =
-  'inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60'
 const OUTLINE_BTN =
   'inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
 const CARD = 'rounded-2xl border border-gray-200 bg-white p-5 shadow-sm'
