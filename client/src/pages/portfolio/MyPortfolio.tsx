@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useSelector } from 'react-redux'
+import toast from 'react-hot-toast'
 import type { RootState } from '../../app/store'
 import api from '../../lib/axios'
 import { API_ROUTES, APP_ROUTES } from '../../constants'
@@ -950,11 +951,28 @@ export default function MyPortfolio() {
   const visibilityMutation = useMutation({
     mutationFn: (isPublic: boolean) =>
       api.patch(API_ROUTES.PORTFOLIO.VISIBILITY, { isPublic }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['my-portfolio'] }),
-    onError: (_err, isPublic) => {
-      qc.setQueryData(['my-portfolio'], (old: MyPortfolioData | undefined) =>
+    onMutate: async (isPublic: boolean) => {
+      await qc.cancelQueries({ queryKey: ['my-portfolio'] })
+
+      const previousPortfolio = qc.getQueryData<MyPortfolioData>(['my-portfolio'])
+
+      qc.setQueryData<MyPortfolioData>(['my-portfolio'], old =>
         old ? { ...old, isPublic } : old
       )
+
+      return { previousPortfolio }
+    },
+    onSuccess: () => {
+      toast.dismiss('portfolio-visibility-error')
+      qc.invalidateQueries({ queryKey: ['my-portfolio'] })
+    },
+    onError: (_err, _isPublic, context) => {
+      if (context?.previousPortfolio) {
+        qc.setQueryData(['my-portfolio'], context.previousPortfolio)
+      } else {
+        qc.invalidateQueries({ queryKey: ['my-portfolio'] })
+      }
+      toast.error('Portfolio görünürlüyü saxlanmadı. Yenidən cəhd edin.', { id: 'portfolio-visibility-error' })
     },
   })
 
