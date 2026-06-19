@@ -99,24 +99,24 @@ interface PublicPortfolioData {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const LEAGUE_COLORS: Record<string, string> = {
-  bronze: '#CD7F32', silver: '#C0C0C0', gold: '#FFD700', platinum: '#E5E4E2', diamond: '#B9F2FF',
+  bronze: '#B45309', silver: '#64748B', gold: '#D97706', platinum: '#0EA5E9', diamond: '#7C3AED',
 }
 
 const RARITY_COLORS: Record<string, string> = {
-  common: 'border-white/20 bg-white/5',
-  rare: 'border-blue-500/40 bg-blue-500/10',
-  epic: 'border-purple-500/40 bg-purple-500/10',
-  legendary: 'border-yellow-400/50 bg-yellow-400/10',
+  common: 'border-gray-200 bg-gray-50',
+  rare: 'border-blue-200 bg-blue-50',
+  epic: 'border-purple-200 bg-purple-50',
+  legendary: 'border-amber-300 bg-amber-50',
 }
 
 const SUBJECT_META: Record<string, { emoji: string; color: string }> = {
-  'Riyaziyyat': { emoji: '🔢', color: '#60A5FA' },
-  'Fizika':     { emoji: '⚗️', color: '#A78BFA' },
-  'İnformatika':{ emoji: '💻', color: '#34D399' },
-  'Kimya':      { emoji: '🔬', color: '#FB923C' },
-  'Biologiya':  { emoji: '🌿', color: '#4ADE80' },
-  'Tarix':      { emoji: '📜', color: '#FBBF24' },
-  'Dil':        { emoji: '📖', color: '#F472B6' },
+  'Riyaziyyat': { emoji: '🔢', color: '#2563EB' },
+  'Fizika':     { emoji: '⚗️', color: '#7C3AED' },
+  'İnformatika':{ emoji: '💻', color: '#059669' },
+  'Kimya':      { emoji: '🔬', color: '#EA580C' },
+  'Biologiya':  { emoji: '🌿', color: '#16A34A' },
+  'Tarix':      { emoji: '📜', color: '#D97706' },
+  'Dil':        { emoji: '📖', color: '#DB2777' },
 }
 
 function fmtDate(iso: string): string {
@@ -131,8 +131,8 @@ function Stars({ count, size = 14 }: { count: number; size?: number }) {
     <span className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
         <svg key={i} width={size} height={size} viewBox="0 0 20 20"
-          fill={i <= count ? '#FACC15' : 'rgba(255,255,255,0.1)'}
-          stroke={i <= count ? '#FACC15' : 'rgba(255,255,255,0.15)'}
+          fill={i <= count ? '#F59E0B' : '#E5E7EB'}
+          stroke={i <= count ? '#F59E0B' : '#D1D5DB'}
           strokeWidth="1"
         >
           <polygon points="10,2 12.9,7.7 19,8.6 14.5,13 15.8,19.1 10,16.1 4.2,19.1 5.5,13 1,8.6 7.1,7.7" />
@@ -144,7 +144,7 @@ function Stars({ count, size = 14 }: { count: number; size?: number }) {
 
 // Bölmə boş olduqda — dürüst empty state (fake nailiyyət göstərilmir).
 function SectionEmpty({ text }: { text: string }) {
-  return <p className="py-4 text-center text-sm text-white/40">{text}</p>
+  return <p className="py-4 text-center text-sm text-gray-400">{text}</p>
 }
 
 // ── Meta tags (OG) ────────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
   if (!isAuthenticated) {
     return (
       <div className="flex gap-3">
-        <Link to="/login" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors">
+        <Link to="/login" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors">
           Giriş et — əlaqə saxla
         </Link>
       </div>
@@ -184,7 +184,7 @@ function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
   if (isStudent && portfolio.isConnected) {
     return (
       <div className="flex gap-3 flex-wrap">
-        <span className="flex items-center gap-2 px-4 py-2 border border-indigo-500/40 bg-indigo-500/10 rounded-xl text-sm font-semibold text-indigo-300">
+        <span className="flex items-center gap-2 px-4 py-2 border border-indigo-200 bg-indigo-50 rounded-xl text-sm font-semibold text-indigo-700">
           ✓ Qoşuldunuz
         </span>
       </div>
@@ -206,11 +206,11 @@ function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
         disabled
         aria-disabled="true"
         title={INFO_MSG}
-        className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-white/40 cursor-not-allowed w-fit"
+        className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-400 cursor-not-allowed w-fit"
       >
         {isTeacher ? '📨 Kurs dəvəti göndər' : '🤝 Connect ol'}
       </button>
-      <p className="text-xs text-white/40">{INFO_MSG}</p>
+      <p className="text-xs text-gray-400">{INFO_MSG}</p>
     </div>
   )
 }
@@ -219,54 +219,54 @@ function ActionButtons({ portfolio }: { portfolio: PublicPortfolioData }) {
 
 function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-[#0D0D0D] text-white pb-16">
-      <div className="text-center pt-12 pb-8 px-4">
+    <div className="min-h-screen bg-slate-50 text-gray-900 pb-16">
+      <div className="bg-gradient-to-b from-indigo-50 to-slate-50 text-center pt-12 pb-8 px-4">
         <motion.div
-          className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 border-4 border-yellow-400 flex items-center justify-center text-5xl mb-4 shadow-xl"
+          className="w-28 h-28 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl text-white mb-4 shadow-lg"
           animate={{ y: [0, -8, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' as const }}
         >
-          {portfolio.user.avatar ? <img src={portfolio.user.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : '🦸'}
+          {portfolio.user.avatar ? <img src={portfolio.user.avatar} alt="" className="w-full h-full rounded-2xl object-cover" /> : '🦸'}
         </motion.div>
-        <h1 className="text-3xl font-bold">{portfolio.user.name}</h1>
-        <p className="text-white/50 mt-1">{portfolio.user.school ?? portfolio.user.city}</p>
+        <h1 className="text-3xl font-bold text-gray-900">{portfolio.user.name}</h1>
+        <p className="text-gray-500 mt-1">{portfolio.user.school ?? portfolio.user.city}</p>
         <div className="flex justify-center gap-3 mt-4 flex-wrap">
-          <div className="bg-yellow-400/20 border border-yellow-400/40 rounded-2xl px-4 py-2 text-center">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2 text-center">
             <div className="text-2xl">⚡</div>
-            <div className="text-lg font-bold text-yellow-300">{portfolio.stats.totalXP.toLocaleString()}</div>
-            <div className="text-xs text-yellow-300/60">XP</div>
+            <div className="text-lg font-bold text-amber-600">{portfolio.stats.totalXP.toLocaleString()}</div>
+            <div className="text-xs text-amber-600/70">XP</div>
           </div>
-          <div className="bg-orange-400/20 border border-orange-400/40 rounded-2xl px-4 py-2 text-center">
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-2 text-center">
             <div className="text-2xl">🔥</div>
-            <div className="text-lg font-bold text-orange-300">{portfolio.stats.currentStreak} gün</div>
-            <div className="text-xs text-orange-300/60">Streak</div>
+            <div className="text-lg font-bold text-orange-600">{portfolio.stats.currentStreak} gün</div>
+            <div className="text-xs text-orange-600/70">Streak</div>
           </div>
         </div>
-        <div className="mt-5">
+        <div className="mt-5 flex justify-center">
           <ActionButtons portfolio={portfolio} />
         </div>
       </div>
 
       {/* Skills as world cards */}
       <div className="max-w-xl mx-auto px-4">
-        <h2 className="text-lg font-bold text-center mb-4">🗺️ Bacarıq Dünyaları</h2>
+        <h2 className="text-lg font-bold text-center mb-4 text-gray-900">🗺️ Bacarıq Dünyaları</h2>
         {portfolio.skills.length === 0 && (
           <SectionEmpty text="Hələ bacarıq məlumatı yoxdur." />
         )}
         <div className="grid grid-cols-2 gap-4">
           {portfolio.skills.map((skill, i) => {
-            const meta = SUBJECT_META[skill.subject] ?? { emoji: '📖', color: '#9CA3AF' }
+            const meta = SUBJECT_META[skill.subject] ?? { emoji: '📖', color: '#6366F1' }
             return (
               <motion.div key={skill.subject}
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.1 }}
-                className="rounded-3xl p-5 border border-white/10 text-center"
-                style={{ background: `${meta.color}15`, borderColor: `${meta.color}30` }}
+                className="rounded-3xl p-5 border bg-white text-center shadow-sm"
+                style={{ borderColor: `${meta.color}30` }}
               >
                 <div className="text-4xl mb-2">{meta.emoji}</div>
                 <p className="text-sm font-bold mb-1" style={{ color: meta.color }}>{skill.subject}</p>
-                <Stars count={skill.stars} size={13} />
+                <div className="flex justify-center"><Stars count={skill.stars} size={13} /></div>
               </motion.div>
             )
           })}
@@ -275,7 +275,7 @@ function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
 
       {/* Badges */}
       <div className="max-w-xl mx-auto px-4 mt-8">
-        <h2 className="text-lg font-bold text-center mb-4">🎖️ Nailiyyətlər</h2>
+        <h2 className="text-lg font-bold text-center mb-4 text-gray-900">🎖️ Nailiyyətlər</h2>
         {portfolio.badges.length === 0 && (
           <SectionEmpty text="Hələ mükafat əlavə edilməyib." />
         )}
@@ -285,7 +285,7 @@ function YoungPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
               className={`flex flex-col items-center p-3 rounded-2xl border ${RARITY_COLORS[badge.rarity]} w-24`}
             >
               <span className="text-3xl">{badge.emoji}</span>
-              <span className="text-[10px] text-white/50 mt-1 text-center">{badge.name}</span>
+              <span className="text-[10px] text-gray-500 mt-1 text-center">{badge.name}</span>
             </motion.div>
           ))}
         </div>
@@ -311,26 +311,26 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
         initial={{ opacity: 0, x: isLeft ? -25 : 25 }}
         animate={inView ? { opacity: 1, x: 0 } : {}}
         transition={{ duration: 0.35 }}
-        className={`flex-1 border rounded-2xl p-4 ${event.isMystery ? 'border-yellow-400/50 bg-yellow-400/10' : 'border-white/10 bg-white/5'}`}
+        className={`flex-1 border rounded-2xl p-4 shadow-sm ${event.isMystery ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}
       >
         <div className="flex items-start gap-2">
           <span className="text-xl">{event.badgeEmoji ?? EVENT_ICONS[event.type]}</span>
           <div>
-            <p className="font-semibold text-sm">{event.title}</p>
-            {event.subtitle && <p className="text-xs text-white/50 mt-0.5">{event.subtitle}</p>}
+            <p className="font-semibold text-sm text-gray-900">{event.title}</p>
+            {event.subtitle && <p className="text-xs text-gray-500 mt-0.5">{event.subtitle}</p>}
             {event.rank && (
-              <span className="text-xs font-bold" style={{ color: event.rank === 1 ? '#FACC15' : '#C0C0C0' }}>
+              <span className="text-xs font-bold" style={{ color: event.rank === 1 ? '#D97706' : '#64748B' }}>
                 {event.rank <= 3 ? ['🥇 1-ci', '🥈 2-ci', '🥉 3-cü'][event.rank - 1] : `#${event.rank}`}
               </span>
             )}
-            <p className="text-xs text-white/30 mt-1">{fmtDate(event.date)}</p>
+            <p className="text-xs text-gray-400 mt-1">{fmtDate(event.date)}</p>
           </div>
         </div>
       </motion.div>
       <div className="relative w-12 flex justify-center">
         <motion.div
           initial={{ scale: 0 }} animate={inView ? { scale: 1 } : {}}
-          className="w-4 h-4 rounded-full bg-indigo-500 border-2 border-[#0D0D0D] z-10"
+          className="w-4 h-4 rounded-full bg-indigo-500 border-2 border-white shadow z-10"
         />
       </div>
       <div className="flex-1" />
@@ -340,30 +340,30 @@ function TimelineItem({ event, index }: { event: TimelineEvent; index: number })
 
 function TeenPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white pb-16">
-      <div className="bg-gradient-to-b from-indigo-950 to-[#0D0D0D] pt-8 pb-6 px-4 text-center">
-        <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 border-4 border-yellow-400 flex items-center justify-center text-3xl mb-3 shadow-xl">
+    <div className="min-h-screen bg-slate-50 text-gray-900 pb-16">
+      <div className="bg-gradient-to-b from-indigo-50 to-slate-50 pt-8 pb-6 px-4 text-center">
+        <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-3xl text-white mb-3 shadow-md">
           {portfolio.user.name[0]}
         </div>
-        <h1 className="text-2xl font-bold">{portfolio.user.name}</h1>
-        <p className="text-white/50 text-sm">{portfolio.user.school ?? portfolio.user.city} · Səviyyə {portfolio.user.level}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{portfolio.user.name}</h1>
+        <p className="text-gray-500 text-sm">{portfolio.user.school ?? portfolio.user.city} · Səviyyə {portfolio.user.level}</p>
         <div className="flex justify-center gap-3 mt-3 flex-wrap">
           {[['⚡', portfolio.stats.totalXP.toLocaleString(), 'XP'], ['🔥', `${portfolio.stats.currentStreak} gün`, 'Streak'], ['✅', portfolio.stats.totalQuestions.toString(), 'Sual']].map(([icon, v, l]) => (
-            <div key={l} className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center">
+            <div key={l} className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-center shadow-sm">
               <p className="text-base">{icon}</p>
-              <p className="font-bold text-sm">{v}</p>
-              <p className="text-xs text-white/40">{l}</p>
+              <p className="font-bold text-sm text-gray-900">{v}</p>
+              <p className="text-xs text-gray-400">{l}</p>
             </div>
           ))}
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex justify-center">
           <ActionButtons portfolio={portfolio} />
         </div>
       </div>
 
       {/* Timeline */}
       <div className="max-w-2xl mx-auto px-4 relative">
-        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/10 -translate-x-1/2" />
+        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 -translate-x-1/2" />
         <div className="space-y-4 relative">
           {portfolio.timeline.length === 0 && (
             <SectionEmpty text="Hələ portfolio hadisəsi yoxdur." />
@@ -383,28 +383,28 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
   const chartData = portfolio.competitions.map(c => ({ name: c.title.slice(0, 12), xal: c.score })).reverse()
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white">
+    <div className="min-h-screen bg-slate-50 text-gray-900">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Profile header */}
-        <div className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden">
-          <div className="h-20 bg-gradient-to-r from-indigo-900 via-purple-900 to-[#141414]" />
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="h-20 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600" />
           <div className="px-6 pb-6">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div className="flex items-end gap-4">
-                <div className="w-20 h-20 -mt-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border-4 border-[#141414] flex items-center justify-center text-3xl font-bold shadow-xl shrink-0 relative">
+                <div className="w-20 h-20 -mt-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border-4 border-white flex items-center justify-center text-3xl font-bold text-white shadow-xl shrink-0 relative">
                   {portfolio.user.avatar ? <img src={portfolio.user.avatar} alt="" className="w-full h-full object-cover rounded-lg" /> : portfolio.user.name[0]}
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#141414] text-xs flex items-center justify-center"
-                    style={{ backgroundColor: LEAGUE_COLORS[portfolio.user.league] + '33' }}>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white bg-white shadow text-xs flex items-center justify-center"
+                    style={{ color: LEAGUE_COLORS[portfolio.user.league] }}>
                     {portfolio.user.league === 'gold' ? '🥇' : portfolio.user.league === 'diamond' ? '💎' : '🥈'}
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-2xl font-bold">{portfolio.user.name}</h1>
-                    <span className="text-xs text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">✓ Verified</span>
+                    <h1 className="text-2xl font-bold text-gray-900">{portfolio.user.name}</h1>
+                    <span className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">✓ Verified</span>
                   </div>
-                  <p className="text-white/50 text-sm mt-0.5">{portfolio.user.school ?? portfolio.user.city}</p>
-                  {portfolio.user.bio && <p className="text-white/70 text-sm mt-2 max-w-lg">{portfolio.user.bio}</p>}
+                  <p className="text-gray-500 text-sm mt-0.5">{portfolio.user.school ?? portfolio.user.city}</p>
+                  {portfolio.user.bio && <p className="text-gray-600 text-sm mt-2 max-w-lg">{portfolio.user.bio}</p>}
                 </div>
               </div>
               <div className="flex gap-3 flex-wrap mt-2 sm:mt-0">
@@ -417,40 +417,40 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Ümumi XP', value: portfolio.stats.totalXP.toLocaleString(), color: 'text-yellow-400' },
-            { label: 'Dəqiqlik', value: `${portfolio.stats.accuracy}%`, color: 'text-emerald-400' },
-            { label: 'Streak rekoru', value: `${portfolio.stats.longestStreak} gün`, color: 'text-orange-400' },
-            { label: 'Milli reyting', value: `#${portfolio.stats.rank}`, color: 'text-indigo-400' },
+            { label: 'Ümumi XP', value: portfolio.stats.totalXP.toLocaleString(), color: 'text-amber-600' },
+            { label: 'Dəqiqlik', value: `${portfolio.stats.accuracy}%`, color: 'text-emerald-600' },
+            { label: 'Streak rekoru', value: `${portfolio.stats.longestStreak} gün`, color: 'text-orange-600' },
+            { label: 'Milli reyting', value: `#${portfolio.stats.rank}`, color: 'text-indigo-600' },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-[#141414] border border-white/10 rounded-xl p-4 text-center">
+            <div key={label} className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
               <p className={`text-2xl font-bold ${color}`}>{value}</p>
-              <p className="text-xs text-white/50 mt-0.5">{label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{label}</p>
             </div>
           ))}
         </div>
 
         {/* Skills */}
-        <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-          <h2 className="font-bold mb-4">Bacarıqlar</h2>
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+          <h2 className="font-bold mb-4 text-gray-900">Bacarıqlar</h2>
           <div className="space-y-3">
             {portfolio.skills.filter(s => !s.isWeak).length === 0 && (
               <SectionEmpty text="Hələ bacarıq məlumatı yoxdur." />
             )}
             {portfolio.skills.filter(s => !s.isWeak).map(s => {
-              const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#9CA3AF' }
+              const meta = SUBJECT_META[s.subject] ?? { emoji: '📖', color: '#6366F1' }
               return (
                 <div key={s.subject} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <span>{meta.emoji} <span className="font-medium">{s.subject}</span></span>
-                      {s.isVerified && <span className="text-xs text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded-full">✓ Təsdiqlənib</span>}
+                      <span className="text-gray-700">{meta.emoji} <span className="font-medium">{s.subject}</span></span>
+                      {s.isVerified && <span className="text-xs text-emerald-600 border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 rounded-full">✓ Təsdiqlənib</span>}
                     </div>
                     <div className="flex items-center gap-2">
                       <Stars count={s.stars} size={12} />
-                      <span className="text-xs text-white/40">{s.accuracy}%</span>
+                      <span className="text-xs text-gray-400">{s.accuracy}%</span>
                     </div>
                   </div>
-                  <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <motion.div className="h-full rounded-full" style={{ backgroundColor: meta.color }}
                       initial={{ width: 0 }} animate={{ width: `${s.level}%` }} transition={{ duration: 0.8 }} />
                   </div>
@@ -462,8 +462,8 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Badges */}
-          <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-            <h2 className="font-bold mb-4">Nişanlar</h2>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <h2 className="font-bold mb-4 text-gray-900">Nişanlar</h2>
             <div className="flex flex-wrap gap-3">
               {portfolio.badges.length === 0 && (
                 <SectionEmpty text="Hələ mükafat əlavə edilməyib." />
@@ -475,8 +475,8 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
                 >
                   <span className="text-2xl">{badge.emoji}</span>
                   <div>
-                    <p className="text-xs font-semibold">{badge.name}</p>
-                    <p className="text-[10px] text-white/30 capitalize">{badge.rarity}</p>
+                    <p className="text-xs font-semibold text-gray-900">{badge.name}</p>
+                    <p className="text-[10px] text-gray-400 capitalize">{badge.rarity}</p>
                   </div>
                 </motion.div>
               ))}
@@ -485,15 +485,15 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
 
           {/* Certificates */}
           {portfolio.certificates.length > 0 && (
-            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-              <h2 className="font-bold mb-4">Sertifikatlar</h2>
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+              <h2 className="font-bold mb-4 text-gray-900">Sertifikatlar</h2>
               <div className="space-y-3">
                 {portfolio.certificates.map(cert => (
-                  <div key={cert.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
-                    <div className="w-9 h-9 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-lg shrink-0">🎓</div>
+                  <div key={cert.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-gray-200 rounded-xl">
+                    <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-lg shrink-0">🎓</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{cert.courseName}</p>
-                      <p className="text-xs text-white/40">{cert.teacherName} · {fmtDate(cert.issuedAt)}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{cert.courseName}</p>
+                      <p className="text-xs text-gray-400">{cert.teacherName} · {fmtDate(cert.issuedAt)}</p>
                     </div>
                   </div>
                 ))}
@@ -504,29 +504,29 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
 
         {/* Competition chart */}
         {portfolio.competitions.length > 0 && (
-          <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-            <h2 className="font-bold mb-4">Yarış Nəticələri</h2>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <h2 className="font-bold mb-4 text-gray-900">Yarış Nəticələri</h2>
             <div className="space-y-3 mb-5">
               {portfolio.competitions.map(comp => (
-                <div key={comp.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
-                  <div className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center shrink-0 ${comp.rank === 1 ? 'bg-yellow-400/20' : 'bg-white/10'}`}>
+                <div key={comp.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-gray-200 rounded-xl">
+                  <div className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center shrink-0 ${comp.rank === 1 ? 'bg-amber-100' : 'bg-gray-100'}`}>
                     {comp.rank <= 3 ? ['🥇', '🥈', '🥉'][comp.rank - 1] : `#${comp.rank}`}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{comp.title}</p>
-                    <p className="text-xs text-white/40">{comp.totalParticipants} iştirakçı · {fmtDate(comp.date)}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{comp.title}</p>
+                    <p className="text-xs text-gray-400">{comp.totalParticipants} iştirakçı · {fmtDate(comp.date)}</p>
                   </div>
-                  <span className="text-sm font-bold text-white/60 shrink-0">{comp.score} xal</span>
+                  <span className="text-sm font-bold text-gray-600 shrink-0">{comp.score} xal</span>
                 </div>
               ))}
             </div>
             <div className="h-36">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} />
-                  <Line type="monotone" dataKey="xal" stroke="#818CF8" strokeWidth={2} dot={{ fill: '#818CF8', r: 3 }} />
+                  <XAxis dataKey="name" tick={{ fill: '#94A3B8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tick={{ fill: '#94A3B8', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
+                  <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#111827' }} />
+                  <Line type="monotone" dataKey="xal" stroke="#6366F1" strokeWidth={2} dot={{ fill: '#6366F1', r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -534,8 +534,8 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
         )}
 
         {/* Footer */}
-        <div className="text-center py-4 text-xs text-white/30">
-          LogiCora — Azərbaycanın təhsil super-platforması · <a href="https://logicora.az" className="hover:text-white/60">logicora.az</a>
+        <div className="text-center py-4 text-xs text-gray-400">
+          LogiCora — Azərbaycanın təhsil super-platforması · <a href="https://logicora.az" className="hover:text-gray-600">logicora.az</a>
         </div>
       </div>
     </div>
@@ -561,11 +561,11 @@ export default function PublicPortfolio() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="space-y-3 text-center">
-          <div className="w-20 h-20 rounded-full bg-white/10 animate-pulse mx-auto" />
-          <div className="h-4 bg-white/10 rounded-xl w-36 mx-auto animate-pulse" />
-          <div className="h-3 bg-white/10 rounded-xl w-24 mx-auto animate-pulse" />
+          <div className="w-20 h-20 rounded-2xl bg-slate-200 animate-pulse mx-auto" />
+          <div className="h-4 bg-slate-200 rounded-xl w-36 mx-auto animate-pulse" />
+          <div className="h-3 bg-slate-200 rounded-xl w-24 mx-auto animate-pulse" />
         </div>
       </div>
     )
@@ -573,12 +573,12 @@ export default function PublicPortfolio() {
 
   if (!portfolio) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-center px-4">
         <div className="space-y-4">
           <div className="text-7xl">🔍</div>
-          <h1 className="text-2xl font-bold text-white">Portfolio mövcud deyil</h1>
-          <p className="text-white/50">Bu portfolio mövcud deyil və ya paylaşım aktiv deyil.</p>
-          <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors">
+          <h1 className="text-2xl font-bold text-gray-900">Portfolio mövcud deyil</h1>
+          <p className="text-gray-500">Bu portfolio mövcud deyil və ya paylaşım aktiv deyil.</p>
+          <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors">
             Ana səhifəyə qayıt
           </Link>
         </div>
@@ -588,12 +588,12 @@ export default function PublicPortfolio() {
 
   if (!portfolio.isPublic) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-center px-4">
         <div className="space-y-4 max-w-sm">
           <div className="text-7xl">🔒</div>
-          <h1 className="text-2xl font-bold text-white">Bu portfolio gizlidir</h1>
-          <p className="text-white/50">Sahibi portfoliosunu ictimai etməyib.</p>
-          <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors">
+          <h1 className="text-2xl font-bold text-gray-900">Bu portfolio gizlidir</h1>
+          <p className="text-gray-500">Sahibi portfoliosunu ictimai etməyib.</p>
+          <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors">
             Ana səhifəyə qayıt
           </Link>
         </div>
