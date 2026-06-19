@@ -70,11 +70,11 @@ const KID_AGES = ['3-5', '6-8']
 interface Tier { name: string; min: number; color: string }
 
 const TIERS: Tier[] = [
-  { name: 'Bürünc', min: 0, color: '#CD7F32' },
-  { name: 'Gümüş', min: 1000, color: '#C0C0C0' },
-  { name: 'Qızıl', min: 5000, color: '#FFD700' },
-  { name: 'Platin', min: 15000, color: '#E5E4E2' },
-  { name: 'Almaz', min: 50000, color: '#B9F2FF' },
+  { name: 'Bürünc', min: 0, color: '#B45309' },
+  { name: 'Gümüş', min: 1000, color: '#64748B' },
+  { name: 'Qızıl', min: 5000, color: '#D97706' },
+  { name: 'Platin', min: 15000, color: '#0EA5E9' },
+  { name: 'Almaz', min: 50000, color: '#7C3AED' },
 ]
 
 function getTier(totalXP: number) {
@@ -103,8 +103,8 @@ function AvatarCircle({ name, color, size = 36 }: { name: string; color: string;
       style={{
         width: size, height: size,
         backgroundColor: color,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-        border: '2px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 2px 8px rgba(15,23,42,0.18)',
+        border: '2px solid rgba(255,255,255,0.85)',
         fontSize: size * 0.38,
       }}
     >
@@ -120,18 +120,29 @@ function NotifItem({ n }: { n: AppNotification }) {
     info: '💬', success: '✅', warning: '⚠️', achievement: '🏆', challenge: '⚔️',
   }
   return (
-    <div className={`flex gap-3 p-3 rounded-xl transition-colors ${n.isRead ? 'opacity-60' : 'bg-[rgba(99,102,241,0.08)]'}`}>
+    <div className={`flex gap-3 p-3 rounded-xl transition-colors ${n.isRead ? 'opacity-70' : 'bg-indigo-50'}`}>
       <span className="text-xl shrink-0 mt-0.5">{typeIcon[n.type]}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-white text-sm font-medium leading-tight truncate">{n.title}</p>
-        <p className="text-[#9CA3AF] text-xs mt-0.5 line-clamp-2">{n.message}</p>
+        <p className="text-gray-900 text-sm font-medium leading-tight truncate">{n.title}</p>
+        <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{n.message}</p>
       </div>
-      {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#6366F1] mt-1.5 shrink-0" />}
+      {!n.isRead && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />}
     </div>
   )
 }
 
-// ── Wordmark ────────────────────────────────────────────────────────────────
+// ── Tier dot ────────────────────────────────────────────────────────────────
+
+function TierDot({ color, size = 10 }: { color: string; size?: number }) {
+  return (
+    <span
+      className="rounded-full shrink-0"
+      style={{ width: size, height: size, backgroundColor: color, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.18)' }}
+    />
+  )
+}
+
+// ── Wordmark (light header) ─────────────────────────────────────────────────
 
 function Wordmark({ onClick }: { onClick?: () => void }) {
   return (
@@ -141,12 +152,12 @@ function Wordmark({ onClick }: { onClick?: () => void }) {
       className="flex items-center gap-2 shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
       aria-label="LogiCora — ana səhifə"
     >
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#4F46E5] to-[#3B82F6] shadow-sm shadow-indigo-500/30">
+      <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#4F46E5] to-[#7C3AED] shadow-sm shadow-indigo-500/30">
         <span className="h-2.5 w-2.5 rounded-sm bg-white/90" />
       </span>
       <span className="text-xl font-extrabold tracking-tight">
-        <span className="text-white">Logi</span>
-        <span className="text-[#818CF8]">Cora</span>
+        <span className="text-gray-900">Logi</span>
+        <span className="text-indigo-600">Cora</span>
       </span>
     </Link>
   )
@@ -233,19 +244,13 @@ export default function Navbar() {
 
   return (
     <>
-      <header
-        className="fixed top-0 inset-x-0 h-16 z-40 flex items-center gap-3 px-4 lg:px-6"
-        style={{
-          background: 'rgba(15,21,36,0.82)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(148,163,184,0.10)',
-        }}
-      >
+      <header className="fixed top-0 inset-x-0 h-[72px] z-40 flex items-center gap-3 px-4 lg:px-6 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm">
+
         {/* ── Left — hamburger (mobil) + logo ── */}
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:hidden"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:hidden"
           aria-label="Menyu aç"
           aria-expanded={drawerOpen}
         >
@@ -256,7 +261,7 @@ export default function Navbar() {
 
         {/* ── Desktop horizontal nav ── */}
         <nav
-          className="hidden lg:flex flex-1 min-w-0 items-center justify-start gap-1 pl-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="hidden lg:flex flex-1 min-w-0 items-center justify-start gap-1 pl-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Əsas naviqasiya"
         >
           {navItems.map((item) => {
@@ -267,10 +272,10 @@ export default function Navbar() {
                 type="button"
                 onClick={() => goTo(item.path)}
                 aria-current={active ? 'page' : undefined}
-                className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                className={`whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold transition-colors ${
                   active
-                    ? 'bg-indigo-500/15 text-white ring-1 ring-inset ring-indigo-400/30'
-                    : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
                 {item.label}
@@ -284,11 +289,11 @@ export default function Navbar() {
 
           {/* Status tier chip (yalnız real gamifikasiya datası olanda) */}
           {tier && (
-            <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tier.current.color }} />
+            <div className="hidden md:flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3 py-1.5">
+              <TierDot color={tier.current.color} />
               <div className="leading-tight">
-                <p className="text-xs font-bold text-white">{tier.current.name}</p>
-                <p className="text-[10px] tabular-nums text-slate-400">{fmt(gp!.totalXP)} XP</p>
+                <p className="text-xs font-bold text-gray-900">{tier.current.name}</p>
+                <p className="text-[10px] tabular-nums text-gray-500">{fmt(gp!.totalXP)} XP</p>
               </div>
             </div>
           )}
@@ -297,9 +302,8 @@ export default function Navbar() {
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => { setNotifOpen((v) => !v); setAvatarOpen(false) }}
-              className="relative w-9 h-9 rounded-xl bg-[rgba(255,255,255,0.06)]
-                         hover:bg-[rgba(255,255,255,0.1)] transition-colors
-                         flex items-center justify-center text-[#9CA3AF] hover:text-white
+              className="relative h-10 w-10 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors
+                         flex items-center justify-center text-gray-600 hover:text-gray-900
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               aria-label="Bildirişlər"
               aria-expanded={notifOpen}
@@ -311,7 +315,7 @@ export default function Navbar() {
                   animate={{ scale: 1 }}
                   className="absolute -top-1 -right-1 rounded-full
                              bg-[#EF4444] text-white text-[9px] font-bold
-                             flex items-center justify-center"
+                             flex items-center justify-center ring-2 ring-white"
                   style={{ width: 18, height: 18 }}
                 >
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -327,22 +331,21 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.96 }}
                   transition={{ duration: 0.18 }}
-                  className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden z-50
-                             bg-[#131A2E] border border-[rgba(148,163,184,0.14)]
-                             shadow-[0_16px_48px_rgba(0,0,0,0.6)]"
+                  className="absolute right-0 top-14 w-80 max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden z-50
+                             bg-white border border-gray-200 shadow-[0_16px_48px_rgba(15,23,42,0.18)]"
                 >
-                  <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.07)]">
-                    <h3 className="text-white font-bold text-sm">Bildirişlər</h3>
+                  <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                    <h3 className="text-gray-900 font-bold text-sm">Bildirişlər</h3>
                     <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
                         <button
                           onClick={() => dispatch(markAllAsRead())}
-                          className="text-[#818CF8] text-xs hover:underline"
+                          className="text-indigo-600 text-xs font-medium hover:underline"
                         >
                           Hamısını oxu
                         </button>
                       )}
-                      <button onClick={() => setNotifOpen(false)} className="text-[#9CA3AF] hover:text-white">
+                      <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-700">
                         <X size={14} />
                       </button>
                     </div>
@@ -350,17 +353,17 @@ export default function Navbar() {
 
                   <div className="p-2 max-h-72 overflow-y-auto space-y-1">
                     {recent5.length === 0 ? (
-                      <p className="text-[#9CA3AF] text-sm text-center py-6">Bildiriş yoxdur</p>
+                      <p className="text-gray-500 text-sm text-center py-6">Bildiriş yoxdur</p>
                     ) : (
                       recent5.map((n) => <NotifItem key={n.id} n={n} />)
                     )}
                   </div>
 
                   {notifications.length > 5 && (
-                    <div className="p-3 border-t border-[rgba(255,255,255,0.07)]">
+                    <div className="p-3 border-t border-gray-100">
                       <button
                         onClick={() => setNotifOpen(false)}
-                        className="w-full text-[#818CF8] text-xs hover:underline"
+                        className="w-full text-indigo-600 text-xs font-medium hover:underline"
                       >
                         Hamısına bax →
                       </button>
@@ -376,15 +379,15 @@ export default function Navbar() {
             <button
               onClick={() => { setAvatarOpen((v) => !v); setNotifOpen(false) }}
               className="flex items-center gap-2 rounded-xl px-2 py-1
-                         hover:bg-[rgba(255,255,255,0.06)] transition-colors
+                         hover:bg-gray-100 transition-colors
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               aria-label="Profil menyusu"
               aria-expanded={avatarOpen}
             >
-              {user && <AvatarCircle name={user.name} color={avatarColor} size={34} />}
+              {user && <AvatarCircle name={user.name} color={avatarColor} size={36} />}
               <ChevronDown
                 size={14}
-                className="text-[#9CA3AF] transition-transform duration-200 hidden sm:block"
+                className="text-gray-400 transition-transform duration-200 hidden sm:block"
                 style={{ transform: avatarOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
               />
             </button>
@@ -396,43 +399,42 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.96 }}
                   transition={{ duration: 0.18 }}
-                  className="absolute right-0 top-12 w-64 max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden z-50
-                             bg-[#131A2E] border border-[rgba(148,163,184,0.14)]
-                             shadow-[0_16px_48px_rgba(0,0,0,0.6)]"
+                  className="absolute right-0 top-14 w-64 max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden z-50
+                             bg-white border border-gray-200 shadow-[0_16px_48px_rgba(15,23,42,0.18)]"
                 >
                   {/* User info */}
                   {user && (
-                    <div className="p-4 border-b border-[rgba(255,255,255,0.07)]">
-                      <p className="text-white font-bold text-sm leading-tight">{user.name} {user.surname}</p>
-                      <p className="text-[#9CA3AF] text-xs mt-0.5 truncate">{user.email}</p>
+                    <div className="p-4 border-b border-gray-100">
+                      <p className="text-gray-900 font-bold text-sm leading-tight">{user.name} {user.surname}</p>
+                      <p className="text-gray-500 text-xs mt-0.5 truncate">{user.email}</p>
                     </div>
                   )}
 
                   {/* Status — real XP-dən hesablanmış tier + irəliləyiş */}
                   {tier && (
-                    <div className="p-4 border-b border-[rgba(255,255,255,0.07)]">
+                    <div className="p-4 border-b border-gray-100">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tier.current.color }} />
-                          <span className="text-white font-bold text-sm">{tier.current.name} status</span>
+                          <TierDot color={tier.current.color} />
+                          <span className="text-gray-900 font-bold text-sm">{tier.current.name} status</span>
                         </div>
-                        <span className="text-[#9CA3AF] text-xs">Lv.{gp!.level}</span>
+                        <span className="text-gray-500 text-xs">Lv.{gp!.level}</span>
                       </div>
-                      <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div className="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${tier.progress}%`, backgroundColor: tier.current.color }} />
                       </div>
-                      <div className="mt-1.5 flex items-center justify-between text-[11px] text-[#9CA3AF]">
+                      <div className="mt-1.5 flex items-center justify-between text-[11px] text-gray-500">
                         <span className="tabular-nums">{fmt(gp!.totalXP)} XP</span>
                         <span>{tier.next ? `${fmt(tier.toNext)} XP → ${tier.next.name}` : 'Maksimal tier'}</span>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-2">
-                        <div className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-2.5 py-1.5">
-                          <p className="text-[10px] uppercase text-[#9CA3AF]">Seriya</p>
-                          <p className="text-sm font-bold tabular-nums text-white">{gp!.streak} gün</p>
+                        <div className="rounded-lg border border-gray-200 bg-slate-50 px-2.5 py-1.5">
+                          <p className="text-[10px] text-gray-500">Seriya</p>
+                          <p className="text-sm font-bold tabular-nums text-gray-900">{gp!.streak} gün</p>
                         </div>
-                        <div className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-2.5 py-1.5">
-                          <p className="text-[10px] uppercase text-[#9CA3AF]">Kristal</p>
-                          <p className="text-sm font-bold tabular-nums text-[#06B6D4]">{fmt(gp!.gems)}</p>
+                        <div className="rounded-lg border border-gray-200 bg-slate-50 px-2.5 py-1.5">
+                          <p className="text-[10px] text-gray-500">Kristal</p>
+                          <p className="text-sm font-bold tabular-nums text-cyan-600">{fmt(gp!.gems)}</p>
                         </div>
                       </div>
                     </div>
@@ -442,7 +444,7 @@ export default function Navbar() {
                     <button
                       onClick={() => { goTo(APP_ROUTES.SETTINGS) }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                                 text-[#9CA3AF] hover:text-white hover:bg-[rgba(255,255,255,0.07)]
+                                 text-gray-700 hover:text-gray-900 hover:bg-gray-100
                                  transition-colors text-sm"
                     >
                       <Settings size={15} /> Tənzimləmələr
@@ -451,7 +453,7 @@ export default function Navbar() {
                     <button
                       onClick={() => { handleLogout(); setAvatarOpen(false) }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                                 text-[#EF4444] hover:bg-[rgba(239,68,68,0.08)]
+                                 text-red-600 hover:bg-red-50
                                  transition-colors text-sm"
                     >
                       <LogOut size={15} /> Çıxış
@@ -473,7 +475,7 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+              className="fixed inset-0 z-50 bg-slate-900/40 lg:hidden"
               onClick={() => setDrawerOpen(false)}
               aria-hidden="true"
             />
@@ -482,19 +484,18 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-              className="fixed left-0 top-0 bottom-0 z-50 flex w-72 max-w-[85vw] flex-col lg:hidden"
-              style={{ background: 'linear-gradient(180deg, #131A2E 0%, #0E1525 100%)', borderRight: '1px solid rgba(99,102,241,0.12)' }}
+              className="fixed left-0 top-0 bottom-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white border-r border-gray-200 lg:hidden"
               role="dialog"
               aria-modal="true"
               aria-label="Naviqasiya menyusu"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(148,163,184,0.10)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <Wordmark onClick={() => setDrawerOpen(false)} />
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
-                  className="grid h-9 w-9 place-items-center rounded-xl text-slate-300 hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  className="grid h-9 w-9 place-items-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                   aria-label="Menyu bağla"
                 >
                   <X size={18} />
@@ -503,19 +504,19 @@ export default function Navbar() {
 
               {/* User + tier */}
               {user && (
-                <div className="px-5 py-4 border-b border-[rgba(148,163,184,0.10)]">
+                <div className="px-5 py-4 border-b border-gray-100">
                   <div className="flex items-center gap-3">
                     <AvatarCircle name={user.name} color={avatarColor} size={44} />
                     <div className="min-w-0">
-                      <p className="text-white font-bold text-sm truncate">{user.name} {user.surname}</p>
-                      <p className="text-[#9CA3AF] text-xs">{roleLabelMap[user.role]}</p>
+                      <p className="text-gray-900 font-bold text-sm truncate">{user.name} {user.surname}</p>
+                      <p className="text-gray-500 text-xs">{roleLabelMap[user.role]}</p>
                     </div>
                   </div>
                   {tier && (
-                    <div className="mt-3 flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tier.current.color }} />
-                      <span className="text-white text-xs font-bold">{tier.current.name}</span>
-                      <span className="ml-auto text-[11px] tabular-nums text-[#9CA3AF]">{fmt(gp!.totalXP)} XP</span>
+                    <div className="mt-3 flex items-center gap-2 rounded-xl border border-gray-200 bg-slate-50 px-3 py-2">
+                      <TierDot color={tier.current.color} />
+                      <span className="text-gray-900 text-xs font-bold">{tier.current.name}</span>
+                      <span className="ml-auto text-[11px] tabular-nums text-gray-500">{fmt(gp!.totalXP)} XP</span>
                     </div>
                   )}
                 </div>
@@ -531,10 +532,10 @@ export default function Navbar() {
                       type="button"
                       onClick={() => goTo(item.path)}
                       aria-current={active ? 'page' : undefined}
-                      className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                      className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
                         active
-                          ? 'bg-indigo-500/15 text-white ring-1 ring-inset ring-indigo-400/30'
-                          : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+                          ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
                       {item.label}
@@ -544,18 +545,18 @@ export default function Navbar() {
               </nav>
 
               {/* Settings + logout */}
-              <div className="px-3 py-4 border-t border-[rgba(148,163,184,0.10)] space-y-0.5">
+              <div className="px-3 py-4 border-t border-gray-100 space-y-0.5">
                 <button
                   type="button"
                   onClick={() => goTo(APP_ROUTES.SETTINGS)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                 >
                   <Settings size={16} /> Tənzimləmələr
                 </button>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#EF4444] hover:bg-[rgba(239,68,68,0.08)] transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <LogOut size={16} /> Çıxış
                 </button>

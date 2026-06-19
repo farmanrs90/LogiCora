@@ -28,14 +28,14 @@ export default function PageWrapper({ children }: PageWrapperProps) {
 
       {/* Main content — top navbar-ın altından başlayır, tam en */}
       <main
-        className="pt-16 min-h-screen overflow-x-hidden"
+        className="pt-[72px] min-h-screen overflow-x-hidden"
         id="main-content"
       >
         <motion.div
           variants={pageVariants}
           initial="initial"
           animate="enter"
-          className="min-h-[calc(100vh-4rem)]"
+          className="min-h-[calc(100vh-72px)]"
         >
           {children}
         </motion.div>

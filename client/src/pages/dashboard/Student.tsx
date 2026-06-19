@@ -12,8 +12,6 @@ import {
   Clock,
   Flame,
   Gem,
-  Heart,
-  Medal,
   MessageSquare,
   Shield,
   Sparkles,
@@ -96,16 +94,60 @@ const leagueLabel: Record<LeagueTier, string> = {
   diamond: 'Brilyant Liqa',
 }
 
-// Light league chip stilləri (premium, az kontrastlı deyil)
 const leagueClass: Record<LeagueTier, string> = {
   bronze: 'text-orange-700 border-orange-200 bg-orange-50',
   silver: 'text-slate-600 border-slate-300 bg-slate-100',
   gold: 'text-amber-600 border-amber-200 bg-amber-50',
   platinum: 'text-sky-700 border-sky-200 bg-sky-50',
-  diamond: 'text-cyan-700 border-cyan-200 bg-cyan-50',
+  diamond: 'text-violet-700 border-violet-200 bg-violet-50',
 }
 
-// Reusable light stillər (qlobal .card/.btn-* dark olduğu üçün burada inline)
+// ── Status tier — REAL totalXP-dən (Navbar ilə eyni eşik) ───────────────────
+
+interface Tier { name: string; min: number; color: string }
+
+const TIERS: Tier[] = [
+  { name: 'Bürünc', min: 0, color: '#B45309' },
+  { name: 'Gümüş', min: 1000, color: '#64748B' },
+  { name: 'Qızıl', min: 5000, color: '#D97706' },
+  { name: 'Platin', min: 15000, color: '#0EA5E9' },
+  { name: 'Almaz', min: 50000, color: '#7C3AED' },
+]
+
+function getTier(totalXP: number) {
+  let index = 0
+  for (let i = TIERS.length - 1; i >= 0; i--) {
+    if (totalXP >= TIERS[i].min) { index = i; break }
+  }
+  const current = TIERS[index]
+  const next = TIERS[index + 1] ?? null
+  const progress = next
+    ? Math.max(0, Math.min(100, ((totalXP - current.min) / (next.min - current.min)) * 100))
+    : 100
+  const toNext = next ? Math.max(0, next.min - totalXP) : 0
+  return { current, next, progress, toNext }
+}
+
+// ── Focus card accent zones ─────────────────────────────────────────────────
+
+interface FocusAccent { card: string; chip: string; meta: string; cta: string }
+const FOCUS_ACCENTS: Record<'emerald' | 'amber' | 'violet', FocusAccent> = {
+  emerald: {
+    card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white hover:border-emerald-300',
+    chip: 'bg-emerald-100 text-emerald-700', meta: 'text-emerald-700', cta: 'text-emerald-700',
+  },
+  amber: {
+    card: 'border-amber-200 bg-gradient-to-br from-amber-50 to-white hover:border-amber-300',
+    chip: 'bg-amber-100 text-amber-700', meta: 'text-amber-700', cta: 'text-amber-700',
+  },
+  violet: {
+    card: 'border-violet-200 bg-gradient-to-br from-violet-50 to-white hover:border-violet-300',
+    chip: 'bg-violet-100 text-violet-700', meta: 'text-violet-700', cta: 'text-violet-700',
+  },
+}
+
+// ── Reusable light stillər ──────────────────────────────────────────────────
+
 const PRIMARY_BTN =
   'inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60'
 const OUTLINE_BTN =
@@ -157,11 +199,11 @@ function subjectLabel(subject: string) {
   return labels[subject] ?? subject
 }
 
-function sectionTitle(title: string, eyebrow: string) {
+function sectionTitle(title: string, subtitle?: string) {
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">{eyebrow}</p>
-      <h2 className="text-lg font-bold tracking-tight text-gray-900">{title}</h2>
+      <h2 className="text-xl font-bold tracking-tight text-gray-900">{title}</h2>
+      {subtitle && <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p>}
     </div>
   )
 }
@@ -200,150 +242,114 @@ function QueryErrorState({
   )
 }
 
-function MetricPill({
-  icon: Icon,
-  label,
-  value,
-  accentClass,
-}: {
-  icon: LucideIcon
-  label: string
-  value: string
-  accentClass: string
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
-      <Icon className={`h-4 w-4 shrink-0 ${accentClass}`} aria-hidden="true" />
-      <div className="min-w-0">
-        <p className="truncate text-[10px] font-semibold uppercase text-gray-500">{label}</p>
-        <p className="truncate text-sm font-black tabular-nums text-gray-900">{value}</p>
-      </div>
-    </div>
-  )
-}
+// ── Hero status card (gradient hero-nun içində, ağ/şəffaf) ──────────────────
 
-function StatusHeader({
+function HeroStatusCard({
   profile,
+  tier,
   isLoading,
   isError,
   onRetry,
 }: {
   profile: GamificationProfile
+  tier: ReturnType<typeof getTier>
   isLoading: boolean
   isError: boolean
   onRetry: () => void
 }) {
-  const xp = getXpState(profile)
-  const headerClassName = 'sticky top-16 z-20 -mx-4 border-y border-gray-200 bg-slate-50/90 px-4 py-3 backdrop-blur-xl lg:top-16 lg:mx-0 lg:rounded-2xl lg:border'
-
   if (isError) {
     return (
-      <motion.header
-        variants={panelMotion}
-        transition={motionTransition}
-        className={headerClassName}
-      >
-        <QueryErrorState message="Gamifikasiya məlumatları yüklənmədi." onRetry={onRetry} />
-      </motion.header>
+      <div className="rounded-2xl border border-white/25 bg-white/10 p-5 backdrop-blur">
+        <p className="text-sm font-bold text-white">Status məlumatı yüklənmədi.</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-50"
+        >
+          Yenidən yoxla
+        </button>
+      </div>
     )
   }
 
+  const chips = [
+    { icon: Flame, label: 'Seriya', value: `${profile.streak} gün` },
+    { icon: Gem, label: 'Kristal', value: formatNumber(profile.gems) },
+    { icon: Zap, label: 'Həftəlik', value: formatNumber(profile.weeklyXP) },
+  ]
+
   return (
-    <motion.header
-      variants={panelMotion}
-      transition={motionTransition}
-      className={headerClassName}
-    >
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Komanda mərkəzi</p>
-            <p className="text-xl font-black tabular-nums text-gray-900">Səviyyə {profile.level}</p>
+    <div className="rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-white" />
+          <span className="text-sm font-bold text-white">{tier.current.name} status</span>
+        </div>
+        <span className="text-xs text-indigo-100">{isLoading ? 'Yenilənir…' : `Səviyyə ${profile.level}`}</span>
+      </div>
+
+      <p className="mt-3 text-3xl font-black tabular-nums text-white">
+        {formatNumber(profile.totalXP)} <span className="text-base font-bold text-indigo-200">XP</span>
+      </p>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/20">
+        <motion.div
+          className="h-full rounded-full bg-white"
+          initial={{ width: 0 }}
+          animate={{ width: `${tier.progress}%` }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+        />
+      </div>
+      <div className="mt-1.5 flex items-center justify-between text-[11px] text-indigo-100">
+        <span>{tier.current.name}</span>
+        <span>{tier.next ? `${formatNumber(tier.toNext)} XP → ${tier.next.name}` : 'Maksimal tier'}</span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {chips.map((c) => (
+          <div key={c.label} className="rounded-xl border border-white/15 bg-white/10 px-2.5 py-2">
+            <div className="flex items-center gap-1 text-indigo-100">
+              <c.icon className="h-3 w-3" aria-hidden="true" />
+              <p className="text-[10px]">{c.label}</p>
+            </div>
+            <p className="mt-0.5 text-sm font-bold tabular-nums text-white">{c.value}</p>
           </div>
-          {isLoading && (
-            <span className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500">
-              Yenilənir
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:min-w-[640px]">
-          <MetricPill
-            icon={Zap}
-            label="XP"
-            value={`${formatNumber(profile.totalXP)} XP`}
-            accentClass="text-emerald-600"
-          />
-          <MetricPill
-            icon={Flame}
-            label="Seriya"
-            value={`${profile.streak} gün`}
-            accentClass="text-orange-500"
-          />
-          <MetricPill
-            icon={Medal}
-            label="Liqa"
-            value={leagueLabel[profile.leagueTier]}
-            accentClass="text-amber-500"
-          />
-          <MetricPill
-            icon={Gem}
-            label="Kristal"
-            value={formatNumber(profile.gems)}
-            accentClass="text-teal-600"
-          />
-          <MetricPill
-            icon={Heart}
-            label="Can"
-            value={String(profile.hearts)}
-            accentClass="text-red-500"
-          />
-        </div>
+        ))}
       </div>
-
-      <div className="mt-3">
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Növbəti səviyyəyə irəliləyiş</span>
-          <span>{formatNumber(xp.xpToNext)} XP qalır</span>
-        </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
-          <motion.div
-            className="h-full rounded-full bg-emerald-500"
-            initial={{ width: 0 }}
-            animate={{ width: `${xp.xpPercent}%` }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-          />
-        </div>
-      </div>
-    </motion.header>
+    </div>
   )
 }
 
-function HeroGreeting({
+// ── Hero ────────────────────────────────────────────────────────────────────
+
+function Hero({
   firstName,
   daily,
+  profile,
+  tier,
+  isGamificationLoading,
   isGamificationError,
   isDailyError,
+  onRetryGamification,
 }: {
   firstName: string
   daily: DailyStatusResponse
+  profile: GamificationProfile
+  tier: ReturnType<typeof getTier>
+  isGamificationLoading: boolean
   isGamificationError: boolean
   isDailyError: boolean
+  onRetryGamification: () => void
 }) {
   const navigate = useNavigate()
   const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
   const focusMessage = isDailyError
     ? 'Gündəlik tapşırıq yüklənmədi. Aşağıdakı kartdan yenidən yoxla.'
     : isGamificationError
-      ? 'Gamifikasiya məlumatları yüklənmədi. Yenidən yoxla ilə təkrar cəhd et.'
+      ? 'Bu gün üçün öyrənmə xəttini gücləndir və irəliləyişini izlə.'
       : remaining > 0
-        ? `${remaining} tapşırıq qalır. Davam et və ardıcıllığını qoru.`
+        ? `${remaining} gündəlik tapşırıq qalır. Davam et və ardıcıllığını qoru.`
         : 'Bugünkü suallar tamamlandı. İndi inkişafına və klan xəttinə bax.'
-  const priorityText = isDailyError
-    ? 'Gündəlik tapşırıq yüklənmədi.'
-    : isGamificationError
-      ? 'Gamifikasiya məlumatları yüklənmədi.'
-      : daily.completed ? 'Seriya qorundu, indi mövqe irəliləyişinə bax.' : 'Gündəlik sualları bitir və XP xəttini qoru.'
   const dailyCtaLabel = daily.completed
     ? 'Nəticəyə bax'
     : daily.answeredCount > 0 ? 'Davam et' : 'Bugünkü quizə başla'
@@ -352,37 +358,54 @@ function HeroGreeting({
     <motion.section
       variants={panelMotion}
       transition={motionTransition}
-      className="overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm"
+      className="relative overflow-hidden rounded-3xl p-6 text-white shadow-lg shadow-indigo-500/20 sm:p-8"
+      style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '18px 18px' }}
+        aria-hidden="true"
+      />
+
+      <div className="relative grid items-center gap-6 lg:grid-cols-[1.4fr_1fr]">
+        {/* Left — greeting + CTA */}
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Bugünkü fokus</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
-            Salam, {firstName}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-gray-600">{focusMessage}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-200">Bugünkü plan</p>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">Salam, {firstName} 👋</h1>
+          <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-indigo-100 sm:text-base">{focusMessage}</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(APP_ROUTES.DAILY)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
+            >
+              {dailyCtaLabel}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(APP_ROUTES.COURSES)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              Kurslara bax
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch lg:shrink-0">
-          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Bugünkü prioritet</p>
-            <p className="mt-1 text-sm font-bold text-gray-900">
-              {priorityText}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(APP_ROUTES.DAILY)}
-            className={`${PRIMARY_BTN} w-full sm:w-auto`}
-          >
-            {dailyCtaLabel}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
+        {/* Right — status card */}
+        <HeroStatusCard
+          profile={profile}
+          tier={tier}
+          isLoading={isGamificationLoading}
+          isError={isGamificationError}
+          onRetry={onRetryGamification}
+        />
       </div>
     </motion.section>
   )
 }
+
+// ── Focus card (accent zoned, clickable) ────────────────────────────────────
 
 function FocusCard({
   icon: Icon,
@@ -391,7 +414,7 @@ function FocusCard({
   meta,
   cta,
   onClick,
-  accentClass,
+  accent,
 }: {
   icon: LucideIcon
   title: string
@@ -399,27 +422,28 @@ function FocusCard({
   meta: string
   cta: string
   onClick: () => void
-  accentClass: string
+  accent: keyof typeof FOCUS_ACCENTS
 }) {
+  const a = FOCUS_ACCENTS[accent]
   return (
     <motion.button
       type="button"
-      whileHover={{ y: -2 }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
-      className="group flex h-full min-h-[172px] flex-col justify-between rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className={`group flex h-full min-h-[184px] flex-col justify-between rounded-2xl border ${a.card} p-5 text-left shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
     >
       <div>
         <div className="flex items-start justify-between gap-3">
-          <div className={`rounded-xl border border-current/20 bg-current/10 p-2 ${accentClass}`}>
+          <div className={`rounded-xl p-2.5 ${a.chip}`}>
             <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
-          <span className="text-xs font-semibold text-gray-500">{meta}</span>
+          <span className={`text-xs font-semibold ${a.meta}`}>{meta}</span>
         </div>
         <h3 className="mt-4 text-base font-bold text-gray-900">{title}</h3>
         <p className="mt-2 text-sm font-medium leading-6 text-gray-600">{description}</p>
       </div>
-      <div className="mt-4 flex items-center gap-2 text-sm font-bold text-indigo-600">
+      <div className={`mt-4 flex items-center gap-2 text-sm font-bold ${a.cta}`}>
         {cta}
         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
       </div>
@@ -427,7 +451,9 @@ function FocusCard({
   )
 }
 
-function TodaysFocus({
+// ── Main focus (3 distinct accent cards) ────────────────────────────────────
+
+function MainFocus({
   daily,
   competition,
   mystery,
@@ -446,45 +472,48 @@ function TodaysFocus({
     : 0
 
   return (
-    <motion.section variants={panelMotion} transition={motionTransition} className="space-y-3">
+    <motion.section variants={panelMotion} transition={motionTransition} className="space-y-4">
       <div className="flex items-end justify-between gap-3">
-        {sectionTitle('Bugünkü fokus', 'Nə etməliyəm?')}
-        <span className="text-xs font-semibold text-gray-500">
+        {sectionTitle('Bugünkü fokus', 'Bu gün ən təsirli növbəti addımların')}
+        <span className="hidden text-xs font-semibold text-gray-500 sm:block">
           {isDailyError
             ? 'Gündəlik tapşırıq yüklənmədi'
             : daily.completed ? 'Gündəlik tapşırıq tamamlandı' : `${daily.totalCount - daily.answeredCount} sual qalır`}
         </span>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Daily quiz — emerald zone */}
         {isDailyError ? (
           <QueryErrorState message="Gündəlik tapşırıq yüklənmədi." onRetry={onRetryDaily} />
         ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-emerald-600">
-                <Target className="h-5 w-5" aria-hidden="true" />
+          <div className="flex h-full min-h-[184px] flex-col justify-between rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+                  <Target className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <span className="text-xs font-bold text-emerald-700">+{daily.xpEarned} XP</span>
               </div>
-              <span className="text-xs font-bold text-emerald-600">+{daily.xpEarned} XP</span>
-            </div>
-            <h3 className="mt-4 text-base font-bold text-gray-900">Gündəlik suallar</h3>
-            <p className="mt-2 text-sm font-medium text-gray-600">
-              {daily.completed
-                ? 'Bugünkü suallar tamamlandı. Seriya xətti qorundu.'
-                : `${daily.answeredCount}/${daily.totalCount} sual tamamlanıb. İndi davam etmək ən yaxşı hərəkətdir.`}
-            </p>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-200">
-              <motion.div
-                className="h-full rounded-full bg-emerald-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${answeredPercent}%` }}
-                transition={{ duration: 0.65, ease: 'easeOut' }}
-              />
+              <h3 className="mt-4 text-base font-bold text-gray-900">Gündəlik suallar</h3>
+              <p className="mt-2 text-sm font-medium text-gray-600">
+                {daily.completed
+                  ? 'Bugünkü suallar tamamlandı. Seriya xətti qorundu.'
+                  : `${daily.answeredCount}/${daily.totalCount} sual tamamlanıb.`}
+              </p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100">
+                <motion.div
+                  className="h-full rounded-full bg-emerald-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${answeredPercent}%` }}
+                  transition={{ duration: 0.65, ease: 'easeOut' }}
+                />
+              </div>
             </div>
             <button
               type="button"
               onClick={() => navigate(APP_ROUTES.DAILY)}
-              className={`${PRIMARY_BTN} mt-4 w-full`}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
             >
               {daily.completed ? 'Nəticəyə bax' : 'Davam et'}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -492,6 +521,7 @@ function TodaysFocus({
           </div>
         )}
 
+        {/* Competition — amber zone */}
         <FocusCard
           icon={Swords}
           title={competition ? competition.title : 'Yarış zalı'}
@@ -501,9 +531,10 @@ function TodaysFocus({
           meta={competition?.status === 'active' ? 'Canlı' : 'Hazırlıq'}
           cta={competition ? 'Lobby-ə keç' : 'Yarışa qoşul'}
           onClick={() => navigate(competition ? APP_ROUTES.COMPETITION.LOBBY(competition.id) : COMPETITION_JOIN_PATH)}
-          accentClass="text-orange-500"
+          accent="amber"
         />
 
+        {/* Weekly mystery — violet zone */}
         <FocusCard
           icon={Brain}
           title="Həftənin sirri"
@@ -515,88 +546,86 @@ function TodaysFocus({
           meta={mystery?.status === 'active' ? 'Aktiv' : 'Gözləmə'}
           cta="Sirrə bax"
           onClick={() => navigate(APP_ROUTES.WEEKLY_MYSTERY)}
-          accentClass="text-indigo-600"
+          accent="violet"
         />
       </div>
     </motion.section>
   )
 }
 
-function QuickActions({ showKids }: { showKids: boolean }) {
-  const navigate = useNavigate()
-  const actions: Array<{
-    title: string
-    caption: string
-    icon: LucideIcon
-    path: string
-    tone: string
-  }> = [
+// ── Support insights (kiçik, köməkçi) ───────────────────────────────────────
+
+function SupportInsights({
+  profile,
+  daily,
+  isGamificationError,
+  isDailyError,
+  onRetryGamification,
+  onRetryDaily,
+}: {
+  profile: GamificationProfile
+  daily: DailyStatusResponse
+  isGamificationError: boolean
+  isDailyError: boolean
+  onRetryGamification: () => void
+  onRetryDaily: () => void
+}) {
+  const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
+  const insights = [
     {
-      title: 'Yarış',
-      caption: 'PIN və ya canlı lobby',
-      icon: Swords,
-      path: COMPETITION_JOIN_PATH,
-      tone: 'text-orange-500',
-    },
-    {
-      title: 'Dərslər',
-      caption: 'Kurs kitabxanası',
-      icon: BookOpen,
-      path: APP_ROUTES.COURSES,
-      tone: 'text-teal-600',
-    },
-    {
-      title: 'Portfolio',
-      caption: 'Nailiyyət vitrini',
-      icon: Trophy,
-      path: APP_ROUTES.PORTFOLIO_ME,
-      tone: 'text-indigo-600',
-    },
-    {
-      title: 'Klan',
-      caption: 'Komanda sıralaması',
-      icon: Shield,
-      path: APP_ROUTES.CLAN_LEADERBOARD,
+      icon: CheckCircle2,
+      label: 'Bugünkü qərar',
+      text: isDailyError
+        ? 'Gündəlik tapşırıq yüklənmədi.'
+        : remaining > 0 ? `${remaining} sual tamamla və seriyanı bağla.` : 'Gündəlik tapşırıq tamamlandı.',
       tone: 'text-emerald-600',
+      onRetry: isDailyError ? onRetryDaily : undefined,
     },
-    ...(showKids
-      ? [{
-          title: 'Uşaq Klubu',
-          caption: 'Yaşa uyğun modul',
-          icon: Sparkles,
-          path: APP_ROUTES.KIDS_HUB,
-          tone: 'text-amber-500',
-        }]
-      : []),
+    {
+      icon: Clock,
+      label: 'Temp',
+      text: isGamificationError
+        ? 'Gamifikasiya məlumatları yüklənmədi.'
+        : `${formatNumber(profile.weeklyXP)} XP bu həftə yazılıb.`,
+      tone: 'text-sky-600',
+      onRetry: isGamificationError ? onRetryGamification : undefined,
+    },
+    {
+      icon: Trophy,
+      label: 'Rank',
+      text: isGamificationError
+        ? 'Gamifikasiya məlumatları yüklənmədi.'
+        : `${leagueLabel[profile.leagueTier]} xəttindəsən.`,
+      tone: 'text-amber-600',
+      onRetry: isGamificationError ? onRetryGamification : undefined,
+    },
   ]
 
   return (
-    <motion.section variants={panelMotion} transition={motionTransition} className="space-y-3">
-      {sectionTitle('Sürətli keçidlər', 'Növbəti addım')}
-      <div className="grid grid-cols-2 gap-3">
-        {actions.map((action) => (
-          <motion.button
-            key={action.title}
-            type="button"
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate(action.path)}
-            className="group rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className={`rounded-xl border border-current/20 bg-current/10 p-2 ${action.tone}`}>
-                <action.icon className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-            </div>
-            <p className="mt-4 text-sm font-bold text-gray-900">{action.title}</p>
-            <p className="mt-1 text-xs font-medium text-gray-500">{action.caption}</p>
-          </motion.button>
-        ))}
-      </div>
+    <motion.section variants={panelMotion} transition={motionTransition} className="grid gap-3 sm:grid-cols-3">
+      {insights.map((insight) => (
+        <div key={insight.label} className="rounded-xl border border-gray-200 bg-white/70 p-3.5">
+          <div className="flex items-center gap-2">
+            <insight.icon className={`h-4 w-4 ${insight.tone}`} aria-hidden="true" />
+            <p className="text-xs font-semibold text-gray-500">{insight.label}</p>
+          </div>
+          <p className="mt-1.5 text-sm font-semibold leading-5 text-gray-800">{insight.text}</p>
+          {insight.onRetry && (
+            <button
+              type="button"
+              onClick={insight.onRetry}
+              className="mt-2 text-xs font-semibold text-indigo-600 hover:underline"
+            >
+              Yenidən yoxla
+            </button>
+          )}
+        </div>
+      ))}
     </motion.section>
   )
 }
+
+// ── Course preview ──────────────────────────────────────────────────────────
 
 function CoursePreview({ course }: { course: Course | null }) {
   const navigate = useNavigate()
@@ -605,7 +634,9 @@ function CoursePreview({ course }: { course: Course | null }) {
     <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
       <div className="flex items-start justify-between gap-3">
         {sectionTitle('Kurs önizləməsi', 'Dərs xətti')}
-        <BookOpen className="h-5 w-5 text-teal-600" aria-hidden="true" />
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-600">
+          <BookOpen className="h-5 w-5" aria-hidden="true" />
+        </span>
       </div>
 
       {course ? (
@@ -646,6 +677,46 @@ function CoursePreview({ course }: { course: Course | null }) {
   )
 }
 
+// ── Quick actions (kompakt, aşağı prioritet) ────────────────────────────────
+
+function QuickActions({ showKids }: { showKids: boolean }) {
+  const navigate = useNavigate()
+  const actions: Array<{ title: string; icon: LucideIcon; path: string; tone: string }> = [
+    { title: 'Yarış', icon: Swords, path: COMPETITION_JOIN_PATH, tone: 'text-amber-600' },
+    { title: 'Dərslər', icon: BookOpen, path: APP_ROUTES.COURSES, tone: 'text-teal-600' },
+    { title: 'Portfolio', icon: Trophy, path: APP_ROUTES.PORTFOLIO_ME, tone: 'text-violet-600' },
+    { title: 'Klan', icon: Shield, path: APP_ROUTES.CLAN_LEADERBOARD, tone: 'text-indigo-600' },
+    ...(showKids
+      ? [{ title: 'Uşaq Klubu', icon: Sparkles, path: APP_ROUTES.KIDS_HUB, tone: 'text-sky-600' }]
+      : []),
+  ]
+
+  return (
+    <motion.section variants={panelMotion} transition={motionTransition} className="space-y-3">
+      {sectionTitle('Sürətli keçidlər')}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+        {actions.map((action) => (
+          <motion.button
+            key={action.title}
+            type="button"
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate(action.path)}
+            className="group flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 ${action.tone}`}>
+              <action.icon className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span className="truncate text-sm font-semibold text-gray-900">{action.title}</span>
+          </motion.button>
+        ))}
+      </div>
+    </motion.section>
+  )
+}
+
+// ── Progress panel (ayrıca sky zona) ────────────────────────────────────────
+
 function ProgressPanel({
   profile,
   elo,
@@ -665,9 +736,13 @@ function ProgressPanel({
     : null
 
   return (
-    <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
+    <motion.section
+      variants={panelMotion}
+      transition={motionTransition}
+      className="space-y-4 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 shadow-sm"
+    >
       <div className="flex items-start justify-between gap-3">
-        {sectionTitle('İrəliləyiş', 'Haradayam?')}
+        {sectionTitle('İrəliləyiş', 'Sənin statistikan')}
         {!isGamificationError && <TrendingBadge tier={profile.leagueTier} />}
       </div>
 
@@ -675,16 +750,16 @@ function ProgressPanel({
         <QueryErrorState message="Gamifikasiya məlumatları yüklənmədi." onRetry={onRetryGamification} />
       ) : (
         <>
-          <div>
+          <div className="rounded-xl border border-sky-100 bg-white p-4">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Ümumi XP</p>
+                <p className="text-xs font-medium text-gray-500">Ümumi XP</p>
                 <p className="text-3xl font-black tabular-nums text-gray-900">{formatNumber(profile.totalXP)}</p>
               </div>
-              <p className="text-sm font-bold text-emerald-600">{Math.round(xp.xpPercent)}%</p>
+              <p className="text-sm font-bold text-sky-600">{Math.round(xp.xpPercent)}%</p>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-200">
-              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${xp.xpPercent}%` }} />
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-sky-100">
+              <div className="h-full rounded-full bg-sky-500" style={{ width: `${xp.xpPercent}%` }} />
             </div>
           </div>
 
@@ -710,13 +785,15 @@ function TrendingBadge({ tier }: { tier: LeagueTier }) {
 
 function DataTile({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-slate-50 p-3">
-      <p className="text-[10px] font-semibold uppercase text-gray-500">{label}</p>
+    <div className="rounded-xl border border-gray-200 bg-white p-3">
+      <p className="text-xs font-medium text-gray-500">{label}</p>
       <p className="mt-1 text-xl font-black tabular-nums text-gray-900">{value}</p>
       <p className="mt-1 text-xs font-medium text-gray-500">{detail}</p>
     </div>
   )
 }
+
+// ── Clan & league panel ─────────────────────────────────────────────────────
 
 function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
   const navigate = useNavigate()
@@ -725,15 +802,17 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
   return (
     <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
       <div className="flex items-start justify-between gap-3">
-        {sectionTitle('Klan və liqa', 'Rəqiblər nə edir?')}
-        <Users className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+        {sectionTitle('Klan və liqa', 'Komanda mövqeyi')}
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600">
+          <Users className="h-5 w-5" aria-hidden="true" />
+        </span>
       </div>
 
       {topClan ? (
         <button
           type="button"
           onClick={() => navigate(APP_ROUTES.CLAN(topClan.slug))}
-          className="group block w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="group block w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -750,7 +829,7 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
             <DataTile label="Toplam XP" value={formatNumber(topClan.totalXP)} detail="Klan gücü" />
             <DataTile label="Həftəlik XP" value={formatNumber(topClan.weeklyXP)} detail="Temp" />
           </div>
-          <span className="mt-4 flex items-center gap-2 text-sm font-bold text-indigo-600">
+          <span className="mt-4 flex items-center gap-2 text-sm font-bold text-violet-700">
             Klan səhifəsinə bax
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
           </span>
@@ -784,6 +863,8 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
   )
 }
 
+// ── Social feed panel ───────────────────────────────────────────────────────
+
 function SocialFeedPanel({
   notifications,
   isLoading,
@@ -795,7 +876,9 @@ function SocialFeedPanel({
     <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
       <div className="flex items-start justify-between gap-3">
         {sectionTitle('Aktivlik lenti', 'Son siqnallar')}
-        <Bell className="h-5 w-5 text-teal-600" aria-hidden="true" />
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600">
+          <Bell className="h-5 w-5" aria-hidden="true" />
+        </span>
       </div>
 
       {isLoading ? (
@@ -805,7 +888,7 @@ function SocialFeedPanel({
           {notifications.slice(0, 4).map((item) => (
             <div key={item._id} className="rounded-xl border border-gray-200 bg-slate-50 p-3">
               <div className="flex items-start gap-3">
-                <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
+                <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" aria-hidden="true" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-gray-900">{item.title}</p>
                   <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-gray-500">
@@ -824,76 +907,6 @@ function SocialFeedPanel({
           </p>
         </div>
       )}
-    </motion.section>
-  )
-}
-
-function InsightStrip({
-  profile,
-  daily,
-  isGamificationError,
-  isDailyError,
-  onRetryGamification,
-  onRetryDaily,
-}: {
-  profile: GamificationProfile
-  daily: DailyStatusResponse
-  isGamificationError: boolean
-  isDailyError: boolean
-  onRetryGamification: () => void
-  onRetryDaily: () => void
-}) {
-  const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
-  const insights = [
-    {
-      icon: CheckCircle2,
-      label: 'Bugünkü qərar',
-      text: isDailyError
-        ? 'Gündəlik tapşırıq yüklənmədi.'
-        : remaining > 0 ? `${remaining} sual tamamla və seriyanı bağla.` : 'Gündəlik tapşırıq tamamlandı. Növbəti hədəf liqa tempidir.',
-      tone: 'text-emerald-600',
-      onRetry: isDailyError ? onRetryDaily : undefined,
-    },
-    {
-      icon: Clock,
-      label: 'Temp',
-      text: isGamificationError
-        ? 'Gamifikasiya məlumatları yüklənmədi.'
-        : `${formatNumber(profile.weeklyXP)} XP həftəlik nəticə artıq yazılıb.`,
-      tone: 'text-teal-600',
-      onRetry: isGamificationError ? onRetryGamification : undefined,
-    },
-    {
-      icon: Trophy,
-      label: 'Rank',
-      text: isGamificationError
-        ? 'Gamifikasiya məlumatları yüklənmədi.'
-        : `${leagueLabel[profile.leagueTier]} xəttində mövqeyini qoruyursan.`,
-      tone: 'text-amber-500',
-      onRetry: isGamificationError ? onRetryGamification : undefined,
-    },
-  ]
-
-  return (
-    <motion.section variants={panelMotion} transition={motionTransition} className="grid gap-3 md:grid-cols-3">
-      {insights.map((insight) => (
-        <div key={insight.label} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <insight.icon className={`h-4 w-4 ${insight.tone}`} aria-hidden="true" />
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{insight.label}</p>
-          </div>
-          <p className="mt-3 text-sm font-bold leading-6 text-gray-900">{insight.text}</p>
-          {insight.onRetry && (
-            <button
-              type="button"
-              onClick={insight.onRetry}
-              className={`${OUTLINE_BTN} mt-3`}
-            >
-              Yenidən yoxla
-            </button>
-          )}
-        </div>
-      ))}
     </motion.section>
   )
 }
@@ -1013,49 +1026,53 @@ export default function StudentDashboard() {
     : -1
   const leaderboardRank = rankIndex >= 0 ? rankIndex + 1 : null
 
+  const tier = getTier(profile.totalXP)
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-5 text-gray-900 lg:px-8 lg:py-6">
+    <div
+      className="min-h-[calc(100vh-72px)] px-4 py-6 text-gray-900 lg:px-8 lg:py-8"
+      style={{ background: 'linear-gradient(180deg, #EEF2FF 0px, #F8FAFC 260px)' }}
+    >
       <motion.div
         initial="hidden"
         animate="show"
         transition={{ staggerChildren: 0.06 }}
-        className="mx-auto max-w-screen-2xl space-y-4 lg:space-y-6"
+        className="mx-auto max-w-screen-2xl space-y-6 lg:space-y-8"
       >
-        <StatusHeader
-          profile={profile}
-          isLoading={queries.gamification.isLoading}
-          isError={isGamificationError}
-          onRetry={retryGamification}
-        />
-        <HeroGreeting
+        <Hero
           firstName={firstName}
           daily={daily}
-          isGamificationError={isGamificationError}
-          isDailyError={isDailyError}
-        />
-        <InsightStrip
           profile={profile}
-          daily={daily}
+          tier={tier}
+          isGamificationLoading={queries.gamification.isLoading}
           isGamificationError={isGamificationError}
           isDailyError={isDailyError}
           onRetryGamification={retryGamification}
+        />
+
+        <MainFocus
+          daily={daily}
+          competition={competition}
+          mystery={queries.mystery.data}
+          isDailyError={isDailyError}
           onRetryDaily={retryDaily}
         />
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <main className="space-y-4">
-            <TodaysFocus
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <main className="space-y-6">
+            <SupportInsights
+              profile={profile}
               daily={daily}
-              competition={competition}
-              mystery={queries.mystery.data}
+              isGamificationError={isGamificationError}
               isDailyError={isDailyError}
+              onRetryGamification={retryGamification}
               onRetryDaily={retryDaily}
             />
-            <QuickActions showKids={showKids} />
             <CoursePreview course={course} />
+            <QuickActions showKids={showKids} />
           </main>
 
-          <aside className="space-y-4 lg:sticky lg:top-40 lg:self-start">
+          <aside className="space-y-6 lg:sticky lg:top-[88px] lg:self-start">
             <ProgressPanel
               profile={profile}
               elo={elo}
