@@ -66,15 +66,15 @@ const ROLES: { icon: LucideIcon; title: string; desc: string; cta: string; to: s
   { icon: Building2, title: 'Təhsil mərkəzi / Məktəb', desc: 'Müəllim və şagird axınını vahid sistemdə birləşdir.', cta: 'Daxil ol', to: APP_ROUTES.LOGIN },
 ]
 
-const FEATURES: { icon: LucideIcon; title: string; desc: string }[] = [
-  { icon: Brain, title: 'Gündəlik Quiz', desc: 'Hər gün qısa suallar, streak və XP ilə davamlı öyrənmə.' },
-  { icon: BookOpen, title: 'Kurslar', desc: 'Mövzu-əsaslı dərslər və aydın öyrənmə yolu.' },
-  { icon: Award, title: 'Portfolio / Education Passport', desc: 'Təsdiqlənmiş nailiyyətlər ömürlük pasportda toplanır.' },
-  { icon: LayoutDashboard, title: 'Müəllim idarə paneli', desc: 'Qrup, tapşırıq və davamiyyətin tək yerdən idarəsi.' },
-  { icon: Eye, title: 'Valideyn baxışı', desc: 'Övladın irəliləyişinə şəffaf nəzarət.' },
-  { icon: Smile, title: 'Uşaq Klubu', desc: 'Kiçik yaşlar üçün sadə və əlçatan təhsil rejimi.' },
-  { icon: Accessibility, title: 'Adaptiv öyrənmə', desc: 'Böyük düymələr və azaldılmış vizual yük ilə rahat təcrübə.' },
-  { icon: Swords, title: 'Klan və yarışlar', desc: 'Komanda ilə canlı yarışlar və sıralama.' },
+const FEATURES: { icon: LucideIcon; title: string; desc: string; tint: string }[] = [
+  { icon: Brain, title: 'Gündəlik Quiz', desc: 'Hər gün qısa suallar, streak və XP ilə davamlı öyrənmə.', tint: 'bg-indigo-50 text-indigo-600' },
+  { icon: BookOpen, title: 'Kurslar', desc: 'Mövzu-əsaslı dərslər və aydın öyrənmə yolu.', tint: 'bg-blue-50 text-blue-600' },
+  { icon: Award, title: 'Portfolio / Education Passport', desc: 'Təsdiqlənmiş nailiyyətlər ömürlük pasportda toplanır.', tint: 'bg-amber-50 text-amber-600' },
+  { icon: LayoutDashboard, title: 'Müəllim idarə paneli', desc: 'Qrup, tapşırıq və davamiyyətin tək yerdən idarəsi.', tint: 'bg-purple-50 text-purple-600' },
+  { icon: Eye, title: 'Valideyn baxışı', desc: 'Övladın irəliləyişinə şəffaf nəzarət.', tint: 'bg-teal-50 text-teal-600' },
+  { icon: Smile, title: 'Uşaq Klubu', desc: 'Kiçik yaşlar üçün sadə və əlçatan təhsil rejimi.', tint: 'bg-pink-50 text-pink-600' },
+  { icon: Accessibility, title: 'Adaptiv öyrənmə', desc: 'Böyük düymələr və azaldılmış vizual yük ilə rahat təcrübə.', tint: 'bg-emerald-50 text-emerald-600' },
+  { icon: Swords, title: 'Klan və yarışlar', desc: 'Komanda ilə canlı yarışlar və sıralama.', tint: 'bg-orange-50 text-orange-600' },
 ]
 
 interface JourneyStep { title: string; text: string }
@@ -108,6 +108,16 @@ const AGE_STAGES: { age: string; title: string; desc: string }[] = [
   { age: '9–14', title: 'Məktəb və günlük quiz', desc: 'Gündəlik suallar və kurslar.' },
   { age: '15–18', title: 'Bacarıqlar və portfolio', desc: 'Nailiyyətlər portfolioda toplanır.' },
   { age: '18+', title: 'Education Passport', desc: 'Sertifikatlar və CV əvəzi təhsil izi.' },
+]
+
+// Öyrənmə ekosistemi marquee — CSS-only kartlar (xarici şəkil yoxdur)
+const ECOSYSTEM: { title: string; grad: string; icon: LucideIcon }[] = [
+  { title: 'Müəllim dərs planlayır', grad: 'from-indigo-500 to-blue-500', icon: CalendarDays },
+  { title: 'Şagird mini-test həll edir', grad: 'from-blue-500 to-cyan-500', icon: Brain },
+  { title: 'Valideyn irəliləyişi izləyir', grad: 'from-purple-500 to-indigo-500', icon: Eye },
+  { title: 'Uşaq Klubu fəaliyyəti', grad: 'from-amber-500 to-orange-500', icon: Smile },
+  { title: 'Adaptiv öyrənmə dəstəyi', grad: 'from-teal-500 to-emerald-500', icon: Accessibility },
+  { title: 'Portfolio hadisəsi', grad: 'from-pink-500 to-purple-500', icon: Award },
 ]
 
 // Demo mini-test — lokal, backend yoxdur, nəticə saxlanmır, XP verilmir
@@ -160,8 +170,9 @@ function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: string; 
 function ProductPreview() {
   return (
     <div className="relative" aria-hidden="true">
-      <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xl shadow-indigo-100/60">
-        <div className="flex items-center justify-between">
+      <div className="group relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-5 shadow-xl shadow-indigo-100/60 transition-transform duration-300 hover:-rotate-1">
+        <span className="lc-shine pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/55 to-transparent" />
+        <div className="relative flex items-center justify-between">
           <p className="text-sm font-bold text-gray-900">Tələbə paneli</p>
           <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600">
             Önizləmə
@@ -515,6 +526,18 @@ export default function Landing() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-gray-900">
 
+      {/* Scoped animasiyalar — xarici asılılıq yoxdur, reduced-motion dəstəklənir */}
+      <style>{`
+        @keyframes lc-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .lc-marquee-track { animation: lc-marquee 40s linear infinite; }
+        .lc-marquee:hover .lc-marquee-track { animation-play-state: paused; }
+        @keyframes lc-shine { 0% { transform: translateX(-120%); } 100% { transform: translateX(220%); } }
+        .lc-shine { animation: lc-shine 4.5s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .lc-marquee-track, .lc-shine { animation: none; }
+        }
+      `}</style>
+
       {/* ── NAVBAR ──────────────────────────────────────────────────────────── */}
       <header className="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -738,7 +761,7 @@ export default function Landing() {
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {AGE_STAGES.map((s, i) => (
-                <div key={s.age} className="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div key={s.age} className="relative rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-md">
                   <span className="inline-flex rounded-full bg-indigo-600 px-3 py-1 text-xs font-bold text-white">{s.age}</span>
                   <h3 className="mt-3 text-sm font-bold text-gray-900">{s.title}</h3>
                   <p className="mt-1 text-xs leading-relaxed text-gray-600">{s.desc}</p>
@@ -757,8 +780,8 @@ export default function Landing() {
             <SectionHead eyebrow="Kim üçün?" title="Hər iştirakçı üçün doğru başlanğıc" sub="Şagird, müəllim, valideyn və məktəblər üçün vahid öyrənmə məkanı." />
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {ROLES.map((r) => (
-                <div key={r.title} className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                <div key={r.title} className="group flex flex-col rounded-2xl border border-gray-200 bg-gradient-to-b from-white to-slate-50/60 p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-indigo-50 text-indigo-600 transition-transform duration-200 group-hover:scale-110">
                     <r.icon className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <h3 className="mt-4 text-lg font-bold text-gray-900">{r.title}</h3>
@@ -782,12 +805,36 @@ export default function Landing() {
             <SectionHead eyebrow="İmkanlar" title="Öyrənməni gücləndirən alətlər" sub="Gündəlik öyrənmədən portfolioya qədər tam ekosistem." />
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {FEATURES.map((f) => (
-                <div key={f.title} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                <div key={f.title} className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg">
+                  <span className={`grid h-11 w-11 place-items-center rounded-xl transition-transform duration-200 group-hover:scale-110 ${f.tint}`}>
                     <f.icon className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <h3 className="mt-4 text-base font-bold text-gray-900">{f.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-gray-600">{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── ECOSYSTEM MARQUEE (ClassDojo ruhunda hərəkətli qalereya) ──────── */}
+        <section id="ecosystem" className="scroll-mt-20 overflow-hidden bg-white py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow="Öyrənmə ekosistemi" title="LogiCora hər rolu bir araya gətirir" sub="Şagird, müəllim, valideyn və Uşaq Klubu — vahid axında." />
+          </div>
+          <div className="lc-marquee mt-12 [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+            <div className="lc-marquee-track flex w-max gap-5 px-4">
+              {[...ECOSYSTEM, ...ECOSYSTEM].map((c, i) => (
+                <div key={i} className="w-64 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg">
+                  <div className={`relative flex h-28 items-end bg-gradient-to-br ${c.grad} p-4`}>
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
+                    <span className="relative grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-white backdrop-blur">
+                      <c.icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm font-bold text-gray-900">{c.title}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -826,15 +873,24 @@ export default function Landing() {
               ))}
             </div>
 
-            {/* Active slide */}
-            <div className="mt-10 grid items-center gap-10 rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur sm:p-10 lg:grid-cols-2">
-              <div>
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-sm font-bold text-white">{journeyTab + 1}</span>
-                <h3 className="mt-4 text-2xl font-bold text-gray-900">{JOURNEY[journeyTab].title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-gray-600">{JOURNEY[journeyTab].text}</p>
-              </div>
-              <JourneyMockup step={journeyTab} />
-            </div>
+            {/* Active slide — tab dəyişəndə animasiya ilə gəlir */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={journeyTab}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+                className="mt-10 grid items-center gap-10 rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur sm:p-10 lg:grid-cols-2"
+              >
+                <div>
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-sm font-bold text-white">{journeyTab + 1}</span>
+                  <h3 className="mt-4 text-2xl font-bold text-gray-900">{JOURNEY[journeyTab].title}</h3>
+                  <p className="mt-3 text-base leading-relaxed text-gray-600">{JOURNEY[journeyTab].text}</p>
+                </div>
+                <JourneyMockup step={journeyTab} />
+              </motion.div>
+            </AnimatePresence>
 
             {/* Demo video card (honest) */}
             <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
@@ -1051,8 +1107,9 @@ export default function Landing() {
       </main>
 
       {/* ── FOOTER (geniş, tünd navy — dürüst) ──────────────────────────────── */}
-      <footer className="bg-gray-900 py-14 text-gray-300">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <footer className="bg-gray-900 text-gray-300">
+        <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-teal-400" />
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-md">
             <BrandMark dark />
             <p className="mt-4 text-sm text-gray-400">
