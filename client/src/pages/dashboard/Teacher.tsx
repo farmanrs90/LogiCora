@@ -60,6 +60,8 @@ function todayStr(): string {
   return new Date().toLocaleDateString('az-AZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+const CHART_TOOLTIP = { backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#111827', fontSize: '11px' }
+
 function ChartFrame({
   className,
   children,
@@ -126,7 +128,7 @@ function Sparkline({ data, dataKey, color }: { data: object[]; dataKey: string; 
   )
 }
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
+// ── Stat Card (məlumat kartı — kliklənmir) ──────────────────────────────────────
 
 function StatCard({
   title, main, sub, trend, sparkData, sparkKey, sparkColor, badge,
@@ -136,17 +138,17 @@ function StatCard({
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-[#141414] border border-white/10 rounded-2xl p-5 flex flex-col gap-3"
+      className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col gap-3"
     >
       <div className="flex items-start justify-between">
-        <p className="text-xs text-white/50 font-medium">{title}</p>
-        {badge && <span className="text-xs bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">{badge}</span>}
+        <p className="text-xs text-gray-500 font-medium">{title}</p>
+        {badge && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">{badge}</span>}
       </div>
       <div>
-        <p className="text-3xl font-bold text-white">{main}</p>
+        <p className="text-3xl font-bold text-gray-900">{main}</p>
         <div className="flex items-center gap-2 mt-1">
-          {trend && <span className="text-xs text-emerald-400 font-medium">{trend}</span>}
-          <span className="text-xs text-white/40">{sub}</span>
+          {trend && <span className="text-xs text-emerald-600 font-medium">{trend}</span>}
+          <span className="text-xs text-gray-400">{sub}</span>
         </div>
       </div>
       {sparkData && sparkData.length > 0 && sparkKey && sparkColor && (
@@ -165,31 +167,31 @@ function ImpactGauge({ score }: { score?: number | null }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-[#141414] border border-white/10 rounded-2xl p-5 flex flex-col gap-2"
+      className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col gap-2"
     >
       <div className="flex items-start justify-between">
-        <p className="text-xs text-white/50 font-medium">Impact Score</p>
+        <p className="text-xs text-gray-500 font-medium">Impact Score</p>
       </div>
       <div className="flex items-center gap-4">
         <ChartFrame
           className="w-24 min-w-[96px] h-24 min-h-[96px] shrink-0"
-          fallback={<div className="w-full h-full rounded-full border border-white/10 bg-white/[0.03]" />}
+          fallback={<div className="w-full h-full rounded-full border border-gray-200 bg-slate-50" />}
         >
           {hasScore ? (
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={96}>
               <RadialBarChart innerRadius="65%" outerRadius="100%" data={data} startAngle={220} endAngle={-40} barSize={10}>
-                <RadialBar dataKey="value" cornerRadius={8} background={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <RadialBar dataKey="value" cornerRadius={8} background={{ fill: '#F1F5F9' }} />
               </RadialBarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="w-full h-full rounded-full border border-white/10 bg-white/[0.03] flex items-center justify-center text-white/40 text-sm">
+            <div className="w-full h-full rounded-full border border-gray-200 bg-slate-50 flex items-center justify-center text-gray-400 text-sm">
               —
             </div>
           )}
         </ChartFrame>
         <div>
-          <p className="text-3xl font-bold text-white">{hasScore ? score : '—'}<span className="text-lg text-white/30">/100</span></p>
-          <p className="text-xs text-white/50 mt-1 leading-relaxed max-w-[140px]">
+          <p className="text-3xl font-bold text-gray-900">{hasScore ? score : '—'}<span className="text-lg text-gray-300">/100</span></p>
+          <p className="text-xs text-gray-500 mt-1 leading-relaxed max-w-[140px]">
             Tələbələrinin ortalama irəliləyişinə görə hesablanır
           </p>
         </div>
@@ -205,8 +207,8 @@ function TodaySchedule({ lessons }: { lessons: ScheduleLesson[] }) {
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
         <div className="text-5xl">📅</div>
-        <p className="text-white/50 text-sm">Bu gün dərs yoxdur.</p>
-        <Link to="/groups" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+        <p className="text-gray-500 text-sm">Bu gün dərs yoxdur.</p>
+        <Link to="/groups" className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors">
           Yeni dərs planla →
         </Link>
       </div>
@@ -217,20 +219,20 @@ function TodaySchedule({ lessons }: { lessons: ScheduleLesson[] }) {
       {lessons.map((lesson, i) => (
         <motion.div key={lesson.id}
           initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
-          className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 transition-colors"
+          className="flex items-center gap-4 p-4 bg-slate-50 border border-gray-200 rounded-xl"
         >
           <div className="flex flex-col items-center gap-1 shrink-0 w-12">
             <div className="w-1 h-8 rounded-full" style={{ backgroundColor: lesson.groupColor }} />
-            <span className="text-xs text-white/50 font-mono">{lesson.startTime}</span>
+            <span className="text-xs text-gray-500 font-mono">{lesson.startTime}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-white">{lesson.title}</p>
+            <p className="font-semibold text-sm text-gray-900">{lesson.title}</p>
             <p className="text-xs mt-0.5" style={{ color: lesson.groupColor }}>{lesson.groupName}</p>
-            <p className="text-xs text-white/30">{lesson.startTime} – {lesson.endTime}</p>
+            <p className="text-xs text-gray-400">{lesson.startTime} – {lesson.endTime}</p>
           </div>
           {lesson.classroomId && (
             <Link to={`/classroom/${lesson.classroomId}`}
-              className="shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-semibold transition-colors"
+              className="shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors"
             >
               Başlat →
             </Link>
@@ -252,8 +254,8 @@ function RecentStudents({ students }: { students: RecentStudent[] }) {
       <div className="flex gap-2">
         {(['active', 'weak'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              tab === t ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/50 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              tab === t ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-gray-500 hover:text-gray-900'
             }`}
           >
             {t === 'active' ? '✅ Aktiv' : '⚠️ Zəif'}
@@ -264,27 +266,27 @@ function RecentStudents({ students }: { students: RecentStudent[] }) {
         {displayed.map((s, i) => (
           <motion.div key={s.id}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.06 }}
-            className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl"
+            className="flex items-center gap-3 p-3 bg-slate-50 border border-gray-200 rounded-xl"
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold shrink-0">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
               {s.name[0]}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{s.name}</p>
-              <p className="text-xs text-white/40">{s.lastSeen}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
+              <p className="text-xs text-gray-400">{s.lastSeen}</p>
             </div>
             {tab === 'active' && s.xpChange > 0 && (
-              <span className="text-xs text-emerald-400 font-semibold shrink-0">+{s.xpChange} XP</span>
+              <span className="text-xs text-emerald-600 font-semibold shrink-0">+{s.xpChange} XP</span>
             )}
             {tab === 'weak' && (
-              <Link to="/chat" className="shrink-0 text-xs text-amber-400 border border-amber-400/30 px-2 py-1 rounded-lg hover:bg-amber-400/10 transition-colors">
+              <Link to="/chat" className="shrink-0 text-xs text-amber-700 border border-amber-200 bg-amber-50 px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors">
                 Mesaj
               </Link>
             )}
           </motion.div>
         ))}
         {displayed.length === 0 && (
-          <p className="text-center py-6 text-white/40 text-sm">
+          <p className="text-center py-6 text-gray-400 text-sm">
             {tab === 'weak' ? '🎉 Bütün tələbələr aktivdir!' : 'Hələ tələbə yoxdur.'}
           </p>
         )}
@@ -299,16 +301,16 @@ function CoursePerformanceCard({ course }: { course: CoursePerf }) {
   const weeklyData = Array.isArray(course.weeklyData) ? course.weeklyData : []
 
   return (
-    <div className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors">
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
       <div className="flex gap-4 p-4">
-        <div className="w-20 h-14 rounded-xl overflow-hidden bg-black shrink-0">
+        <div className="w-20 h-14 rounded-xl overflow-hidden bg-slate-900 shrink-0">
           {course.thumbnail
-            ? <img src={course.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+            ? <img src={course.thumbnail} alt="" className="w-full h-full object-cover" />
             : <div className="w-full h-full flex items-center justify-center text-2xl">📚</div>}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{course.title}</p>
-          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+          <p className="text-sm font-semibold text-gray-900 truncate">{course.title}</p>
+          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
             <span>👥 {course.enrollCount.toLocaleString()}</span>
             {course.completionPct > 0 && (
               <>
@@ -318,7 +320,7 @@ function CoursePerformanceCard({ course }: { course: CoursePerf }) {
             )}
           </div>
           {course.completionPct > 0 && (
-            <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <motion.div className="h-full bg-emerald-500 rounded-full"
                 initial={{ width: 0 }} animate={{ width: `${course.completionPct}%` }} transition={{ duration: 0.8 }} />
             </div>
@@ -327,12 +329,12 @@ function CoursePerformanceCard({ course }: { course: CoursePerf }) {
       </div>
       {weeklyData.length > 0 && (
         <div className="px-4 pb-2">
-          <p className="text-xs text-white/30 mb-1">Həftəlik qeydiyyat</p>
+          <p className="text-xs text-gray-400 mb-1">Həftəlik qeydiyyat</p>
           <ChartFrame className="w-full min-w-0 h-10 min-h-[40px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={40}>
               <LineChart data={weeklyData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
                 <Line type="monotone" dataKey="count" stroke="#6366F1" strokeWidth={2} dot={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '11px' }} />
+                <Tooltip contentStyle={CHART_TOOLTIP} />
               </LineChart>
             </ResponsiveContainer>
           </ChartFrame>
@@ -340,7 +342,7 @@ function CoursePerformanceCard({ course }: { course: CoursePerf }) {
       )}
       <div className="px-4 pb-4 pt-2">
         <Link to={`/courses/${course.id}`}
-          className="block w-full py-1.5 text-center text-xs border border-white/10 hover:border-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+          className="block w-full py-1.5 text-center text-xs border border-gray-300 bg-white hover:bg-gray-50 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
         >
           Kursu düzənlə
         </Link>
@@ -382,29 +384,26 @@ export default function TeacherDashboard() {
   const courseList = courses ?? []
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-gray-900 overflow-x-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">
-              <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                Salam, {user?.name?.split(' ')[0] ?? 'Müəllim'}!
-              </span>{' '}👋
-            </h1>
-            <p className="text-white/40 text-sm mt-0.5 capitalize">{todayStr()}</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">Müəllim paneli</h1>
+            <p className="mt-1 text-sm text-gray-600">Qruplar, dərslər və tələbə irəliləyişini bir yerdə idarə et.</p>
+            <p className="mt-1 text-xs text-gray-400 capitalize">Salam, {user?.name?.split(' ')[0] ?? 'Müəllim'} · {todayStr()}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {isVerified && (
-              <span className="flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-full">
+              <span className="flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-full">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
                 Verified Müəllim
               </span>
             )}
-            <Link to="/analytics" className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 hover:border-white/20 rounded-xl text-sm transition-colors">
+            <Link to="/analytics" className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-800 transition-colors">
               📊 Analitika
             </Link>
           </div>
@@ -414,19 +413,19 @@ export default function TeacherDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {statsLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-5 h-44 animate-pulse" />
+              <div key={i} className="bg-white border border-gray-200 rounded-2xl p-5 h-44 animate-pulse" />
             ))
           ) : statsError ? (
-            <div className="col-span-full bg-[#141414] border border-white/10 rounded-2xl py-10 px-5 text-center space-y-4">
+            <div className="col-span-full bg-white border border-gray-200 rounded-2xl py-10 px-5 text-center space-y-4 shadow-sm">
               <div className="text-4xl">⚠️</div>
-              <p className="text-white/60 text-sm">Müəllim statistikası yüklənmədi.</p>
+              <p className="text-gray-600 text-sm">Müəllim statistikası yüklənmədi.</p>
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <button onClick={() => refetchStats()}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-semibold transition-colors">
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors">
                   Yenidən yoxla
                 </button>
                 <button onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-white/5 border border-white/10 hover:border-white/20 rounded-lg text-xs font-medium transition-colors">
+                  className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-xs font-medium text-gray-700 transition-colors">
                   Dashboard-u yenilə
                 </button>
               </div>
@@ -451,19 +450,19 @@ export default function TeacherDashboard() {
           {/* Left 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             {/* Today schedule */}
-            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold">📅 Bugünkü Cədvəl</h2>
-                <Link to="/groups" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Bütün cədvəl →</Link>
+                <h2 className="font-bold text-gray-900">📅 Bugünkü Cədvəl</h2>
+                <Link to="/groups" className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors">Bütün cədvəl →</Link>
               </div>
               {scheduleLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 2 }).map((_, i) => (
-                    <div key={i} className="h-20 bg-white/5 border border-white/10 rounded-xl animate-pulse" />
+                    <div key={i} className="h-20 bg-slate-50 border border-gray-200 rounded-xl animate-pulse" />
                   ))}
                 </div>
               ) : scheduleError ? (
-                <p className="text-center py-8 text-white/40 text-sm">Bugünkü cədvəl yüklənmədi.</p>
+                <p className="text-center py-8 text-gray-400 text-sm">Bugünkü cədvəl yüklənmədi.</p>
               ) : (
                 <TodaySchedule lessons={schedule ?? []} />
               )}
@@ -472,9 +471,9 @@ export default function TeacherDashboard() {
             {/* Course performance */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold">📊 Kurs Performansı</h2>
+                <h2 className="font-bold text-gray-900">📊 Kurs Performansı</h2>
                 <Link to="/courses"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors"
                 >
                   + Yeni Kurs
                 </Link>
@@ -482,11 +481,11 @@ export default function TeacherDashboard() {
               {coursesLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Array.from({ length: 2 }).map((_, i) => (
-                    <div key={i} className="h-40 bg-white/5 border border-white/10 rounded-2xl animate-pulse" />
+                    <div key={i} className="h-40 bg-white border border-gray-200 rounded-2xl animate-pulse" />
                   ))}
                 </div>
               ) : coursesError ? (
-                <div className="bg-[#141414] border border-white/10 rounded-2xl py-10 text-center text-white/40 text-sm">
+                <div className="bg-white border border-gray-200 rounded-2xl py-10 text-center text-gray-400 text-sm shadow-sm">
                   Kurs performansı yüklənmədi.
                 </div>
               ) : courseList.length > 0 ? (
@@ -494,8 +493,8 @@ export default function TeacherDashboard() {
                   {courseList.map(c => <CoursePerformanceCard key={c.id} course={c} />)}
                 </div>
               ) : (
-                <div className="bg-[#141414] border border-white/10 rounded-2xl py-10 text-center text-white/40 text-sm">
-                  Hələ kurs məlumatı yoxdur. <Link to="/courses" className="text-indigo-400 hover:text-indigo-300">İlk kursunuzu yaradın →</Link>
+                <div className="bg-white border border-gray-200 rounded-2xl py-10 text-center text-gray-500 text-sm shadow-sm">
+                  Hələ kurs məlumatı yoxdur. <Link to="/courses" className="text-indigo-600 hover:text-indigo-700">İlk kursunuzu yaradın →</Link>
                 </div>
               )}
             </div>
@@ -503,27 +502,27 @@ export default function TeacherDashboard() {
 
           {/* Right 1/3 */}
           <div className="space-y-6">
-            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold">👥 Son Aktivlik</h2>
-                <Link to="/groups" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Hamısı →</Link>
+                <h2 className="font-bold text-gray-900">👥 Son Aktivlik</h2>
+                <Link to="/groups" className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors">Hamısı →</Link>
               </div>
               {studentsLoading ? (
                 <div className="space-y-2">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="h-14 bg-white/5 border border-white/10 rounded-xl animate-pulse" />
+                    <div key={i} className="h-14 bg-slate-50 border border-gray-200 rounded-xl animate-pulse" />
                   ))}
                 </div>
               ) : studentsError ? (
-                <p className="text-center py-8 text-white/40 text-sm">Tələbə aktivliyi yüklənmədi.</p>
+                <p className="text-center py-8 text-gray-400 text-sm">Tələbə aktivliyi yüklənmədi.</p>
               ) : (
                 <RecentStudents students={recentStudents ?? []} />
               )}
             </div>
 
             {/* Quick links */}
-            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-2">
-              <h2 className="font-bold mb-3">Sürətli Keçidlər</h2>
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-2">
+              <h2 className="font-bold mb-3 text-gray-900">Sürətli Keçidlər</h2>
               {[
                 { icon: '👥', label: 'Qrup idarəetməsi', to: '/groups' },
                 { icon: '📊', label: 'Analitika', to: '/analytics' },
@@ -531,11 +530,11 @@ export default function TeacherDashboard() {
                 { icon: '🏫', label: 'Storefront', to: `/teachers/me` },
               ].map(({ icon, label, to }) => (
                 <Link key={to} to={to}
-                  className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/8 hover:border-white/15 rounded-xl transition-colors"
+                  className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 border border-gray-200 hover:border-indigo-200 rounded-xl transition-colors"
                 >
                   <span className="text-xl">{icon}</span>
-                  <span className="text-sm font-medium">{label}</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-auto text-white/30">
+                  <span className="text-sm font-medium text-gray-800">{label}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-auto text-gray-400">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </Link>
