@@ -285,29 +285,11 @@ function StarRating({ value, size = 16 }: { value: number; size?: number }) {
   return (
     <span className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <svg key={i} width={size} height={size} viewBox="0 0 20 20" fill={i <= Math.round(value) ? '#FACC15' : 'none'} stroke="#FACC15" strokeWidth="1.5">
+        <svg key={i} width={size} height={size} viewBox="0 0 20 20" fill={i <= Math.round(value) ? '#F59E0B' : 'none'} stroke="#F59E0B" strokeWidth="1.5">
           <polygon points="10,2 12.9,7.7 19,8.6 14.5,13 15.8,19.1 10,16.1 4.2,19.1 5.5,13 1,8.6 7.1,7.7" />
         </svg>
       ))}
     </span>
-  )
-}
-
-function RatingBar({ label, count, total }: { label: string; count: number; total: number }) {
-  const pct = total > 0 ? (count / total) * 100 : 0
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-white/60 w-4">{label}</span>
-      <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-        <motion.div
-          className="h-full bg-yellow-400 rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        />
-      </div>
-      <span className="text-white/50 w-8 text-right">{count}</span>
-    </div>
   )
 }
 
@@ -334,17 +316,17 @@ function SectionAccordion({
   }, [hasFocusedLesson])
 
   return (
-    <div className="border border-white/10 rounded-xl overflow-hidden">
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/8 transition-colors text-left"
+        className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
       >
         <div>
-          <p className="font-semibold text-white">{section.title}</p>
-          <p className="text-xs text-white/50 mt-0.5">
+          <p className="font-semibold text-gray-900">{section.title}</p>
+          <p className="text-xs text-gray-500 mt-0.5">
             {section.lessons.length} dərs · {fmtDuration(total)}
             {isEnrolled && completed > 0 && (
-              <span className="text-emerald-400 ml-2">· {completed}/{section.lessons.length} tamamlandı</span>
+              <span className="text-emerald-600 ml-2">· {completed}/{section.lessons.length} tamamlandı</span>
             )}
           </p>
         </div>
@@ -352,7 +334,7 @@ function SectionAccordion({
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
           width="20" height="20" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="2" className="text-white/40 shrink-0"
+          stroke="currentColor" strokeWidth="2" className="text-gray-400 shrink-0"
         >
           <path d="M6 9l6 6 6-6" />
         </motion.svg>
@@ -370,8 +352,8 @@ function SectionAccordion({
               <div
                 key={lesson.id}
                 id={`course-lesson-${lesson.id}`}
-                className={`flex items-center gap-3 px-4 py-3 border-t border-white/5 hover:bg-white/3 ${
-                  lesson.id === focusLessonId ? 'bg-indigo-500/10' : ''
+                className={`flex items-center gap-3 px-4 py-3 border-t border-gray-100 hover:bg-slate-50 ${
+                  lesson.id === focusLessonId ? 'bg-indigo-50' : ''
                 }`}
               >
                 {/* Status icon */}
@@ -382,29 +364,29 @@ function SectionAccordion({
                     </svg>
                   </div>
                 ) : (
-                  <div className={`w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center ${isEnrolled || lesson.isFree ? 'border-white/30' : 'border-white/15'}`}>
+                  <div className={`w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center ${isEnrolled || lesson.isFree ? 'border-gray-300' : 'border-gray-200'}`}>
                     {(!isEnrolled && !lesson.isFree) && (
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-white/30">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
                         <path d="M18 11H6V8a6 6 0 0112 0v3zm-1 9H7a2 2 0 01-2-2v-6h14v6a2 2 0 01-2 2z" />
                       </svg>
                     )}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm truncate ${lesson.isCompleted ? 'text-white/60 line-through' : 'text-white/90'}`}>
+                  <p className={`text-sm truncate ${lesson.isCompleted ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
                     {lesson.title}
                   </p>
-                  <p className="text-xs text-white/40">{fmtDuration(lesson.duration)}</p>
+                  <p className="text-xs text-gray-400">{fmtDuration(lesson.duration)}</p>
                 </div>
                 {lesson.isFree && (
-                  <span className="text-xs text-emerald-400 border border-emerald-400/30 px-1.5 py-0.5 rounded shrink-0">
+                  <span className="text-xs text-emerald-600 border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0">
                     Pulsuz
                   </span>
                 )}
                 {isEnrolled && !lesson.isCompleted && (
                   <button
                     onClick={() => onComplete(lesson.id)}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 shrink-0"
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 shrink-0"
                   >
                     Tamamla
                   </button>
@@ -440,14 +422,16 @@ function EnrollmentCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+      className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl"
     >
       {/* Thumbnail preview */}
-      <div className="relative aspect-video bg-black">
-        <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover opacity-80" />
+      <div className="relative aspect-video bg-slate-900">
+        {course.thumbnail && (
+          <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+        )}
         {course.previewVideoUrl && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+            <div className="w-14 h-14 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center border border-white/40">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
                 <path d="M8 5v14l11-7z" />
               </svg>
@@ -460,15 +444,15 @@ function EnrollmentCard({
         {/* Price */}
         <div className="flex items-end gap-3">
           {course.isFree ? (
-            <span className="text-3xl font-bold text-emerald-400">Pulsuz</span>
+            <span className="text-3xl font-bold text-emerald-600">Pulsuz</span>
           ) : (
             <>
-              <span className="text-3xl font-bold text-white">{displayPrice} ₼</span>
+              <span className="text-3xl font-bold text-gray-900">{displayPrice} ₼</span>
               {hasDiscount && (
-                <span className="text-lg text-white/40 line-through mb-0.5">{course.price} ₼</span>
+                <span className="text-lg text-gray-400 line-through mb-0.5">{course.price} ₼</span>
               )}
               {hasDiscount && (
-                <span className="text-sm text-rose-400 font-semibold mb-0.5">
+                <span className="text-sm text-rose-500 font-semibold mb-0.5">
                   {Math.round(((course.price - displayPrice) / course.price) * 100)}% endirim
                 </span>
               )}
@@ -481,11 +465,11 @@ function EnrollmentCard({
           <div className="space-y-2">
             {/* Progress */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs text-white/50">
+              <div className="flex justify-between text-xs text-gray-500">
                 <span>Tərəqqi</span>
                 <span>{course.enrollmentProgress}%</span>
               </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
                   initial={{ width: 0 }}
@@ -496,14 +480,14 @@ function EnrollmentCard({
             </div>
             <button
               onClick={onContinue}
-              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             >
               Dəvam et →
             </button>
             {course.enrollmentProgress === 100 && (
               <button
                 onClick={onCertificate}
-                className="w-full py-2.5 rounded-xl border border-yellow-400/30 text-yellow-400 font-semibold hover:bg-yellow-400/10 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-xl border border-amber-300 text-amber-600 font-semibold hover:bg-amber-50 transition-colors flex items-center justify-center gap-2"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 15l-2 5-1-1-5 1 1-5-1-1 5-2 3 3zM18 8a5 5 0 00-8-4 4 4 0 105 5 5 5 0 003-1z" />
@@ -516,10 +500,10 @@ function EnrollmentCard({
           <button
             onClick={onEnroll}
             disabled={isEnrolling}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
           >
             {isEnrolling ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
             ) : (
               <>
                 {course.isFree ? 'Pulsuz qoşul' : 'Kursa yazıl'}
@@ -532,7 +516,7 @@ function EnrollmentCard({
         )}
 
         {/* Trust signals */}
-        <div className="pt-2 space-y-2 text-sm text-white/50">
+        <div className="pt-2 space-y-2 text-sm text-gray-500">
           {[
             { icon: '🔒', text: '30 günlük geri qaytarma zəmanəti' },
             { icon: '♾️', text: 'Ömürlük giriş' },
@@ -647,15 +631,15 @@ export default function CourseDetail() {
   // ── Loading skeleton ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] animate-pulse">
+      <div className="min-h-screen bg-slate-50 animate-pulse">
         <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            <div className="h-8 bg-white/10 rounded-xl w-3/4" />
-            <div className="h-4 bg-white/10 rounded-xl w-full" />
-            <div className="h-4 bg-white/10 rounded-xl w-5/6" />
-            <div className="h-64 bg-white/10 rounded-2xl" />
+            <div className="h-8 bg-slate-200 rounded-xl w-3/4" />
+            <div className="h-4 bg-slate-200 rounded-xl w-full" />
+            <div className="h-4 bg-slate-200 rounded-xl w-5/6" />
+            <div className="h-64 bg-slate-200 rounded-2xl" />
           </div>
-          <div className="h-96 bg-white/10 rounded-2xl" />
+          <div className="h-96 bg-slate-200 rounded-2xl" />
         </div>
       </div>
     )
@@ -665,23 +649,23 @@ export default function CourseDetail() {
   // Backend 404 və ya xəta verdikdə fake kurs göstərmirik — istifadəçiyə real vəziyyəti bildiririk.
   if (isError || !course) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 text-gray-900 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="text-6xl mb-4">📕</div>
           <h1 className="text-2xl font-bold mb-2">Kurs tapılmadı və ya yüklənmədi</h1>
-          <p className="text-white/50 text-sm mb-6">
+          <p className="text-gray-500 text-sm mb-6">
             Axtardığınız kurs mövcud deyil və ya hazırda yüklənə bilmədi.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link
               to={APP_ROUTES.COURSES}
-              className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors"
+              className="px-5 py-2.5 rounded-xl bg-white border border-gray-300 text-sm font-semibold hover:bg-gray-50 transition-colors"
             >
               ← Kurslara qayıt
             </Link>
             <button
               onClick={() => refetch()}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold transition-all"
             >
               Yenidən yoxla
             </button>
@@ -696,56 +680,56 @@ export default function CourseDetail() {
   const displayedSections = showAllSections ? course.sections : course.sections.slice(0, 3)
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white">
+    <div className="min-h-screen bg-slate-50 text-gray-900">
       {/* Hero gradient header */}
-      <div className="bg-gradient-to-b from-indigo-950/60 to-[#0D0D0D] border-b border-white/5">
+      <div className="bg-gradient-to-b from-indigo-50 to-slate-50 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             {/* Left: course info */}
             <div className="lg:col-span-2 space-y-4">
               {/* Breadcrumb */}
-              <div className="flex items-center gap-2 text-sm text-white/40">
-                <Link to={APP_ROUTES.COURSES} className="hover:text-white transition-colors">Kurslar</Link>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Link to={APP_ROUTES.COURSES} className="hover:text-gray-700 transition-colors">Kurslar</Link>
                 <span>/</span>
-                <span className="text-white/70 truncate">{course.title}</span>
+                <span className="text-gray-600 truncate">{course.title}</span>
               </div>
 
-              <h1 className="text-2xl lg:text-3xl font-bold leading-tight">{course.title}</h1>
-              <p className="text-white/70 text-lg">{course.description}</p>
+              <h1 className="text-2xl lg:text-3xl font-bold leading-tight text-gray-900">{course.title}</h1>
+              <p className="text-gray-600 text-lg">{course.description}</p>
 
               {/* Meta row */}
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <div className="flex items-center gap-1.5">
                   <StarRating value={course.rating} size={14} />
-                  <span className="text-yellow-400 font-semibold">{course.rating}</span>
-                  <span className="text-white/40">({course.reviewCount} rəy)</span>
+                  <span className="text-amber-600 font-semibold">{course.rating}</span>
+                  <span className="text-gray-400">({course.reviewCount} rəy)</span>
                 </div>
-                <span className="text-white/30">·</span>
-                <span className="text-white/60">{course.studentCount.toLocaleString()} tələbə</span>
-                <span className="text-white/30">·</span>
-                <span className="capitalize text-white/60">{course.level}</span>
-                <span className="text-white/30">·</span>
-                <span className="text-white/60">{course.language} dilində</span>
+                <span className="text-gray-300">·</span>
+                <span className="text-gray-600">{course.studentCount.toLocaleString()} tələbə</span>
+                <span className="text-gray-300">·</span>
+                <span className="capitalize text-gray-600">{course.level}</span>
+                <span className="text-gray-300">·</span>
+                <span className="text-gray-600">{course.language} dilində</span>
               </div>
 
               {/* Teacher */}
               <Link
                 to={`/teachers/${course.teacher.slug}`}
-                className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors w-fit"
+                className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 transition-colors w-fit"
               >
-                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
                   {course.teacher.name[0]}
                 </div>
                 {course.teacher.name}
                 {course.teacher.isVerified && (
-                  <span className="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded">✓ Təsdiqlənmiş</span>
+                  <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded">✓ Təsdiqlənmiş</span>
                 )}
               </Link>
 
               {/* Tags */}
               <div className="flex flex-wrap gap-2">
                 {course.tags.map(tag => (
-                  <span key={tag} className="text-xs bg-white/5 border border-white/10 text-white/60 px-2.5 py-1 rounded-full">{tag}</span>
+                  <span key={tag} className="text-xs bg-white border border-gray-200 text-gray-600 px-2.5 py-1 rounded-full">{tag}</span>
                 ))}
               </div>
             </div>
@@ -783,21 +767,21 @@ export default function CourseDetail() {
             </div>
 
             {/* Tabs */}
-            <div ref={tabsRef} className="relative border-b border-white/10">
+            <div ref={tabsRef} className="relative border-b border-gray-200">
               <div className="flex gap-0 overflow-x-auto scrollbar-none">
                 {TABS.map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`relative px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
-                      activeTab === tab ? 'text-white' : 'text-white/40 hover:text-white/70'
+                      activeTab === tab ? 'text-gray-900' : 'text-gray-400 hover:text-gray-700'
                     }`}
                   >
                     {tab}
                     {activeTab === tab && (
                       <motion.div
                         layoutId="course-tab-underline"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"
                       />
                     )}
                   </button>
@@ -817,12 +801,12 @@ export default function CourseDetail() {
                 {activeTab === 'Kurs haqqında' && (
                   <div className="space-y-8">
                     {/* What you'll learn */}
-                    <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-2xl p-6 space-y-4">
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 space-y-4">
                       <h2 className="text-lg font-bold">Bu kursda nə öyrənəcəksiniz?</h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {visibleLearn.map(item => (
-                          <div key={item} className="flex items-start gap-2 text-sm text-white/80">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818CF8" strokeWidth="2.5" className="mt-0.5 shrink-0">
+                          <div key={item} className="flex items-start gap-2 text-sm text-gray-700">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5" className="mt-0.5 shrink-0">
                               <path d="M20 6L9 17l-5-5" />
                             </svg>
                             {item}
@@ -832,7 +816,7 @@ export default function CourseDetail() {
                       {course.whatYoullLearn.length > 6 && (
                         <button
                           onClick={() => setShowAllLearn(o => !o)}
-                          className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                          className="text-sm text-indigo-600 hover:text-indigo-700 transition-colors"
                         >
                           {showAllLearn ? 'Daha az göstər ↑' : `+${course.whatYoullLearn.length - 6} daha göstər ↓`}
                         </button>
@@ -844,8 +828,8 @@ export default function CourseDetail() {
                       <h2 className="text-lg font-bold">Tələblər</h2>
                       <ul className="space-y-2">
                         {course.requirements.map(req => (
-                          <li key={req} className="flex items-start gap-2 text-sm text-white/70">
-                            <span className="text-indigo-400 mt-0.5">•</span>
+                          <li key={req} className="flex items-start gap-2 text-sm text-gray-600">
+                            <span className="text-indigo-500 mt-0.5">•</span>
                             {req}
                           </li>
                         ))}
@@ -855,7 +839,7 @@ export default function CourseDetail() {
                     {/* Description */}
                     <div className="space-y-3">
                       <h2 className="text-lg font-bold">Kurs haqqında</h2>
-                      <p className="text-white/70 leading-relaxed text-sm">{course.longDescription}</p>
+                      <p className="text-gray-600 leading-relaxed text-sm">{course.longDescription}</p>
                     </div>
 
                     {/* Stats bar */}
@@ -866,9 +850,9 @@ export default function CourseDetail() {
                         { label: 'Yeniləndi', value: fmtDate(course.updatedAt) },
                         { label: 'Səviyyə', value: course.level },
                       ].map(({ label, value }) => (
-                        <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-                          <p className="text-xs text-white/40 mb-1">{label}</p>
-                          <p className="text-sm font-semibold capitalize">{value}</p>
+                        <div key={label} className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm">
+                          <p className="text-xs text-gray-400 mb-1">{label}</p>
+                          <p className="text-sm font-semibold capitalize text-gray-900">{value}</p>
                         </div>
                       ))}
                     </div>
@@ -879,11 +863,11 @@ export default function CourseDetail() {
                 {activeTab === 'Dərslər' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-white/60 text-sm">
+                      <p className="text-gray-600 text-sm">
                         {course.sections.length} bölmə · {totalLessons} dərs · {fmtDuration(course.duration)}
                       </p>
                       {!course.isEnrolled && (
-                        <span className="text-xs text-white/40">Pulsuz dərslər açıqdır</span>
+                        <span className="text-xs text-gray-400">Pulsuz dərslər açıqdır</span>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -898,7 +882,7 @@ export default function CourseDetail() {
                           />
                         ))
                       ) : (
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-white/60">
+                        <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-600">
                           Bu kurs üçün dərslər hələ əlavə edilməyib.
                         </div>
                       )}
@@ -906,7 +890,7 @@ export default function CourseDetail() {
                     {course.sections.length > 3 && (
                       <button
                         onClick={() => setShowAllSections(o => !o)}
-                        className="w-full py-3 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white hover:border-white/20 transition-colors"
+                        className="w-full py-3 border border-gray-200 bg-white rounded-xl text-sm text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors"
                       >
                         {showAllSections
                           ? 'Daha az göstər'
@@ -917,60 +901,54 @@ export default function CourseDetail() {
                 )}
 
                 {/* ── TAB 3: Rəylər ───────────────────────────────────── */}
+                {/* Yalnız REAL rəy datası göstərilir — uydurma paylanma/statistika yoxdur. */}
                 {activeTab === 'Rəylər' && (
                   <div className="space-y-6">
-                    {/* Rating summary */}
-                    <div className="flex gap-8 items-center">
+                    {/* Rating summary — real ortalama + say */}
+                    <div className="flex items-center gap-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                       <div className="text-center">
-                        <p className="text-6xl font-bold text-yellow-400">{course.rating}</p>
+                        <p className="text-5xl font-bold text-amber-500">{course.rating}</p>
                         <StarRating value={course.rating} size={20} />
-                        <p className="text-xs text-white/40 mt-1">{course.reviewCount} rəy</p>
+                        <p className="text-xs text-gray-400 mt-1">{course.reviewCount} rəy</p>
                       </div>
-                      <div className="flex-1 space-y-2">
-                        {[5, 4, 3, 2, 1].map(star => {
-                          const count = star === 5 ? Math.round(course.reviewCount * 0.65)
-                            : star === 4 ? Math.round(course.reviewCount * 0.22)
-                            : star === 3 ? Math.round(course.reviewCount * 0.08)
-                            : star === 2 ? Math.round(course.reviewCount * 0.03)
-                            : Math.round(course.reviewCount * 0.02)
-                          return <RatingBar key={star} label={`${star}★`} count={count} total={course.reviewCount} />
-                        })}
+                      <div className="w-px h-16 bg-gray-200" />
+                      <div className="flex-1 text-sm text-gray-600 leading-relaxed">
+                        {course.reviewCount > 0
+                          ? `${course.reviewCount} rəy əsasında ortalama reytinq.`
+                          : 'Bu kurs üçün hələ rəy yoxdur.'}
                       </div>
                     </div>
 
-                    {/* Review list */}
-                    <div className="space-y-4">
-                      {course.reviews.map(review => (
-                        <motion.div
-                          key={review.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-white/5 border border-white/8 rounded-xl p-4 space-y-2"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-indigo-600/60 flex items-center justify-center text-sm font-bold">
-                                {review.user.name[0]}
+                    {/* Review list — real rəylər */}
+                    {course.reviews.length === 0 ? (
+                      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+                        <p className="text-sm font-semibold text-gray-900">Bu kurs üçün hələ rəy yoxdur.</p>
+                        <p className="mt-1 text-sm text-gray-500">Rəy bölməsi real istifadəçi rəyləri ilə formalaşacaq.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {course.reviews.map(review => (
+                          <motion.div
+                            key={review.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 shadow-sm"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold">
+                                  {review.user.name[0]}
+                                </div>
+                                <span className="font-medium text-sm text-gray-900">{review.user.name}</span>
                               </div>
-                              <span className="font-medium text-sm">{review.user.name}</span>
+                              <div className="flex items-center gap-2">
+                                <StarRating value={review.rating} size={12} />
+                                <span className="text-xs text-gray-400">{fmtDate(review.createdAt)}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <StarRating value={review.rating} size={12} />
-                              <span className="text-xs text-white/40">{fmtDate(review.createdAt)}</span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-white/70 leading-relaxed">{review.comment}</p>
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    {/* Write review (only enrolled) */}
-                    {course.isEnrolled && (
-                      <div className="bg-white/5 border border-dashed border-white/15 rounded-xl p-4 text-center">
-                        <p className="text-sm text-white/60 mb-3">Kurs haqqında rəyinizi yazın</p>
-                        <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors">
-                          Rəy yaz
-                        </button>
+                            <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
+                          </motion.div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -980,27 +958,27 @@ export default function CourseDetail() {
                 {activeTab === 'Müəllim' && (
                   <div className="space-y-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-3xl font-bold shrink-0">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shrink-0">
                         {course.teacher.name[0]}
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h2 className="text-xl font-bold">{course.teacher.name}</h2>
                           {course.teacher.isVerified && (
-                            <span className="text-xs bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">✓ Təsdiqlənmiş</span>
+                            <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">✓ Təsdiqlənmiş</span>
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-4 mt-2 text-sm text-white/50">
+                        <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-500">
                           <span>⭐ {course.teacher.rating} reytinq</span>
                           <span>👥 {course.teacher.totalStudents.toLocaleString()} tələbə</span>
                           <span>📚 {course.teacher.courseCount} kurs</span>
                         </div>
                       </div>
                     </div>
-                    <p className="text-white/70 leading-relaxed">{course.teacher.bio}</p>
+                    <p className="text-gray-600 leading-relaxed">{course.teacher.bio}</p>
                     <Link
                       to={`/teachers/${course.teacher.slug}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl text-sm transition-colors"
                     >
                       Tam profili gör
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
