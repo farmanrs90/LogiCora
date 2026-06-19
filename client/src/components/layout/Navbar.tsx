@@ -41,7 +41,8 @@ function AvatarCircle({ name, color, size = 36 }: { name: string; color: string;
       style={{
         width: size, height: size,
         backgroundColor: color,
-        boxShadow: `0 0 12px ${color}60`,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+        border: '2px solid rgba(255,255,255,0.08)',
         fontSize: size * 0.38,
       }}
     >
@@ -57,13 +58,13 @@ function NotifItem({ n }: { n: AppNotification }) {
     info: '💬', success: '✅', warning: '⚠️', achievement: '🏆', challenge: '⚔️',
   }
   return (
-    <div className={`flex gap-3 p-3 rounded-xl transition-colors ${n.isRead ? 'opacity-60' : 'bg-[rgba(147,51,234,0.06)]'}`}>
+    <div className={`flex gap-3 p-3 rounded-xl transition-colors ${n.isRead ? 'opacity-60' : 'bg-[rgba(99,102,241,0.08)]'}`}>
       <span className="text-xl shrink-0 mt-0.5">{typeIcon[n.type]}</span>
       <div className="flex-1 min-w-0">
         <p className="text-white text-sm font-medium leading-tight truncate">{n.title}</p>
         <p className="text-[#9CA3AF] text-xs mt-0.5 line-clamp-2">{n.message}</p>
       </div>
-      {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#9333EA] mt-1.5 shrink-0" />}
+      {!n.isRead && <div className="w-2 h-2 rounded-full bg-[#6366F1] mt-1.5 shrink-0" />}
     </div>
   )
 }
@@ -125,32 +126,32 @@ export default function Navbar() {
     <header
       className="fixed top-0 right-0 left-0 lg:left-60 h-16 z-40 flex items-center px-4 lg:px-6 gap-4"
       style={{
-        background: 'rgba(13,13,13,0.85)',
+        background: 'rgba(15,21,36,0.82)',
         backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: '1px solid rgba(148,163,184,0.10)',
       }}
     >
-      {/* ── Logo (left) ── */}
+      {/* ── Logo (left, mobile) — Landing marka stili ── */}
       <Link
         to={APP_ROUTES.DASHBOARD.ROOT}
-        className="font-black text-xl bg-gradient-to-r from-[#3B82F6] to-[#9333EA]
-                   bg-clip-text text-transparent shrink-0 lg:hidden"
+        className="flex items-center gap-2 shrink-0 lg:hidden"
+        aria-label="LogiCora — ana səhifə"
       >
-        LogiCora
+        <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#4F46E5] to-[#3B82F6] shadow-sm shadow-indigo-500/30">
+          <span className="h-2.5 w-2.5 rounded-sm bg-white/90" />
+        </span>
+        <span className="text-xl font-extrabold tracking-tight">
+          <span className="text-white">Logi</span>
+          <span className="text-[#818CF8]">Cora</span>
+        </span>
       </Link>
 
-      {/* ── Center — streak / XP / gems (desktop) ── */}
-      <div className="hidden lg:flex items-center gap-5 flex-1 justify-center">
+      {/* ── Center — streak / XP / gems (desktop, achievement-style chips) ── */}
+      <div className="hidden lg:flex items-center gap-3 flex-1 justify-center">
 
         {/* Streak */}
-        <div className="flex items-center gap-1.5">
-          <motion.span
-            className="text-xl"
-            animate={{ scale: [1, 1.15, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            🔥
-          </motion.span>
+        <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2.5 py-1">
+          <span className="text-base leading-none">🔥</span>
           <span className="font-bold text-sm" style={{ color: sColor }}>
             {gp?.streak ?? 0}
           </span>
@@ -158,14 +159,14 @@ export default function Navbar() {
 
         {/* XP bar */}
         <div
-          className="relative flex items-center gap-2 group"
+          className="relative flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2.5 py-1"
           onMouseEnter={() => setXpTooltip(true)}
           onMouseLeave={() => setXpTooltip(false)}
         >
           <span className="text-[#9CA3AF] text-xs font-medium shrink-0">
             Lv.{gp?.level ?? 1}
           </span>
-          <div className="w-32 h-2 bg-[rgba(255,255,255,0.1)] rounded-full overflow-hidden">
+          <div className="w-28 h-1.5 bg-[rgba(255,255,255,0.1)] rounded-full overflow-hidden">
             <motion.div
               className="h-full rounded-full"
               style={{ backgroundColor: avatarColor }}
@@ -183,7 +184,7 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 className="absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap
-                           bg-[#1F2937] border border-[rgba(255,255,255,0.1)]
+                           bg-[#1E293B] border border-[rgba(148,163,184,0.18)]
                            text-white text-xs px-3 py-1.5 rounded-lg pointer-events-none z-50"
               >
                 Növbəti level üçün {xpRemain} XP lazımdır
@@ -193,14 +194,8 @@ export default function Navbar() {
         </div>
 
         {/* Gems */}
-        <div className="flex items-center gap-1.5">
-          <motion.span
-            className="text-lg"
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' as const }}
-          >
-            💎
-          </motion.span>
+        <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2.5 py-1">
+          <span className="text-sm leading-none">💎</span>
           <span className="font-bold text-sm text-[#06B6D4]">{gp?.gems ?? 0}</span>
         </div>
       </div>
@@ -245,7 +240,7 @@ export default function Navbar() {
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
                 transition={{ duration: 0.18 }}
                 className="absolute right-0 top-12 w-80 rounded-2xl overflow-hidden z-50
-                           bg-[#111827] border border-[rgba(255,255,255,0.1)]
+                           bg-[#131A2E] border border-[rgba(148,163,184,0.14)]
                            shadow-[0_16px_48px_rgba(0,0,0,0.6)]"
               >
                 <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.07)]">
@@ -254,7 +249,7 @@ export default function Navbar() {
                     {unreadCount > 0 && (
                       <button
                         onClick={() => dispatch(markAllAsRead())}
-                        className="text-[#9333EA] text-xs hover:underline"
+                        className="text-[#818CF8] text-xs hover:underline"
                       >
                         Hamısını oxu
                       </button>
@@ -277,7 +272,7 @@ export default function Navbar() {
                   <div className="p-3 border-t border-[rgba(255,255,255,0.07)]">
                     <button
                       onClick={() => setNotifOpen(false)}
-                      className="w-full text-[#9333EA] text-xs hover:underline"
+                      className="w-full text-[#818CF8] text-xs hover:underline"
                     >
                       Hamısına bax →
                     </button>
@@ -313,7 +308,7 @@ export default function Navbar() {
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
                 transition={{ duration: 0.18 }}
                 className="absolute right-0 top-12 w-52 rounded-2xl overflow-hidden z-50
-                           bg-[#111827] border border-[rgba(255,255,255,0.1)]
+                           bg-[#131A2E] border border-[rgba(148,163,184,0.14)]
                            shadow-[0_16px_48px_rgba(0,0,0,0.6)]"
               >
                 {/* User info */}

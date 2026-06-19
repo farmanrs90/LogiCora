@@ -84,7 +84,8 @@ function AvatarCircle({ name, color, size = 52 }: { name: string; color: string;
       style={{
         width: size, height: size,
         backgroundColor: color,
-        boxShadow: `0 0 20px ${color}50`,
+        boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+        border: '2px solid rgba(255,255,255,0.08)',
         fontSize: size * 0.38,
       }}
     >
@@ -105,8 +106,9 @@ function NavLink({ item, active, color }: { item: NavItem; active: boolean; colo
       className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
                  transition-colors duration-150 text-left"
       style={{
-        backgroundColor: active ? `${color}18` : 'transparent',
+        backgroundColor: active ? `${color}1A` : 'transparent',
         color: active ? '#FFFFFF' : '#9CA3AF',
+        boxShadow: active ? `inset 0 0 0 1px ${color}33` : 'none',
       }}
       onMouseEnter={(e) => {
         if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)'
@@ -178,19 +180,29 @@ export default function Sidebar() {
     <aside
       className="fixed left-0 top-0 bottom-0 w-60 hidden lg:flex flex-col z-30"
       style={{
-        backgroundColor: '#111827',
-        borderRight: '1px solid rgba(255,255,255,0.05)',
+        background: 'linear-gradient(180deg, #131A2E 0%, #0E1525 100%)',
+        borderRight: '1px solid rgba(99,102,241,0.12)',
       }}
     >
-      {/* Logo */}
-      <div className="px-5 py-5 border-b border-[rgba(255,255,255,0.05)]">
-        <span className="text-xl font-black bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">
-          LogiCora
-        </span>
+      {/* Logo / wordmark — Landing ilə eyni marka stili */}
+      <div className="px-5 py-5 border-b border-[rgba(148,163,184,0.10)]">
+        <button
+          onClick={() => navigate(APP_ROUTES.DASHBOARD.ROOT)}
+          className="flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          aria-label="LogiCora — ana səhifə"
+        >
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#4F46E5] to-[#3B82F6] shadow-sm shadow-indigo-500/30">
+            <span className="h-2.5 w-2.5 rounded-sm bg-white/90" />
+          </span>
+          <span className="text-xl font-extrabold tracking-tight">
+            <span className="text-white">Logi</span>
+            <span className="text-[#818CF8]">Cora</span>
+          </span>
+        </button>
       </div>
 
       {/* Avatar section */}
-      <div className="px-4 py-5 border-b border-[rgba(255,255,255,0.05)]">
+      <div className="px-4 py-5 border-b border-[rgba(148,163,184,0.10)]">
         <div className="flex items-center gap-3">
           {user ? (
             <AvatarCircle name={user.name} color={avatarColor} />
@@ -233,11 +245,12 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom — XP + actions */}
-      <div className="px-4 py-4 border-t border-[rgba(255,255,255,0.05)] space-y-4">
+      <div className="px-4 py-4 border-t border-[rgba(148,163,184,0.10)] space-y-4">
         {/* XP bar */}
         <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">İrəliləyiş</p>
           <div className="flex justify-between items-center">
-            <span className="text-[#9CA3AF] text-xs">
+            <span className="text-[#E2E8F0] text-xs font-medium">
               {gp ? `${gp.totalXP} XP` : '— XP'}
             </span>
             <span className="text-[#9CA3AF] text-[10px]">

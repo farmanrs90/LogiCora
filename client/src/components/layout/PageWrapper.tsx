@@ -60,9 +60,9 @@ function BottomTabBar({ role }: { role: Role | undefined }) {
       className="fixed bottom-0 left-0 right-0 lg:hidden z-40 flex items-center
                  justify-around px-2 py-1"
       style={{
-        background:     'rgba(17,24,39,0.95)',
+        background:     'rgba(15,21,36,0.92)',
         backdropFilter: 'blur(20px)',
-        borderTop:      '1px solid rgba(255,255,255,0.07)',
+        borderTop:      '1px solid rgba(99,102,241,0.12)',
         height:         64,
       }}
       aria-label="Mobil naviqasiya"
@@ -119,7 +119,10 @@ export default function PageWrapper({ children }: PageWrapperProps) {
   const user = authUser ?? ctxUser
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D]">
+    <div
+      className="min-h-screen"
+      style={{ background: 'linear-gradient(180deg, #0E1525 0%, #0B111E 100%)' }}
+    >
       {/* Fixed sidebar — desktop only */}
       <Sidebar />
 
@@ -128,7 +131,7 @@ export default function PageWrapper({ children }: PageWrapperProps) {
 
       {/* Main content area */}
       <main
-        className="lg:pl-[15rem] pt-16 pb-16 lg:pb-0 min-h-screen"
+        className="lg:pl-[15rem] pt-16 pb-16 lg:pb-0 min-h-screen overflow-x-hidden"
         id="main-content"
       >
         <motion.div
