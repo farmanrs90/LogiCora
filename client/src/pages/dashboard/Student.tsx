@@ -96,13 +96,21 @@ const leagueLabel: Record<LeagueTier, string> = {
   diamond: 'Brilyant Liqa',
 }
 
+// Light league chip stilləri (premium, az kontrastlı deyil)
 const leagueClass: Record<LeagueTier, string> = {
-  bronze: 'text-bronze border-bronze/30 bg-bronze/10',
-  silver: 'text-silver border-silver/30 bg-silver/10',
-  gold: 'text-gold border-gold/30 bg-gold/10',
-  platinum: 'text-platinum border-platinum/30 bg-platinum/10',
-  diamond: 'text-diamond border-diamond/30 bg-diamond/10',
+  bronze: 'text-orange-700 border-orange-200 bg-orange-50',
+  silver: 'text-slate-600 border-slate-300 bg-slate-100',
+  gold: 'text-amber-600 border-amber-200 bg-amber-50',
+  platinum: 'text-sky-700 border-sky-200 bg-sky-50',
+  diamond: 'text-cyan-700 border-cyan-200 bg-cyan-50',
 }
+
+// Reusable light stillər (qlobal .card/.btn-* dark olduğu üçün burada inline)
+const PRIMARY_BTN =
+  'inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60'
+const OUTLINE_BTN =
+  'inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
+const CARD = 'rounded-2xl border border-gray-200 bg-white p-5 shadow-sm'
 
 const panelMotion = {
   hidden: { opacity: 0, y: 8 },
@@ -152,8 +160,8 @@ function subjectLabel(subject: string) {
 function sectionTitle(title: string, eyebrow: string) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase text-text-secondary">{eyebrow}</p>
-      <h2 className="text-lg font-bold text-white">{title}</h2>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">{eyebrow}</p>
+      <h2 className="text-lg font-bold tracking-tight text-gray-900">{title}</h2>
     </div>
   )
 }
@@ -164,7 +172,7 @@ function LoadingBlock({ lines = 3 }: { lines?: number }) {
       {Array.from({ length: lines }).map((_, index) => (
         <div
           key={index}
-          className="h-10 animate-pulse rounded-card border border-border bg-bg-card"
+          className="h-10 animate-pulse rounded-xl border border-gray-200 bg-slate-100"
         />
       ))}
     </div>
@@ -179,12 +187,12 @@ function QueryErrorState({
   onRetry: () => void
 }) {
   return (
-    <div className="rounded-card border border-danger/30 bg-danger/10 p-4">
-      <p className="text-sm font-bold text-white">{message}</p>
+    <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+      <p className="text-sm font-bold text-red-700">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="btn-outline mt-3"
+        className={`${OUTLINE_BTN} mt-3`}
       >
         Yenidən yoxla
       </button>
@@ -204,11 +212,11 @@ function MetricPill({
   accentClass: string
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-btn border border-border bg-bg-card px-3 py-2">
+    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
       <Icon className={`h-4 w-4 shrink-0 ${accentClass}`} aria-hidden="true" />
       <div className="min-w-0">
-        <p className="truncate text-[10px] font-semibold uppercase text-text-secondary">{label}</p>
-        <p className="truncate text-sm font-black tabular-nums text-white">{value}</p>
+        <p className="truncate text-[10px] font-semibold uppercase text-gray-500">{label}</p>
+        <p className="truncate text-sm font-black tabular-nums text-gray-900">{value}</p>
       </div>
     </div>
   )
@@ -226,7 +234,7 @@ function StatusHeader({
   onRetry: () => void
 }) {
   const xp = getXpState(profile)
-  const headerClassName = 'sticky top-16 z-20 -mx-4 border-y border-border bg-bg-primary/90 px-4 py-3 backdrop-blur-xl lg:top-16 lg:mx-0 lg:rounded-card lg:border'
+  const headerClassName = 'sticky top-16 z-20 -mx-4 border-y border-gray-200 bg-slate-50/90 px-4 py-3 backdrop-blur-xl lg:top-16 lg:mx-0 lg:rounded-2xl lg:border'
 
   if (isError) {
     return (
@@ -249,11 +257,11 @@ function StatusHeader({
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase text-text-secondary">Komanda mərkəzi</p>
-            <p className="text-xl font-black tabular-nums text-white">Səviyyə {profile.level}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Komanda mərkəzi</p>
+            <p className="text-xl font-black tabular-nums text-gray-900">Səviyyə {profile.level}</p>
           </div>
           {isLoading && (
-            <span className="rounded-btn border border-border bg-bg-card px-2 py-1 text-xs text-text-secondary">
+            <span className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500">
               Yenilənir
             </span>
           )}
@@ -264,43 +272,43 @@ function StatusHeader({
             icon={Zap}
             label="XP"
             value={`${formatNumber(profile.totalXP)} XP`}
-            accentClass="text-accent-green"
+            accentClass="text-emerald-600"
           />
           <MetricPill
             icon={Flame}
             label="Seriya"
             value={`${profile.streak} gün`}
-            accentClass="text-accent-orange"
+            accentClass="text-orange-500"
           />
           <MetricPill
             icon={Medal}
             label="Liqa"
             value={leagueLabel[profile.leagueTier]}
-            accentClass="text-gold"
+            accentClass="text-amber-500"
           />
           <MetricPill
             icon={Gem}
             label="Kristal"
             value={formatNumber(profile.gems)}
-            accentClass="text-accent-cyan"
+            accentClass="text-teal-600"
           />
           <MetricPill
             icon={Heart}
             label="Can"
             value={String(profile.hearts)}
-            accentClass="text-danger"
+            accentClass="text-red-500"
           />
         </div>
       </div>
 
       <div className="mt-3">
-        <div className="flex items-center justify-between text-xs text-text-secondary">
+        <div className="flex items-center justify-between text-xs text-gray-500">
           <span>Növbəti səviyyəyə irəliləyiş</span>
           <span>{formatNumber(xp.xpToNext)} XP qalır</span>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
           <motion.div
-            className="h-full rounded-full bg-accent-green"
+            className="h-full rounded-full bg-emerald-500"
             initial={{ width: 0 }}
             animate={{ width: `${xp.xpPercent}%` }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
@@ -311,22 +319,20 @@ function StatusHeader({
   )
 }
 
-function CompanionGreeting({
+function HeroGreeting({
   firstName,
-  avatarColor,
   daily,
   isGamificationError,
   isDailyError,
 }: {
   firstName: string
-  avatarColor: string
   daily: DailyStatusResponse
   isGamificationError: boolean
   isDailyError: boolean
 }) {
   const navigate = useNavigate()
   const remaining = Math.max(0, daily.totalCount - daily.answeredCount)
-  const companionTone = isDailyError
+  const focusMessage = isDailyError
     ? 'Gündəlik tapşırıq yüklənmədi. Aşağıdakı kartdan yenidən yoxla.'
     : isGamificationError
       ? 'Gamifikasiya məlumatları yüklənmədi. Yenidən yoxla ilə təkrar cəhd et.'
@@ -346,37 +352,28 @@ function CompanionGreeting({
     <motion.section
       variants={panelMotion}
       transition={motionTransition}
-      className="card-glow overflow-hidden"
+      className="overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-4">
-          <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card border bg-bg-card"
-            style={{ borderColor: `${avatarColor}66`, boxShadow: `0 0 28px ${avatarColor}22` }}
-            aria-hidden="true"
-          >
-            <Sparkles className="h-5 w-5" style={{ color: avatarColor }} />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-text-secondary">Bugünkü fokus</p>
-            <h1 className="text-2xl font-extrabold text-white sm:text-3xl">
-              Salam, {firstName}
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm font-medium text-white/75">{companionTone}</p>
-          </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Bugünkü fokus</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
+            Salam, {firstName}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-gray-600">{focusMessage}</p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch lg:shrink-0">
-          <div className="rounded-card border border-border bg-bg-card px-4 py-3">
-            <p className="text-xs font-semibold uppercase text-text-secondary">Bugünkü prioritet</p>
-            <p className="mt-1 text-sm font-bold text-white">
+          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Bugünkü prioritet</p>
+            <p className="mt-1 text-sm font-bold text-gray-900">
               {priorityText}
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate(APP_ROUTES.DAILY)}
-            className="btn-primary w-full sm:w-auto"
+            className={`${PRIMARY_BTN} w-full sm:w-auto`}
           >
             {dailyCtaLabel}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -410,19 +407,19 @@ function FocusCard({
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
-      className="group flex h-full min-h-[172px] flex-col justify-between rounded-card border border-border bg-bg-card p-4 text-left transition-colors hover:border-white/25"
+      className="group flex h-full min-h-[172px] flex-col justify-between rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
     >
       <div>
         <div className="flex items-start justify-between gap-3">
-          <div className={`rounded-btn border border-current/25 bg-current/10 p-2 ${accentClass}`}>
+          <div className={`rounded-xl border border-current/20 bg-current/10 p-2 ${accentClass}`}>
             <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
-          <span className="text-xs font-semibold text-text-secondary">{meta}</span>
+          <span className="text-xs font-semibold text-gray-500">{meta}</span>
         </div>
-        <h3 className="mt-4 text-base font-bold text-white">{title}</h3>
-        <p className="mt-2 text-sm font-medium leading-6 text-white/70">{description}</p>
+        <h3 className="mt-4 text-base font-bold text-gray-900">{title}</h3>
+        <p className="mt-2 text-sm font-medium leading-6 text-gray-600">{description}</p>
       </div>
-      <div className="mt-4 flex items-center gap-2 text-sm font-bold text-white">
+      <div className="mt-4 flex items-center gap-2 text-sm font-bold text-indigo-600">
         {cta}
         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
       </div>
@@ -452,7 +449,7 @@ function TodaysFocus({
     <motion.section variants={panelMotion} transition={motionTransition} className="space-y-3">
       <div className="flex items-end justify-between gap-3">
         {sectionTitle('Bugünkü fokus', 'Nə etməliyəm?')}
-        <span className="text-xs font-semibold text-text-secondary">
+        <span className="text-xs font-semibold text-gray-500">
           {isDailyError
             ? 'Gündəlik tapşırıq yüklənmədi'
             : daily.completed ? 'Gündəlik tapşırıq tamamlandı' : `${daily.totalCount - daily.answeredCount} sual qalır`}
@@ -463,22 +460,22 @@ function TodaysFocus({
         {isDailyError ? (
           <QueryErrorState message="Gündəlik tapşırıq yüklənmədi." onRetry={onRetryDaily} />
         ) : (
-          <div className="rounded-card border border-border bg-bg-card p-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <div className="rounded-btn border border-accent-green/30 bg-accent-green/10 p-2 text-accent-green">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-emerald-600">
                 <Target className="h-5 w-5" aria-hidden="true" />
               </div>
-              <span className="text-xs font-bold text-accent-green">+{daily.xpEarned} XP</span>
+              <span className="text-xs font-bold text-emerald-600">+{daily.xpEarned} XP</span>
             </div>
-            <h3 className="mt-4 text-base font-bold text-white">Gündəlik suallar</h3>
-            <p className="mt-2 text-sm font-medium text-white/70">
+            <h3 className="mt-4 text-base font-bold text-gray-900">Gündəlik suallar</h3>
+            <p className="mt-2 text-sm font-medium text-gray-600">
               {daily.completed
                 ? 'Bugünkü suallar tamamlandı. Seriya xətti qorundu.'
                 : `${daily.answeredCount}/${daily.totalCount} sual tamamlanıb. İndi davam etmək ən yaxşı hərəkətdir.`}
             </p>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-200">
               <motion.div
-                className="h-full rounded-full bg-accent-green"
+                className="h-full rounded-full bg-emerald-500"
                 initial={{ width: 0 }}
                 animate={{ width: `${answeredPercent}%` }}
                 transition={{ duration: 0.65, ease: 'easeOut' }}
@@ -487,7 +484,7 @@ function TodaysFocus({
             <button
               type="button"
               onClick={() => navigate(APP_ROUTES.DAILY)}
-              className="btn-primary mt-4 w-full"
+              className={`${PRIMARY_BTN} mt-4 w-full`}
             >
               {daily.completed ? 'Nəticəyə bax' : 'Davam et'}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -504,7 +501,7 @@ function TodaysFocus({
           meta={competition?.status === 'active' ? 'Canlı' : 'Hazırlıq'}
           cta={competition ? 'Lobby-ə keç' : 'Yarışa qoşul'}
           onClick={() => navigate(competition ? APP_ROUTES.COMPETITION.LOBBY(competition.id) : COMPETITION_JOIN_PATH)}
-          accentClass="text-accent-orange"
+          accentClass="text-orange-500"
         />
 
         <FocusCard
@@ -518,7 +515,7 @@ function TodaysFocus({
           meta={mystery?.status === 'active' ? 'Aktiv' : 'Gözləmə'}
           cta="Sirrə bax"
           onClick={() => navigate(APP_ROUTES.WEEKLY_MYSTERY)}
-          accentClass="text-accent-purple"
+          accentClass="text-indigo-600"
         />
       </div>
     </motion.section>
@@ -539,28 +536,28 @@ function QuickActions({ showKids }: { showKids: boolean }) {
       caption: 'PIN və ya canlı lobby',
       icon: Swords,
       path: COMPETITION_JOIN_PATH,
-      tone: 'text-accent-orange',
+      tone: 'text-orange-500',
     },
     {
       title: 'Dərslər',
       caption: 'Kurs kitabxanası',
       icon: BookOpen,
       path: APP_ROUTES.COURSES,
-      tone: 'text-accent-cyan',
+      tone: 'text-teal-600',
     },
     {
       title: 'Portfolio',
       caption: 'Nailiyyət vitrini',
       icon: Trophy,
       path: APP_ROUTES.PORTFOLIO_ME,
-      tone: 'text-accent-purple',
+      tone: 'text-indigo-600',
     },
     {
       title: 'Klan',
       caption: 'Komanda sıralaması',
       icon: Shield,
       path: APP_ROUTES.CLAN_LEADERBOARD,
-      tone: 'text-accent-green',
+      tone: 'text-emerald-600',
     },
     ...(showKids
       ? [{
@@ -568,7 +565,7 @@ function QuickActions({ showKids }: { showKids: boolean }) {
           caption: 'Yaşa uyğun modul',
           icon: Sparkles,
           path: APP_ROUTES.KIDS_HUB,
-          tone: 'text-gold',
+          tone: 'text-amber-500',
         }]
       : []),
   ]
@@ -584,16 +581,16 @@ function QuickActions({ showKids }: { showKids: boolean }) {
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate(action.path)}
-            className="group rounded-card border border-border bg-bg-card p-4 text-left transition-colors hover:border-white/25"
+            className="group rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className={`rounded-btn border border-current/25 bg-current/10 p-2 ${action.tone}`}>
+              <div className={`rounded-xl border border-current/20 bg-current/10 p-2 ${action.tone}`}>
                 <action.icon className="h-5 w-5" aria-hidden="true" />
               </div>
-              <ArrowRight className="h-4 w-4 text-text-secondary transition-transform group-hover:translate-x-1" aria-hidden="true" />
+              <ArrowRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </div>
-            <p className="mt-4 text-sm font-bold text-white">{action.title}</p>
-            <p className="mt-1 text-xs font-medium text-text-secondary">{action.caption}</p>
+            <p className="mt-4 text-sm font-bold text-gray-900">{action.title}</p>
+            <p className="mt-1 text-xs font-medium text-gray-500">{action.caption}</p>
           </motion.button>
         ))}
       </div>
@@ -605,41 +602,41 @@ function CoursePreview({ course }: { course: Course | null }) {
   const navigate = useNavigate()
 
   return (
-    <motion.section variants={panelMotion} transition={motionTransition} className="card space-y-4">
+    <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
       <div className="flex items-start justify-between gap-3">
         {sectionTitle('Kurs önizləməsi', 'Dərs xətti')}
-        <BookOpen className="h-5 w-5 text-accent-cyan" aria-hidden="true" />
+        <BookOpen className="h-5 w-5 text-teal-600" aria-hidden="true" />
       </div>
 
       {course ? (
-        <div className="rounded-card border border-border bg-bg-card p-4">
-          <p className="text-base font-bold text-white">{course.title}</p>
-          <p className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-white/70">
+        <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
+          <p className="text-base font-bold text-gray-900">{course.title}</p>
+          <p className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-gray-600">
             {course.description}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="badge-purple">{courseLevelLabel(course.level)}</span>
-            <span className="badge-green">{course.totalEnrolled} tələbə</span>
+            <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">{courseLevelLabel(course.level)}</span>
+            <span className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">{course.totalEnrolled} tələbə</span>
           </div>
           <button
             type="button"
             onClick={() => navigate(APP_ROUTES.COURSE(course._id))}
-            className="btn-outline mt-4 w-full"
+            className={`${OUTLINE_BTN} mt-4 w-full`}
           >
             Dərslərə bax
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       ) : (
-        <div className="rounded-card border border-border bg-bg-card p-4">
-          <p className="text-sm font-bold text-white">Hələ aktiv kurs yoxdur.</p>
-          <p className="mt-2 text-sm font-medium leading-6 text-text-secondary">
+        <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
+          <p className="text-sm font-bold text-gray-900">Hələ aktiv kurs yoxdur.</p>
+          <p className="mt-2 text-sm font-medium leading-6 text-gray-500">
             Kitabxanadan uyğun mövzu seçib irəliləyişini başlada bilərsən.
           </p>
           <button
             type="button"
             onClick={() => navigate(APP_ROUTES.COURSES)}
-            className="btn-outline mt-4 w-full"
+            className={`${OUTLINE_BTN} mt-4 w-full`}
           >
             Kurslara bax
           </button>
@@ -668,7 +665,7 @@ function ProgressPanel({
     : null
 
   return (
-    <motion.section variants={panelMotion} transition={motionTransition} className="card space-y-4">
+    <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
       <div className="flex items-start justify-between gap-3">
         {sectionTitle('İrəliləyiş', 'Haradayam?')}
         {!isGamificationError && <TrendingBadge tier={profile.leagueTier} />}
@@ -681,13 +678,13 @@ function ProgressPanel({
           <div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase text-text-secondary">Ümumi XP</p>
-                <p className="text-3xl font-black tabular-nums text-white">{formatNumber(profile.totalXP)}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Ümumi XP</p>
+                <p className="text-3xl font-black tabular-nums text-gray-900">{formatNumber(profile.totalXP)}</p>
               </div>
-              <p className="text-sm font-bold text-accent-green">{Math.round(xp.xpPercent)}%</p>
+              <p className="text-sm font-bold text-emerald-600">{Math.round(xp.xpPercent)}%</p>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-accent-green" style={{ width: `${xp.xpPercent}%` }} />
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-200">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${xp.xpPercent}%` }} />
             </div>
           </div>
 
@@ -705,7 +702,7 @@ function ProgressPanel({
 
 function TrendingBadge({ tier }: { tier: LeagueTier }) {
   return (
-    <span className={`rounded-btn border px-2 py-1 text-xs font-bold ${leagueClass[tier]}`}>
+    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${leagueClass[tier]}`}>
       {leagueLabel[tier]}
     </span>
   )
@@ -713,10 +710,10 @@ function TrendingBadge({ tier }: { tier: LeagueTier }) {
 
 function DataTile({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
-    <div className="rounded-card border border-border bg-bg-card p-3">
-      <p className="text-[10px] font-semibold uppercase text-text-secondary">{label}</p>
-      <p className="mt-1 text-xl font-black tabular-nums text-white">{value}</p>
-      <p className="mt-1 text-xs font-medium text-text-secondary">{detail}</p>
+    <div className="rounded-xl border border-gray-200 bg-slate-50 p-3">
+      <p className="text-[10px] font-semibold uppercase text-gray-500">{label}</p>
+      <p className="mt-1 text-xl font-black tabular-nums text-gray-900">{value}</p>
+      <p className="mt-1 text-xs font-medium text-gray-500">{detail}</p>
     </div>
   )
 }
@@ -726,26 +723,26 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
   const topClan = clans[0] ?? null
 
   return (
-    <motion.section variants={panelMotion} transition={motionTransition} className="card space-y-4">
+    <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
       <div className="flex items-start justify-between gap-3">
         {sectionTitle('Klan və liqa', 'Rəqiblər nə edir?')}
-        <Users className="h-5 w-5 text-accent-purple" aria-hidden="true" />
+        <Users className="h-5 w-5 text-indigo-600" aria-hidden="true" />
       </div>
 
       {topClan ? (
         <button
           type="button"
           onClick={() => navigate(APP_ROUTES.CLAN(topClan.slug))}
-          className="group block w-full rounded-card border border-border bg-bg-card p-4 text-left transition-colors hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+          className="group block w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-bold text-white">{topClan.name}</p>
-              <p className="mt-1 text-xs font-medium text-text-secondary">
+              <p className="text-sm font-bold text-gray-900">{topClan.name}</p>
+              <p className="mt-1 text-xs font-medium text-gray-500">
                 {topClan.schoolName || 'Açıq sıralama'}
               </p>
             </div>
-            <span className="rounded-btn border border-gold/30 bg-gold/10 px-2 py-1 text-xs font-black text-gold">
+            <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-black text-amber-600">
               #1
             </span>
           </div>
@@ -753,15 +750,15 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
             <DataTile label="Toplam XP" value={formatNumber(topClan.totalXP)} detail="Klan gücü" />
             <DataTile label="Həftəlik XP" value={formatNumber(topClan.weeklyXP)} detail="Temp" />
           </div>
-          <span className="mt-4 flex items-center gap-2 text-sm font-bold text-white">
+          <span className="mt-4 flex items-center gap-2 text-sm font-bold text-indigo-600">
             Klan səhifəsinə bax
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
           </span>
         </button>
       ) : (
-        <div className="rounded-card border border-border bg-bg-card p-4">
-          <p className="text-sm font-bold text-white">Klan sıralaması boşdur</p>
-          <p className="mt-2 text-sm font-medium leading-6 text-text-secondary">
+        <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
+          <p className="text-sm font-bold text-gray-900">Klan sıralaması boşdur</p>
+          <p className="mt-2 text-sm font-medium leading-6 text-gray-500">
             Klana qoşulmamısan. Komanda ilə XP qazanmaq üçün sıralamanı yoxla və uyğun klan seç.
           </p>
         </div>
@@ -771,14 +768,14 @@ function ClanLeaguePanel({ clans }: { clans: ClanLeaderboardRow[] }) {
         <button
           type="button"
           onClick={() => navigate(APP_ROUTES.CLAN('me'))}
-          className="btn-outline w-full"
+          className={`${OUTLINE_BTN} w-full`}
         >
           Mənim klanım
         </button>
         <button
           type="button"
           onClick={() => navigate(APP_ROUTES.CLAN_LEADERBOARD)}
-          className="btn-outline w-full"
+          className={`${OUTLINE_BTN} w-full`}
         >
           Tam sıralama
         </button>
@@ -795,10 +792,10 @@ function SocialFeedPanel({
   isLoading: boolean
 }) {
   return (
-    <motion.section variants={panelMotion} transition={motionTransition} className="card space-y-4">
+    <motion.section variants={panelMotion} transition={motionTransition} className={`${CARD} space-y-4`}>
       <div className="flex items-start justify-between gap-3">
         {sectionTitle('Aktivlik lenti', 'Son siqnallar')}
-        <Bell className="h-5 w-5 text-accent-cyan" aria-hidden="true" />
+        <Bell className="h-5 w-5 text-teal-600" aria-hidden="true" />
       </div>
 
       {isLoading ? (
@@ -806,12 +803,12 @@ function SocialFeedPanel({
       ) : notifications.length > 0 ? (
         <div className="space-y-2">
           {notifications.slice(0, 4).map((item) => (
-            <div key={item._id} className="rounded-card border border-border bg-bg-card p-3">
+            <div key={item._id} className="rounded-xl border border-gray-200 bg-slate-50 p-3">
               <div className="flex items-start gap-3">
-                <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-accent-purple" aria-hidden="true" />
+                <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-white">{item.title}</p>
-                  <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-text-secondary">
+                  <p className="truncate text-sm font-bold text-gray-900">{item.title}</p>
+                  <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-gray-500">
                     {item.message}
                   </p>
                 </div>
@@ -820,9 +817,9 @@ function SocialFeedPanel({
           ))}
         </div>
       ) : (
-        <div className="rounded-card border border-border bg-bg-card p-4">
-          <p className="text-sm font-bold text-white">Bu gün üçün yeni bildiriş yoxdur.</p>
-          <p className="mt-2 text-sm font-medium leading-6 text-text-secondary">
+        <div className="rounded-xl border border-gray-200 bg-slate-50 p-4">
+          <p className="text-sm font-bold text-gray-900">Bu gün üçün yeni bildiriş yoxdur.</p>
+          <p className="mt-2 text-sm font-medium leading-6 text-gray-500">
             Gündəlik tapşırıq, yarış və klan nəticələri burada kompakt şəkildə görünəcək.
           </p>
         </div>
@@ -854,7 +851,7 @@ function InsightStrip({
       text: isDailyError
         ? 'Gündəlik tapşırıq yüklənmədi.'
         : remaining > 0 ? `${remaining} sual tamamla və seriyanı bağla.` : 'Gündəlik tapşırıq tamamlandı. Növbəti hədəf liqa tempidir.',
-      tone: 'text-accent-green',
+      tone: 'text-emerald-600',
       onRetry: isDailyError ? onRetryDaily : undefined,
     },
     {
@@ -863,7 +860,7 @@ function InsightStrip({
       text: isGamificationError
         ? 'Gamifikasiya məlumatları yüklənmədi.'
         : `${formatNumber(profile.weeklyXP)} XP həftəlik nəticə artıq yazılıb.`,
-      tone: 'text-accent-cyan',
+      tone: 'text-teal-600',
       onRetry: isGamificationError ? onRetryGamification : undefined,
     },
     {
@@ -872,7 +869,7 @@ function InsightStrip({
       text: isGamificationError
         ? 'Gamifikasiya məlumatları yüklənmədi.'
         : `${leagueLabel[profile.leagueTier]} xəttində mövqeyini qoruyursan.`,
-      tone: 'text-gold',
+      tone: 'text-amber-500',
       onRetry: isGamificationError ? onRetryGamification : undefined,
     },
   ]
@@ -880,17 +877,17 @@ function InsightStrip({
   return (
     <motion.section variants={panelMotion} transition={motionTransition} className="grid gap-3 md:grid-cols-3">
       {insights.map((insight) => (
-        <div key={insight.label} className="rounded-card border border-border bg-bg-card p-4">
+        <div key={insight.label} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2">
             <insight.icon className={`h-4 w-4 ${insight.tone}`} aria-hidden="true" />
-            <p className="text-xs font-semibold uppercase text-text-secondary">{insight.label}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{insight.label}</p>
           </div>
-          <p className="mt-3 text-sm font-bold leading-6 text-white">{insight.text}</p>
+          <p className="mt-3 text-sm font-bold leading-6 text-gray-900">{insight.text}</p>
           {insight.onRetry && (
             <button
               type="button"
               onClick={insight.onRetry}
-              className="btn-outline mt-3"
+              className={`${OUTLINE_BTN} mt-3`}
             >
               Yenidən yoxla
             </button>
@@ -1017,7 +1014,7 @@ export default function StudentDashboard() {
   const leaderboardRank = rankIndex >= 0 ? rankIndex + 1 : null
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-bg-primary px-4 py-5 text-white lg:px-8 lg:py-6">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-5 text-gray-900 lg:px-8 lg:py-6">
       <motion.div
         initial="hidden"
         animate="show"
@@ -1030,9 +1027,8 @@ export default function StudentDashboard() {
           isError={isGamificationError}
           onRetry={retryGamification}
         />
-        <CompanionGreeting
+        <HeroGreeting
           firstName={firstName}
-          avatarColor={avatarColor}
           daily={daily}
           isGamificationError={isGamificationError}
           isDailyError={isDailyError}
