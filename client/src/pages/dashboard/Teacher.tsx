@@ -341,10 +341,10 @@ function CoursePerformanceCard({ course }: { course: CoursePerf }) {
         </div>
       )}
       <div className="px-4 pb-4 pt-2">
-        <Link to={`/courses/${course.id}`}
+        <Link to={`/courses/${course.id}/edit`}
           className="block w-full py-1.5 text-center text-xs border border-gray-300 bg-white hover:bg-gray-50 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
         >
-          Kursu düzənlə
+          Kursu redaktə et
         </Link>
       </div>
     </div>
@@ -472,7 +472,7 @@ export default function TeacherDashboard() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-bold text-gray-900">📊 Kurs Performansı</h2>
-                <Link to="/courses"
+                <Link to="/courses/new"
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors"
                 >
                   + Yeni Kurs
@@ -494,7 +494,7 @@ export default function TeacherDashboard() {
                 </div>
               ) : (
                 <div className="bg-white border border-gray-200 rounded-2xl py-10 text-center text-gray-500 text-sm shadow-sm">
-                  Hələ kurs məlumatı yoxdur. <Link to="/courses" className="text-indigo-600 hover:text-indigo-700">İlk kursunuzu yaradın →</Link>
+                  Hələ kurs məlumatı yoxdur. <Link to="/courses/new" className="text-indigo-600 hover:text-indigo-700">İlk kursunuzu yaradın →</Link>
                 </div>
               )}
             </div>

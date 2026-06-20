@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import api from '../../lib/axios'
 import { API_ROUTES, APP_ROUTES } from '../../constants'
+import { useAuth } from '../../context/AuthContext'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ interface CourseDetailData {
   }
   isEnrolled: boolean
   enrollmentProgress: number // 0-100
+  ownerUserId: string // kursun sahib müəlliminin User._id-si (sahiblik yoxlaması üçün)
   certificate?: { url: string; issuedAt: string }
 }
 
@@ -277,6 +279,7 @@ function normalizeCourseDetailResponse(payload: unknown): CourseDetailData | nul
     teacher: normalizeTeacher(source),
     isEnrolled: asBoolean(source.isEnrolled),
     enrollmentProgress: Math.min(100, Math.max(0, asNumber(source.enrollmentProgress))),
+    ownerUserId: isRecord(source.teacherId) ? asString((source.teacherId as RawRecord).userId) : '',
     certificate,
   }
 }
@@ -408,12 +411,16 @@ function EnrollmentCard({
   isEnrolling,
   onContinue,
   onCertificate,
+  isOwner,
+  onEdit,
 }: {
   course: CourseDetailData
   onEnroll: () => void
   isEnrolling: boolean
   onContinue: () => void
   onCertificate: () => void
+  isOwner: boolean
+  onEdit: () => void
 }) {
   const displayPrice = course.discountedPrice ?? course.price
   const hasDiscount = course.price > 0 && course.discountedPrice !== undefined && course.discountedPrice < course.price
@@ -461,7 +468,14 @@ function EnrollmentCard({
         </div>
 
         {/* CTA */}
-        {course.isEnrolled ? (
+        {isOwner ? (
+          <button
+            onClick={onEdit}
+            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          >
+            ✏️ Kursu redaktə et
+          </button>
+        ) : course.isEnrolled ? (
           <div className="space-y-2">
             {/* Progress */}
             <div className="space-y-1">
@@ -548,6 +562,8 @@ type Tab = typeof TABS[number]
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>()
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('Kurs haqqında')
   const [showAllLearn, setShowAllLearn] = useState(false)
   const [showAllSections, setShowAllSections] = useState(false)
@@ -692,6 +708,10 @@ export default function CourseDetail() {
   const totalLessons = course.sections.reduce((s, sec) => s + sec.lessons.length, 0)
   const displayedSections = showAllSections ? course.sections : course.sections.slice(0, 3)
 
+  // Sahiblik: yalnız kursun sahib müəllimi idarəetmə (Redaktə) görür.
+  const isOwner = !!user && user.role === 'teacher' && !!course.ownerUserId && user._id === course.ownerUserId
+  const handleEdit = () => navigate(`/courses/${course.id}/edit`)
+
   return (
     <div className="min-h-screen bg-slate-50 text-gray-900">
       {/* Hero gradient header */}
@@ -756,6 +776,8 @@ export default function CourseDetail() {
                   isEnrolling={enrollMutation.isPending}
                   onContinue={handleContinue}
                   onCertificate={handleCertificate}
+                  isOwner={isOwner}
+                  onEdit={handleEdit}
                 />
               </div>
             </div>
@@ -776,6 +798,8 @@ export default function CourseDetail() {
                 isEnrolling={enrollMutation.isPending}
                 onContinue={handleContinue}
                 onCertificate={handleCertificate}
+                isOwner={isOwner}
+                onEdit={handleEdit}
               />
             </div>
 
@@ -1013,6 +1037,8 @@ export default function CourseDetail() {
                 isEnrolling={enrollMutation.isPending}
                 onContinue={handleContinue}
                 onCertificate={handleCertificate}
+                isOwner={isOwner}
+                onEdit={handleEdit}
               />
             </div>
           </div>

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../../middleware/auth');
+const { authenticate, optionalAuth } = require('../../middleware/auth');
 const { checkRole } = require('../../middleware/roleCheck');
 const { validate } = require('../../middleware/validation');
 const courseController = require('./course.controller');
@@ -29,7 +29,7 @@ const attachStudent = async (req, res, next) => {
 
 // Public routes
 router.get('/', courseController.getCourses);
-router.get('/:id', courseController.getCourseById);
+router.get('/:id', optionalAuth, courseController.getCourseById);
 
 // Teacher routes
 router.post(

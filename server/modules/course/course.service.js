@@ -105,13 +105,25 @@ const getCourses = async (filters = {}) => {
   return courses;
 };
 
-const getCourseById = async (courseId) => {
+const getCourseById = async (courseId, requesterUserId = null) => {
   const course = await Course.findById(courseId)
     .populate('teacherId', 'userId specialization rating bio');
-  if (!course || !course.isPublished) {
+  if (!course) {
     const error = new Error('Kurs tapılmadı.');
     error.statusCode = 404;
     throw error;
+  }
+
+  // Qaralama (publish olunmamış) kurs yalnız SAHİB müəllimə görünür (redaktə üçün).
+  // Başqa hər kəs üçün 404 — ictimai görünmə davranışı dəyişmir.
+  if (!course.isPublished) {
+    const ownerUserId = course.teacherId && course.teacherId.userId;
+    const isOwner = requesterUserId && ownerUserId && String(ownerUserId) === String(requesterUserId);
+    if (!isOwner) {
+      const error = new Error('Kurs tapılmadı.');
+      error.statusCode = 404;
+      throw error;
+    }
   }
 
   const lessons = await Lesson.find({ courseId }).sort({ order: 1 });

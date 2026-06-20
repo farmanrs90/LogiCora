@@ -26,7 +26,9 @@ const getCourses = async (req, res) => {
 };
 
 const getCourseById = async (req, res) => {
-  const result = await courseService.getCourseById(req.params.id);
+  // optionalAuth: giriş edibsə sahib müəllim öz qaralama kursunu da görə bilər.
+  const requesterUserId = req.user ? req.user._id : null;
+  const result = await courseService.getCourseById(req.params.id, requesterUserId);
   res.status(200).json({ success: true, data: result, message: 'Kurs alındı.' });
 };
 

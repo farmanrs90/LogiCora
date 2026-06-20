@@ -36,6 +36,7 @@ import AttendanceQR from '../pages/classroom/AttendanceQR'
 import Courses from '../pages/courses/CourseList'
 import CourseDetail from '../pages/courses/CourseDetail'
 import TeacherStorefront from '../pages/courses/TeacherStorefront'
+import CourseEditor from '../pages/courses/CourseEditor'
 import MyPortfolio from '../pages/portfolio/MyPortfolio'
 import PublicPortfolio from '../pages/portfolio/PublicPortfolio'
 import GroupManagement from '../pages/teacher/GroupManagement'
@@ -167,7 +168,10 @@ export default function AppRouter() {
         <Route path={APP_ROUTES.COURSES} element={<PW><Courses /></PW>} />
         {/* /courses/create səhifəsi yoxdur — "create" id kimi qəbul olunub CourseDetail mock açmasın deyə
             /:id-dən ƏVVƏL kurslar səhifəsinə yönləndirilir. */}
-        <Route path="/courses/create" element={<Navigate to={APP_ROUTES.COURSES} replace />} />
+        <Route path="/courses/create" element={<Navigate to="/courses/new" replace />} />
+        {/* Müəllim kurs builder — yalnız müəllim (statik seqmentlər /:id-dən üstündür) */}
+        <Route path="/courses/new" element={<RoleRoute roles={['teacher']}><PageWrapper><CourseEditor /></PageWrapper></RoleRoute>} />
+        <Route path="/courses/:id/edit" element={<RoleRoute roles={['teacher']}><PageWrapper><CourseEditor /></PageWrapper></RoleRoute>} />
         <Route path="/courses/:id" element={<PW><CourseDetail /></PW>} />
         {/* Müəllim sinif indeksi — /classroom/:id-dən ƏVVƏL (exact match) */}
         <Route path="/classroom" element={<RoleRoute roles={['teacher']}><PageWrapper><TeacherClassroomIndex /></PageWrapper></RoleRoute>} />
