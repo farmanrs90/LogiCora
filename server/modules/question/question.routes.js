@@ -16,6 +16,8 @@ router.post(
 
 router.get('/', auth, controller.getAllQuestions);
 
+router.get('/subjects', auth, controller.getSubjects);
+
 router.get('/:questionId', auth, controller.getQuestion);
 
 router.put(

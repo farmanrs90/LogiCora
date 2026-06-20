@@ -18,6 +18,12 @@ const AGE_GRADE_MAP = {
   '23+':  { min: 10, max: 12 },
 };
 
+const DIFFICULTY_BY_KNOWLEDGE = {
+  beginner: 'easy',
+  intermediate: 'medium',
+  advanced: 'hard',
+};
+
 const getTodayString = () => {
   const now = new Date();
   return now.toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -38,30 +44,64 @@ const refillHeartsIfNeeded = async (profile) => {
 
 const isDuplicateAnswerError = (error) => error && error.code === 11000;
 
-const getDailyQuestions = async (user) => {
-  const today = getTodayString();
+const normalizeText = (value) => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === 'string' ? raw.trim().slice(0, 80) : '';
+};
 
-  // Count how many questions the user has already answered today
-  const answeredToday = await DailyQuestion.find({ userId: user._id, date: today }).select('questionId');
-  const answeredIds = answeredToday.map((r) => r.questionId);
+const uniqueTexts = (values = []) => {
+  if (!Array.isArray(values)) return [];
 
-  if (answeredIds.length >= DAILY_LIMIT) {
-    const error = new Error('Günlük limit dolub. Sabah davam edə bilərsiniz.');
-    error.statusCode = 429;
-    throw error;
+  const seen = new Set();
+  return values
+    .map((value) => normalizeText(value))
+    .filter(Boolean)
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
+const rangesEqual = (a, b) => a.min === b.min && a.max === b.max;
+
+const getPersonalizedGradeRange = (student, fallbackRange) => {
+  const grade = Number(student && student.grade);
+
+  if (
+    Number.isInteger(grade) &&
+    grade >= fallbackRange.min &&
+    grade <= fallbackRange.max
+  ) {
+    return { min: grade, max: grade };
   }
 
-  const remaining = DAILY_LIMIT - answeredIds.length;
-  const gradeRange = AGE_GRADE_MAP[user.ageGroup] || { min: 1, max: 12 };
+  return fallbackRange;
+};
 
-  // Pick random questions matching user's grade range, exclude already-answered today
-  const questions = await Question.aggregate([
-    {
-      $match: {
-        _id: { $nin: answeredIds },
-        grade: { $gte: gradeRange.min, $lte: gradeRange.max },
-      },
-    },
+const buildMatch = ({ answeredIds, gradeRange, subjects, difficulty }) => {
+  const match = {
+    _id: { $nin: answeredIds },
+    grade: { $gte: gradeRange.min, $lte: gradeRange.max },
+  };
+
+  if (Array.isArray(subjects) && subjects.length > 0) {
+    match.subject = { $in: subjects };
+  }
+
+  if (difficulty) {
+    match.difficulty = difficulty;
+  }
+
+  return match;
+};
+
+const fetchDailyQuestionCandidates = async ({ answeredIds, remaining, gradeRange, subjects, difficulty }) => {
+  const match = buildMatch({ answeredIds, gradeRange, subjects, difficulty });
+
+  return Question.aggregate([
+    { $match: match },
     { $sample: { size: remaining } },
     {
       $project: {
@@ -77,12 +117,95 @@ const getDailyQuestions = async (user) => {
       },
     },
   ]);
+};
+
+const getDailyQuestions = async (user, filters = {}) => {
+  const today = getTodayString();
+
+  // Count how many questions the user has already answered today
+  const answeredToday = await DailyQuestion.find({ userId: user._id, date: today }).select('questionId');
+  const answeredIds = answeredToday.map((r) => r.questionId);
+
+  if (answeredIds.length >= DAILY_LIMIT) {
+    const error = new Error('Günlük limit dolub. Sabah davam edə bilərsiniz.');
+    error.statusCode = 429;
+    throw error;
+  }
+
+  const remaining = DAILY_LIMIT - answeredIds.length;
+  const gradeRange = AGE_GRADE_MAP[user.ageGroup] || { min: 1, max: 12 };
+  const student = await Student.findOne({ userId: user._id })
+    .select('grade subjects knowledgeLevel')
+    .lean();
+  const personalizedGradeRange = getPersonalizedGradeRange(student, gradeRange);
+  const requestedSubject = normalizeText(filters.subject);
+  const profileSubjects = uniqueTexts(student && student.subjects);
+  const subjectFilters = requestedSubject ? [requestedSubject] : profileSubjects;
+  const preferredDifficulty = DIFFICULTY_BY_KNOWLEDGE[student && student.knowledgeLevel];
+
+  const attempts = [];
+  const seenAttempts = new Set();
+  const addAttempt = ({ subjects, range, difficulty }) => {
+    const key = JSON.stringify({
+      subjects: subjects || [],
+      min: range.min,
+      max: range.max,
+      difficulty: difficulty || null,
+    });
+    if (seenAttempts.has(key)) return;
+    seenAttempts.add(key);
+    attempts.push({ subjects, gradeRange: range, difficulty });
+  };
+
+  if (subjectFilters.length > 0 && preferredDifficulty) {
+    addAttempt({ subjects: subjectFilters, range: personalizedGradeRange, difficulty: preferredDifficulty });
+  }
+  if (subjectFilters.length > 0) {
+    addAttempt({ subjects: subjectFilters, range: personalizedGradeRange });
+    if (!rangesEqual(personalizedGradeRange, gradeRange)) {
+      addAttempt({ subjects: subjectFilters, range: gradeRange });
+    }
+  }
+  if (subjectFilters.length === 0 && preferredDifficulty) {
+    addAttempt({ range: personalizedGradeRange, difficulty: preferredDifficulty });
+  }
+  if (subjectFilters.length === 0 && !rangesEqual(personalizedGradeRange, gradeRange)) {
+    addAttempt({ range: personalizedGradeRange });
+  }
+  addAttempt({ range: gradeRange });
+
+  let questions = [];
+  let appliedAttempt = null;
+  for (const attempt of attempts) {
+    questions = await fetchDailyQuestionCandidates({
+      answeredIds,
+      remaining,
+      gradeRange: attempt.gradeRange,
+      subjects: attempt.subjects,
+      difficulty: attempt.difficulty,
+    });
+
+    if (questions.length > 0) {
+      appliedAttempt = attempt;
+      break;
+    }
+  }
 
   return {
     questions,
     answeredToday: answeredIds.length,
     remaining,
     dailyLimit: DAILY_LIMIT,
+    personalization: {
+      requestedSubject: requestedSubject || null,
+      profileSubjects: subjectFilters,
+      preferredDifficulty: preferredDifficulty || null,
+      fallbackUsed: Boolean(
+        appliedAttempt &&
+        subjectFilters.length > 0 &&
+        (!appliedAttempt.subjects || appliedAttempt.subjects.length === 0)
+      ),
+    },
   };
 };
 

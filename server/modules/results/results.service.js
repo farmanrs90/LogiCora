@@ -23,11 +23,35 @@ const studentUserId = (student) => {
   return u && typeof u === 'object' && u._id ? u._id : u;
 };
 
+const buildDailySubjectAnalysis = (records) => {
+  const bySubject = new Map();
+
+  records.forEach((record) => {
+    const question = record.questionId;
+    const subject = question && typeof question === 'object' ? question.subject : null;
+    if (!subject) return;
+
+    const current = bySubject.get(subject) || { subject, answered: 0, correct: 0 };
+    current.answered += 1;
+    if (record.isCorrect) current.correct += 1;
+    bySubject.set(subject, current);
+  });
+
+  return [...bySubject.values()]
+    .map((item) => ({
+      subject: item.subject,
+      answered: item.answered,
+      correct: item.correct,
+      accuracy: item.answered > 0 ? Math.round((item.correct / item.answered) * 100) : 0,
+    }))
+    .sort((a, b) => b.answered - a.answered || a.subject.localeCompare(b.subject, 'az'));
+};
+
 // ── Tək tələbənin tam REAL nəticələri (uydurma yoxdur) ──────────────────────
 const buildStudentResults = async (student) => {
   const userId = studentUserId(student);
 
-  const [gam, dailyTotal, dailyCorrect, recentDaily, comps, enrolls] = await Promise.all([
+  const [gam, dailyTotal, dailyCorrect, recentDaily, dailyForSubjects, comps, enrolls] = await Promise.all([
     Gamification.findOne({ studentId: student._id }).lean(),
     DailyQuestion.countDocuments({ userId }),
     DailyQuestion.countDocuments({ userId, isCorrect: true }),
@@ -35,6 +59,9 @@ const buildStudentResults = async (student) => {
       .sort({ answeredAt: -1 })
       .limit(15)
       .populate('questionId', 'text subject')
+      .lean(),
+    DailyQuestion.find({ userId })
+      .populate('questionId', 'subject')
       .lean(),
     Competition.find({ status: 'finished', 'participants.studentId': student._id })
       .sort({ finishedAt: -1 })
@@ -83,6 +110,7 @@ const buildStudentResults = async (student) => {
       totalAnswered: dailyTotal,
       correctAnswers: dailyCorrect,
       accuracy: dailyTotal > 0 ? Math.round((dailyCorrect / dailyTotal) * 100) : 0,
+      subjects: buildDailySubjectAnalysis(dailyForSubjects),
       recent: recentDaily.map((d) => ({
         id: d._id,
         questionText: (d.questionId && d.questionId.text) || null,

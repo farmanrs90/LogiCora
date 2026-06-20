@@ -1,6 +1,6 @@
 import api from '../lib/api'
 import { API_ROUTES } from '../constants'
-import type { Question, AnswerResponse, AgeGroup, QuestionFormat } from '../types'
+import type { Question, AnswerResponse, QuestionFormat } from '../types'
 
 // ── Backend formatları ────────────────────────────────────────────────────
 
@@ -53,9 +53,10 @@ function mapQuestion(q: BackendQuestion): Question {
 
 export const questionService = {
   // Backend token-dəki user-in yaşına görə sualları özü seçir
-  async fetchDaily(_ageGroup?: AgeGroup): Promise<Question[]> {
-    void _ageGroup
-    const res = await api.get<{ data: { questions: BackendQuestion[] } }>(API_ROUTES.DAILY.GET)
+  async fetchDaily(subject?: string): Promise<Question[]> {
+    const res = await api.get<{ data: { questions: BackendQuestion[] } }>(API_ROUTES.DAILY.GET, {
+      params: subject ? { subject } : undefined,
+    })
     const questions = res.data.data?.questions ?? []
     return questions.map(mapQuestion)
   },

@@ -28,6 +28,17 @@ const getAllQuestions = async (filters) => {
   return questions;
 };
 
+const getSubjects = async () => {
+  const subjects = await Question.distinct('subject', {
+    subject: { $exists: true, $type: 'string', $ne: '' },
+  });
+
+  return subjects
+    .map((subject) => subject.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'az'));
+};
+
 const updateQuestion = async (questionId, userId, payload) => {
   const question = await Question.findById(questionId);
   if (!question) {
@@ -72,6 +83,7 @@ module.exports = {
   createQuestion,
   getQuestion,
   getAllQuestions,
+  getSubjects,
   updateQuestion,
   deleteQuestion,
 };

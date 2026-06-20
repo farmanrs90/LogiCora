@@ -10,7 +10,7 @@ import { questionService } from '../../services/questionService'
 import api from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import type { RootState } from '../../app/store'
-import type { Question, AgeGroup, DailyStatusResponse, GamificationProfile } from '../../types'
+import type { Question, AgeGroup, DailyStatusResponse, GamificationProfile, StudentLearningProfile } from '../../types'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
 
 import FormatA from '../../features/quiz/formats/FormatA'
@@ -63,6 +63,31 @@ function getQuestionId(question: Question | undefined): string {
   const fallbackId = (question as Question & { id?: unknown }).id
   const rawId = question._id || (typeof fallbackId === 'string' ? fallbackId : '')
   return typeof rawId === 'string' ? rawId.trim() : ''
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+
+  const seen = new Set<string>()
+  return value
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+    .filter(item => {
+      const key = item.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
+function parseSubjectsPayload(payload: unknown): string[] {
+  if (Array.isArray(payload)) return toStringArray(payload)
+  if (isRecord(payload) && Array.isArray(payload.data)) return toStringArray(payload.data)
+  return []
 }
 
 // ── Confetti piece ────────────────────────────────────────────────────────
@@ -412,6 +437,56 @@ function CompletedTodayScreen({ status }: { status: DailyStatusResponse }) {
   )
 }
 
+function DailySubjectSelector({
+  subjects,
+  selectedSubject,
+  disabled,
+  dark = false,
+  fallbackUsed = false,
+  onChange,
+}: {
+  subjects: string[]
+  selectedSubject: string
+  disabled: boolean
+  dark?: boolean
+  fallbackUsed?: boolean
+  onChange: (subject: string) => void
+}) {
+  if (subjects.length === 0) return null
+
+  return (
+    <div className={dark ? 'border-b border-white/10 px-4 py-2' : 'w-full max-w-md'}>
+      <div className={`mx-auto flex w-full max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${dark ? '' : 'rounded-2xl border border-gray-200 bg-white p-3 shadow-sm'}`}>
+        <label className={`flex flex-col gap-1 text-left text-xs font-semibold sm:flex-row sm:items-center sm:gap-2 ${dark ? 'text-slate-300' : 'text-gray-700'}`}>
+          <span>Fənn seç</span>
+          <select
+            value={selectedSubject}
+            onChange={e => onChange(e.target.value)}
+            disabled={disabled}
+            className={`min-w-[180px] rounded-xl border px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${dark
+              ? 'border-white/10 bg-white/5 text-white focus:border-indigo-400 focus:ring-indigo-400/30'
+              : 'border-gray-200 bg-slate-50 text-gray-900 focus:border-indigo-500 focus:ring-indigo-100'
+              }`}
+          >
+            <option className="bg-white text-gray-900" value="">Profilimə görə</option>
+            {subjects.map(subject => (
+              <option className="bg-white text-gray-900" key={subject} value={subject}>{subject}</option>
+            ))}
+          </select>
+        </label>
+        <div className={dark ? 'text-[11px] leading-relaxed text-slate-400' : 'text-[11px] leading-relaxed text-gray-500'}>
+          <p>Suallar yaş qrupu, sinif və seçilmiş fənnə görə seçilir.</p>
+          {fallbackUsed && (
+            <p className={dark ? 'mt-1 text-amber-200' : 'mt-1 text-amber-700'}>
+              Seçilmiş fənn üzrə uyğun sual tapılmadığı üçün yaş qrupuna uyğun suallar göstərilir.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main DailyQuiz ────────────────────────────────────────────────────────
 
 export default function DailyQuiz() {
@@ -424,6 +499,26 @@ export default function DailyQuiz() {
   const ageGroup = user?.ageGroup as AgeGroup | undefined
   const isSpecialNeeds = user?.isSpecialNeeds ?? false
   const isChild = isChildAge(ageGroup)
+  const [selectedSubject, setSelectedSubject] = useState('')
+
+  const { data: learningProfile } = useQuery<StudentLearningProfile>({
+    queryKey: ['student', 'learning-profile'],
+    queryFn: () => api.get<StudentLearningProfile>(API_ROUTES.STUDENTS.PROFILE).then(r => r.data),
+    enabled: user?.role === 'student',
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: questionSubjects = [] } = useQuery<string[]>({
+    queryKey: ['questions', 'subjects'],
+    queryFn: () => api.get<unknown>(API_ROUTES.QUESTIONS.SUBJECTS).then(r => parseSubjectsPayload(r.data)),
+    enabled: user?.role === 'student',
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const subjectOptions = Array.from(new Set([
+    ...questionSubjects,
+    ...toStringArray(learningProfile?.subjects),
+  ])).sort((a, b) => a.localeCompare(b, 'az'))
 
   // Fetch daily status first; completed users should not call /daily questions.
   const {
@@ -457,8 +552,8 @@ export default function DailyQuiz() {
     isError: isQuestionsError,
     refetch: refetchQuestions,
   } = useQuery<Question[]>({
-    queryKey: ['daily', 'questions'],
-    queryFn: () => questionService.fetchDaily(ageGroup),
+    queryKey: ['daily', 'questions', selectedSubject || 'profile'],
+    queryFn: () => questionService.fetchDaily(selectedSubject || undefined),
     enabled: canFetchDailyQuestions,
     // staleTime 0: hər girişdə təzə sual dəsti gəlsin. Backend artıq bu gün cavablanmış
     // sualları çıxarır; köhnə cache re-serve etsə, onlara cavab "artıq cavab verilmişdir" 400 verirdi.
@@ -527,6 +622,13 @@ export default function DailyQuiz() {
   const current = questions?.[currentIndex]
   const format = current?.format ?? 'A'
   const totalTime = current?.timeLimit ?? 30
+  const subjectSelectorLocked = answeredCount > 0 || isAnswered || mutation.isPending || phase !== 'question'
+  const selectedSubjectFallbackUsed = Boolean(
+    selectedSubject &&
+    questions &&
+    questions.length > 0 &&
+    !questions.some(question => question.subject === selectedSubject),
+  )
 
   const goDashboard = useCallback(() => {
     navigate(APP_ROUTES.DASHBOARD.STUDENT)
@@ -549,6 +651,25 @@ export default function DailyQuiz() {
 
     goDashboard()
   }, [current, goDashboard, phase])
+
+  useEffect(() => {
+    setCurrentIndex(0)
+    setSelectedAnswer(null)
+    setIsAnswered(false)
+    setPhase('question')
+    setTimeLeft(30)
+    setTotalXP(0)
+    setStreak(0)
+    setShowCoins(false)
+    setLastXP(0)
+    setShowMascot(false)
+    setMascotCorrect(false)
+    setEarnedBadge(undefined)
+    setAnsweredCount(0)
+    setRevealedAnswer('')
+    setSubmitError(false)
+    startTimeRef.current = Date.now()
+  }, [selectedSubject])
 
   // Reset timer when question changes
   useEffect(() => {
@@ -713,6 +834,12 @@ export default function DailyQuiz() {
   if (isDailyStatusError || isQuestionsError || !questions || questions.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6 px-4 text-center">
+        <DailySubjectSelector
+          subjects={subjectOptions}
+          selectedSubject={selectedSubject}
+          disabled={false}
+          onChange={setSelectedSubject}
+        />
         <div className="grid h-16 w-16 place-items-center rounded-2xl border border-indigo-100 bg-indigo-50 text-3xl">🧩</div>
         <div>
           <h2 className="text-xl font-bold text-gray-900">
@@ -721,6 +848,11 @@ export default function DailyQuiz() {
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-gray-500">
             Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.
           </p>
+          {selectedSubject && (
+            <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-amber-700">
+              Seçilmiş fənn üzrə uyğun sual tapılmadıqda sistem yaş qrupu üzrə mövcud suallara qayıdır; hazırda onlar da yüklənmədi.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
@@ -811,6 +943,15 @@ export default function DailyQuiz() {
           </div>
         )}
       </div>
+
+      <DailySubjectSelector
+        subjects={subjectOptions}
+        selectedSubject={selectedSubject}
+        disabled={subjectSelectorLocked}
+        dark
+        fallbackUsed={selectedSubjectFallbackUsed}
+        onChange={setSelectedSubject}
+      />
 
       {/* ── Question area ── */}
       <div className="flex-1 flex flex-col items-center justify-center py-6 px-2 overflow-hidden">

@@ -228,6 +228,19 @@ export interface DailyStatusResponse {
   xpEarned: number
 }
 
+export type LearningStyle = 'visual' | 'auditory' | 'kinesthetic' | 'reading_writing'
+export type KnowledgeLevel = 'beginner' | 'intermediate' | 'advanced'
+
+export interface StudentLearningProfile {
+  _id: string
+  grade: number
+  school?: string
+  subjects: string[]
+  interests: string[]
+  learningStyle: LearningStyle
+  knowledgeLevel: KnowledgeLevel
+}
+
 // Weekly Mystery
 export interface WeeklyMysteryQuestion {
   _id: string

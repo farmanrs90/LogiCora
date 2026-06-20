@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import { API_ROUTES, APP_ROUTES } from '../../constants'
 import { useAuth } from '../../context/AuthContext'
-import type { Role } from '../../types'
+import type { KnowledgeLevel, LearningStyle, Role, StudentLearningProfile } from '../../types'
 
 interface AccessibilityConfig {
   fontSize: 'sm' | 'md' | 'lg' | 'xl'
@@ -54,6 +54,19 @@ const ROLE_LABELS: Record<Role, string> = {
 
 const SPECIAL_NEEDS_TYPES = ['Görmə', 'Eşitmə', 'İdrak', 'Motor', 'Digər']
 
+const KNOWLEDGE_LEVEL_OPTIONS: { value: KnowledgeLevel; label: string }[] = [
+  { value: 'beginner', label: 'Başlanğıc' },
+  { value: 'intermediate', label: 'Orta' },
+  { value: 'advanced', label: 'Güclü' },
+]
+
+const LEARNING_STYLE_OPTIONS: { value: LearningStyle; label: string }[] = [
+  { value: 'visual', label: 'Vizual' },
+  { value: 'auditory', label: 'Dinləyərək' },
+  { value: 'kinesthetic', label: 'Praktik' },
+  { value: 'reading_writing', label: 'Oxu/yazı' },
+]
+
 const inputCls =
   'w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 ' +
   'focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 ' +
@@ -62,6 +75,31 @@ const inputCls =
 const primaryBtn =
   'px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors ' +
   'disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+
+  const seen = new Set<string>()
+  return value
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+    .filter(item => {
+      const key = item.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
+function parseSubjectsPayload(payload: unknown): string[] {
+  if (Array.isArray(payload)) return toStringArray(payload)
+  if (isRecord(payload) && Array.isArray(payload.data)) return toStringArray(payload.data)
+  return []
+}
 
 // Backend xəta mesajını dürüst göstər — fake mesaj uydurmadan.
 function getApiErrorMessage(err: unknown, fallback: string): string {
@@ -196,6 +234,284 @@ function ProfileSection() {
           {saved && <span className="text-sm text-emerald-600 font-medium">✓ Saxlandı</span>}
         </div>
       </form>
+    </section>
+  )
+}
+
+// ── Student learning profile ──────────────────────────────────────────────
+
+interface LearningProfileForm {
+  grade: string
+  subjects: string[]
+  interests: string[]
+  interestDraft: string
+  knowledgeLevel: KnowledgeLevel
+  learningStyle: LearningStyle
+}
+
+const DEFAULT_LEARNING_FORM: LearningProfileForm = {
+  grade: '1',
+  subjects: [],
+  interests: [],
+  interestDraft: '',
+  knowledgeLevel: 'beginner',
+  learningStyle: 'visual',
+}
+
+function normalizeLearningProfile(profile: StudentLearningProfile): LearningProfileForm {
+  return {
+    grade: String(profile.grade || 1),
+    subjects: toStringArray(profile.subjects),
+    interests: toStringArray(profile.interests),
+    interestDraft: '',
+    knowledgeLevel: profile.knowledgeLevel ?? 'beginner',
+    learningStyle: profile.learningStyle ?? 'visual',
+  }
+}
+
+function LearningProfileSection() {
+  const qc = useQueryClient()
+  const [form, setForm] = useState<LearningProfileForm>(DEFAULT_LEARNING_FORM)
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  const profileQuery = useQuery<StudentLearningProfile>({
+    queryKey: ['student', 'learning-profile'],
+    queryFn: () => api.get<StudentLearningProfile>(API_ROUTES.STUDENTS.PROFILE).then(r => r.data),
+  })
+
+  const subjectsQuery = useQuery<string[]>({
+    queryKey: ['questions', 'subjects'],
+    queryFn: () => api.get<unknown>(API_ROUTES.QUESTIONS.SUBJECTS).then(r => parseSubjectsPayload(r.data)),
+    staleTime: 1000 * 60 * 10,
+  })
+
+  useEffect(() => {
+    if (profileQuery.data) setForm(normalizeLearningProfile(profileQuery.data))
+  }, [profileQuery.data])
+
+  const subjectOptions = Array.from(new Set([
+    ...(subjectsQuery.data ?? []),
+    ...form.subjects,
+  ])).sort((a, b) => a.localeCompare(b, 'az'))
+
+  const updateForm = (patch: Partial<LearningProfileForm>) => {
+    setForm(prev => ({ ...prev, ...patch }))
+    if (error) setError('')
+    if (saved) setSaved(false)
+  }
+
+  const toggleSubject = (subject: string) => {
+    if (form.subjects.includes(subject)) {
+      updateForm({ subjects: form.subjects.filter(s => s !== subject) })
+      return
+    }
+
+    if (form.subjects.length >= 12) {
+      setError('Ən çox 12 fənn seçilə bilər.')
+      return
+    }
+
+    updateForm({ subjects: [...form.subjects, subject] })
+  }
+
+  const addInterest = () => {
+    const tag = form.interestDraft.trim().replace(/\s+/g, ' ')
+    if (!tag) return
+    if (tag.length > 50) { setError('Maraq etiketi 50 simvoldan uzun ola bilməz.'); return }
+    if (form.interests.some(item => item.toLowerCase() === tag.toLowerCase())) {
+      updateForm({ interestDraft: '' })
+      return
+    }
+    if (form.interests.length >= 20) { setError('Ən çox 20 maraq etiketi əlavə edilə bilər.'); return }
+    updateForm({ interests: [...form.interests, tag], interestDraft: '' })
+  }
+
+  const removeInterest = (tag: string) => {
+    updateForm({ interests: form.interests.filter(item => item !== tag) })
+  }
+
+  const mutation = useMutation({
+    mutationFn: (payload: {
+      grade: number
+      subjects: string[]
+      interests: string[]
+      knowledgeLevel: KnowledgeLevel
+      learningStyle: LearningStyle
+    }) => api.put<StudentLearningProfile>(API_ROUTES.STUDENTS.UPDATE, payload).then(r => r.data),
+    onSuccess: (profile) => {
+      qc.setQueryData(['student', 'learning-profile'], profile)
+      setForm(normalizeLearningProfile(profile))
+      setError('')
+      setSaved(true)
+      toast.success('Öyrənmə profili saxlandı')
+      setTimeout(() => setSaved(false), 2500)
+    },
+    onError: (err: unknown) => {
+      setSaved(false)
+      setError(getApiErrorMessage(err, 'Öyrənmə profili saxlanmadı. Yenidən cəhd edin.'))
+    },
+  })
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    const grade = Number(form.grade)
+    if (!Number.isInteger(grade) || grade < 1 || grade > 12) {
+      setError('Sinif 1–12 aralığında olmalıdır.')
+      return
+    }
+
+    const interests = toStringArray(form.interestDraft ? [...form.interests, form.interestDraft] : form.interests).slice(0, 20)
+    setError('')
+    setForm(prev => ({ ...prev, interests, interestDraft: '' }))
+    mutation.mutate({
+      grade,
+      subjects: form.subjects.slice(0, 12),
+      interests,
+      knowledgeLevel: form.knowledgeLevel,
+      learningStyle: form.learningStyle,
+    })
+  }
+
+  return (
+    <section id="learning-profile" tabIndex={-1} className="scroll-mt-24 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4 focus:outline-none">
+      <div>
+        <h2 className="font-bold text-gray-900">Öyrənmə profili</h2>
+        <p className="mt-0.5 text-xs text-gray-500">Fənn, sinif və bilik səviyyəni seç ki, suallar sənə daha uyğun gəlsin.</p>
+      </div>
+
+      {profileQuery.isLoading ? (
+        <div className="h-40 bg-slate-50 border border-gray-200 rounded-xl animate-pulse" />
+      ) : profileQuery.isError ? (
+        <div className="rounded-xl border border-rose-100 bg-rose-50 p-4">
+          <p className="text-sm text-rose-700">Öyrənmə profili yüklənmədi.</p>
+          <button onClick={() => profileQuery.refetch()} className="mt-2 text-xs font-semibold text-rose-700 hover:text-rose-800">
+            Yenidən yoxla
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Sinif</label>
+              <input
+                type="number"
+                min={1}
+                max={12}
+                value={form.grade}
+                onChange={e => updateForm({ grade: e.target.value })}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Bilik səviyyəsi</label>
+              <select
+                value={form.knowledgeLevel}
+                onChange={e => updateForm({ knowledgeLevel: e.target.value as KnowledgeLevel })}
+                className={inputCls}
+              >
+                {KNOWLEDGE_LEVEL_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Öyrənmə tərzi</label>
+            <select
+              value={form.learningStyle}
+              onChange={e => updateForm({ learningStyle: e.target.value as LearningStyle })}
+              className={inputCls}
+            >
+              {LEARNING_STYLE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <label className="block text-xs font-medium text-gray-600">Fənlər</label>
+              {subjectsQuery.isFetching && <span className="text-[11px] text-gray-400">Yüklənir...</span>}
+            </div>
+            {subjectOptions.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {subjectOptions.map(subject => {
+                  const selected = form.subjects.includes(subject)
+                  return (
+                    <button
+                      key={subject}
+                      type="button"
+                      onClick={() => toggleSubject(subject)}
+                      className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selected
+                        ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                        }`}
+                      aria-pressed={selected}
+                    >
+                      {subject}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-gray-100 bg-slate-50 px-3 py-2 text-xs text-gray-500">
+                Sual bankında fənn siyahısı hələ görünmür. Profil yenə sinif və bilik səviyyəsinə görə saxlanacaq.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Maraqlar / etiketlər</label>
+            <div className="flex gap-2">
+              <input
+                value={form.interestDraft}
+                onChange={e => updateForm({ interestDraft: e.target.value })}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault()
+                    addInterest()
+                  }
+                }}
+                placeholder="Məsələn: robotika"
+                className={inputCls}
+              />
+              <button
+                type="button"
+                onClick={addInterest}
+                className="shrink-0 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                Əlavə et
+              </button>
+            </div>
+            {form.interests.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {form.interests.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => removeInterest(tag)}
+                    className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    title="Silmək üçün kliklə"
+                  >
+                    {tag} ×
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && <p className="text-xs text-rose-600">{error}</p>}
+
+          <div className="flex items-center gap-3">
+            <button type="submit" disabled={mutation.isPending} className={primaryBtn}>
+              {mutation.isPending ? 'Saxlanılır...' : 'Öyrənmə profilini saxla'}
+            </button>
+            {saved && <span className="text-sm text-emerald-600 font-medium">✓ Saxlandı</span>}
+          </div>
+        </form>
+      )}
     </section>
   )
 }
@@ -509,6 +825,9 @@ export default function Settings() {
 
         {/* Account / Profile */}
         <ProfileSection />
+
+        {/* Student learning profile */}
+        {user?.role === 'student' && <LearningProfileSection />}
 
         {/* Password change */}
         <PasswordSection />

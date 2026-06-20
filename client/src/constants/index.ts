@@ -14,6 +14,16 @@ export const API_ROUTES = {
     CHANGE_PASSWORD: '/users/change-password',
   },
 
+  STUDENTS: {
+    PROFILE: '/students',
+    UPDATE: '/students',
+  },
+
+  QUESTIONS: {
+    LIST: '/questions',
+    SUBJECTS: '/questions/subjects',
+  },
+
   // Courses
   COURSES: {
     LIST: '/courses',

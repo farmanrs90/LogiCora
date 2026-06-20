@@ -2,7 +2,9 @@ const dailyQuestionService = require('./dailyQuestion.service');
 
 const getDaily = async (req, res, next) => {
   try {
-    const data = await dailyQuestionService.getDailyQuestions(req.user);
+    const data = await dailyQuestionService.getDailyQuestions(req.user, {
+      subject: req.query.subject,
+    });
     res.json({ success: true, data, message: 'Günün sualları uğurla alındı.' });
   } catch (err) {
     next(err);

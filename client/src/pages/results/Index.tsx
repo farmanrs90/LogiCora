@@ -27,7 +27,14 @@ interface ResultsDailyQuiz {
   totalAnswered: number
   correctAnswers: number
   accuracy: number
+  subjects?: ResultsSubject[]
   recent: DailyRecent[]
+}
+interface ResultsSubject {
+  subject: string
+  answered: number
+  correct: number
+  accuracy: number
 }
 interface ResultsCompetition {
   id: string
@@ -102,9 +109,16 @@ function SectionCard({ title, children }: { title: string; children: ReactNode }
   )
 }
 
+function subjectStatus(accuracy: number): { label: string; cls: string } {
+  if (accuracy >= 80) return { label: 'Güclü', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+  if (accuracy >= 50) return { label: 'İnkişaf edir', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+  return { label: 'Dəstək lazımdır', cls: 'bg-amber-50 text-amber-700 border-amber-200' }
+}
+
 // Tək tələbənin tam nəticə görünüşü — student/teacher-detail/parent-child eyni şəkli istifadə edir.
 function StudentResultsView({ data }: { data: StudentResults }) {
   const g = data.gamification
+  const subjectRows = data.dailyQuiz.subjects ?? []
   return (
     <div className="space-y-5">
       {/* Gamification summary */}
@@ -149,6 +163,33 @@ function StudentResultsView({ data }: { data: StudentResults }) {
             <p className="text-[11px] text-gray-400 mt-3">Tam sual-sual tarixçə post-demo mərhələsində genişləndiriləcək.</p>
           </>
         ) : null}
+      </SectionCard>
+
+      {/* Subject analysis */}
+      <SectionCard title="Fənn üzrə nəticə">
+        {subjectRows.length === 0 ? (
+          <EmptyRow label="Fənn üzrə analiz üçün hələ kifayət qədər cavab yoxdur." />
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {subjectRows.map((row) => {
+              const status = subjectStatus(row.accuracy)
+              return (
+                <li key={row.subject} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{row.subject}</p>
+                    <p className="text-[11px] text-gray-400">{row.answered} cavab · {row.correct} düz</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold tabular-nums text-gray-900">{row.accuracy}%</span>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${status.cls}`}>
+                      {status.label}
+                    </span>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </SectionCard>
 
       {/* Competitions */}

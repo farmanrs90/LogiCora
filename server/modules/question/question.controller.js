@@ -27,6 +27,15 @@ const getAllQuestions = async (req, res, next) => {
   }
 };
 
+const getSubjects = async (req, res, next) => {
+  try {
+    const data = await questionService.getSubjects();
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const updateQuestion = async (req, res, next) => {
   try {
     const data = await questionService.updateQuestion(
@@ -53,6 +62,7 @@ module.exports = {
   createQuestion,
   getQuestion,
   getAllQuestions,
+  getSubjects,
   updateQuestion,
   deleteQuestion,
 };

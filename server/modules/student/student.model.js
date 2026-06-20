@@ -23,14 +23,13 @@ const studentSchema = new mongoose.Schema(
       ref: 'Parent',
       default: null,
     },
-    interests: {
+    subjects: {
       type: [String],
       default: [],
     },
-    learningStyle: {
-      type: String,
-      enum: ['visual', 'auditory', 'kinesthetic', 'reading_writing'],
-      default: 'visual',
+    interests: {
+      type: [String],
+      default: [],
     },
     learningStyle: {
       type: String,
