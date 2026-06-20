@@ -40,29 +40,29 @@ type AnswerAction =
 
 // ── Static data ───────────────────────────────────────────────────────────
 
-const AGE_CARDS: { group: AgeGroup; icon: string; label: string; color: string }[] = [
-  { group: '3-5',   icon: '🚀', label: 'Raket dünyası',        color: '#F97316' },
-  { group: '6-8',   icon: '🌲', label: 'Sehrli meşə',          color: '#58CC02' },
-  { group: '9-11',  icon: '🏙️', label: 'Futuristik şəhər',     color: '#06B6D4' },
-  { group: '12-14', icon: '🛸', label: 'Kosmik stansiya',       color: '#9333EA' },
-  { group: '15-17', icon: '🌆', label: 'Professional üfüq',     color: '#3B82F6' },
-  { group: '18-22', icon: '🎓', label: 'Universitet kampusu',   color: '#EC4899' },
-  { group: '23+',   icon: '💼', label: 'Executive dünya',       color: '#ffd700' },
+const AGE_CARDS: { group: AgeGroup; marker: string; label: string; color: string }[] = [
+  { group: '3-5',   marker: 'M1', label: 'Məktəbəqədər',      color: '#F97316' },
+  { group: '6-8',   marker: 'M2', label: 'Erkən ibtidai',      color: '#58CC02' },
+  { group: '9-11',  marker: 'M3', label: 'İbtidai mərhələ',    color: '#06B6D4' },
+  { group: '12-14', marker: 'M4', label: 'Orta mərhələ',       color: '#9333EA' },
+  { group: '15-17', marker: 'M5', label: 'Yuxarı sinif',       color: '#3B82F6' },
+  { group: '18-22', marker: 'U1', label: 'Universitet',        color: '#EC4899' },
+  { group: '23+',   marker: 'P1', label: 'Peşəkar inkişaf',    color: '#ffd700' },
 ]
 
-const Q2_EMOJIS = [
-  { key: '⚡', label: 'Tez qərar', score: 'fast' },
-  { key: '🔍', label: 'Araşdır',   score: 'analytical' },
-  { key: '👥', label: 'Məsləhət', score: 'creative' },
-  { key: '🎯', label: 'Hədəfə bax', score: 'fast' },
-  { key: '💪', label: 'Davam et',  score: 'fast' },
-  { key: '🧘', label: 'Sakit ol',  score: 'creative' },
+const Q2_OPTIONS = [
+  { key: '⚡', marker: 'Q1', label: 'Tez qərar', score: 'fast' },
+  { key: '🔍', marker: 'Q2', label: 'Araşdırma',   score: 'analytical' },
+  { key: '👥', marker: 'Q3', label: 'Məsləhət', score: 'creative' },
+  { key: '🎯', marker: 'Q4', label: 'Hədəf', score: 'fast' },
+  { key: '💪', marker: 'Q5', label: 'Davamlılıq',  score: 'fast' },
+  { key: '🧘', marker: 'Q6', label: 'Sakit yanaşma',  score: 'creative' },
 ]
 
-const CHARACTER_INFO: Record<CharacterType, { emoji: string; label: string; color: string; avatarEmoji: string }> = {
-  'fast-thinker':      { emoji: '⚡', label: 'Sürətli Düşünən',  color: '#06B6D4', avatarEmoji: '🦅' },
-  'deep-analyst':      { emoji: '🔍', label: 'Dərin Analitik',    color: '#3B82F6', avatarEmoji: '🦉' },
-  'creative-explorer': { emoji: '🎨', label: 'Yaradıcı Kəşfçi',  color: '#9333EA', avatarEmoji: '🦋' },
+const CHARACTER_INFO: Record<CharacterType, { code: string; label: string; color: string }> = {
+  'fast-thinker':      { code: 'S1', label: 'Sürətli qərarvermə', color: '#06B6D4' },
+  'deep-analyst':      { code: 'A1', label: 'Analitik yanaşma',   color: '#3B82F6' },
+  'creative-explorer': { code: 'Y1', label: 'Yaradıcı yanaşma',   color: '#9333EA' },
 }
 
 const KNOWLEDGE_QUESTIONS: Record<string, { q: string; options: string[]; correct: number }[]> = {
@@ -234,9 +234,9 @@ function Step1({ answers, dispatch, onNext }: {
         transition={{ delay: 0.45, duration: 0.5 }}
         className="text-xl text-white font-medium leading-relaxed"
       >
-        Salam! Mən LogiCora-yam.
+        LogiCora öyrənmə profilini hazırlayır.
         <br />
-        <span className="text-[#9CA3AF]">Adın nədir?</span>
+        <span className="text-[#9CA3AF]">Profil üçün adını yaz.</span>
       </motion.p>
 
       <motion.div
@@ -286,13 +286,13 @@ function Step2({ answers, dispatch, onNext }: {
         className="text-center"
       >
         <h2 className="text-3xl font-black text-white">
-          Sən hansı{' '}
+          Təhsil{' '}
           <span className="bg-gradient-to-r from-[#F97316] to-[#9333EA] bg-clip-text text-transparent">
-            dünyadan
+            mərhələni
           </span>{' '}
-          gəlirsən?
+          seç
         </h2>
-        <p className="text-[#9CA3AF] mt-2">Yaş qrupunu seç</p>
+        <p className="text-[#9CA3AF] mt-2">Yaş qrupunu və uyğun öyrənmə mərhələsini seç</p>
       </motion.div>
 
       <motion.div
@@ -320,7 +320,7 @@ function Step2({ answers, dispatch, onNext }: {
               aria-label={`Yaş qrupu: ${card.group}`}
               aria-pressed={selected}
             >
-              <span className="text-3xl">{card.icon}</span>
+              <span className="text-2xl font-black tracking-tight" style={{ color: card.color }}>{card.marker}</span>
               <span className="text-white font-bold text-sm">{card.group}</span>
               <span className="text-[#9CA3AF] text-xs text-center leading-tight">{card.label}</span>
               {selected && (
@@ -415,21 +415,25 @@ function Step3({ answers, dispatch, onNext }: {
                 Boş vaxtında nə etmək istəyirsən?
               </h2>
               <div className="grid grid-cols-3 gap-4 w-full">
-                {[{ icon: '🏊', label: 'Üzmək' }, { icon: '♟️', label: 'Şahmat' }, { icon: '🎨', label: 'Rəsm' }]
+                {[
+                  { value: '🏊', marker: 'F1', label: 'Fiziki aktivlik' },
+                  { value: '♟️', marker: 'M1', label: 'Strategiya' },
+                  { value: '🎨', marker: 'Y1', label: 'Yaradıcılıq' },
+                ]
                   .map((opt) => (
                     <motion.button
-                      key={opt.icon}
-                      onClick={() => dispatch({ type: 'SET_Q1', value: opt.icon })}
-                      animate={answers.q1 === opt.icon
+                      key={opt.value}
+                      onClick={() => dispatch({ type: 'SET_Q1', value: opt.value })}
+                      animate={answers.q1 === opt.value
                         ? { scale: 1.08, borderColor: '#9333EA', backgroundColor: 'rgba(147,51,234,0.15)' }
                         : { scale: 1,    borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.04)' }
                       }
                       whileTap={{ scale: 0.95 }}
                       className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 cursor-pointer"
                       aria-label={opt.label}
-                      aria-pressed={answers.q1 === opt.icon}
+                      aria-pressed={answers.q1 === opt.value}
                     >
-                      <span className="text-5xl">{opt.icon}</span>
+                      <span className="text-3xl font-black text-white">{opt.marker}</span>
                       <span className="text-white text-sm font-semibold">{opt.label}</span>
                     </motion.button>
                   ))}
@@ -437,14 +441,14 @@ function Step3({ answers, dispatch, onNext }: {
             </>
           )}
 
-          {/* Q2 — emoji grid */}
+          {/* Q2 — response style grid */}
           {subStep === 1 && (
             <>
               <h2 className="text-2xl font-black text-white text-center">
                 Çətin problemlə üzləşəndə?
               </h2>
               <div className="grid grid-cols-3 gap-3 w-full">
-                {Q2_EMOJIS.map((opt) => (
+                {Q2_OPTIONS.map((opt) => (
                   <motion.button
                     key={opt.key}
                     onClick={() => dispatch({ type: 'SET_Q2', value: opt.key })}
@@ -457,7 +461,7 @@ function Step3({ answers, dispatch, onNext }: {
                     aria-label={opt.label}
                     aria-pressed={answers.q2 === opt.key}
                   >
-                    <span className="text-3xl">{opt.key}</span>
+                    <span className="text-2xl font-black text-white">{opt.marker}</span>
                     <span className="text-[#9CA3AF] text-xs text-center">{opt.label}</span>
                   </motion.button>
                 ))}
@@ -469,12 +473,12 @@ function Step3({ answers, dispatch, onNext }: {
           {subStep === 2 && (
             <>
               <h2 className="text-2xl font-black text-white text-center">
-                Sürəti nə qədər sevirsən?
+                Tapşırıqları hansı tempdə həll edirsən?
               </h2>
               <div className="w-full flex flex-col items-center gap-6">
-                <div className="flex justify-between w-full text-3xl px-2">
-                  <span>🐢</span>
-                  <span>🐆</span>
+                <div className="flex justify-between w-full text-sm font-semibold text-[#9CA3AF] px-1">
+                  <span>Dəqiq</span>
+                  <span>Sürətli</span>
                 </div>
                 <input
                   type="range"
@@ -497,15 +501,15 @@ function Step3({ answers, dispatch, onNext }: {
             </>
           )}
 
-          {/* Q4 — dramatic split screen */}
+          {/* Q4 — learning mode */}
           {subStep === 3 && (
             <>
               <h2 className="text-2xl font-black text-white text-center">
                 Öyrənmə stilin?
               </h2>
               <div className="grid grid-cols-2 gap-4 w-full h-52">
-                {[{ icon: '📺', label: 'İzləyərək öyrənirəm', val: '📺' },
-                  { icon: '🛠️', label: 'Edərək öyrənirəm',   val: '🛠️' }]
+                {[{ marker: 'V1', label: 'İzləyərək öyrənirəm', val: '📺' },
+                  { marker: 'P1', label: 'Praktika ilə öyrənirəm', val: '🛠️' }]
                   .map((opt) => (
                     <motion.button
                       key={opt.val}
@@ -519,7 +523,7 @@ function Step3({ answers, dispatch, onNext }: {
                       aria-label={opt.label}
                       aria-pressed={answers.q4 === opt.val}
                     >
-                      <span className="text-5xl">{opt.icon}</span>
+                      <span className="text-3xl font-black text-white">{opt.marker}</span>
                       <span className="text-white text-sm font-semibold text-center px-3">{opt.label}</span>
                     </motion.button>
                   ))}
@@ -527,16 +531,16 @@ function Step3({ answers, dispatch, onNext }: {
             </>
           )}
 
-          {/* Q5 — 3 emoji reaction */}
+          {/* Q5 — response reaction */}
           {subStep === 4 && (
             <>
               <h2 className="text-2xl font-black text-white text-center">
-                Yarışda uduzanda nə edərsən?
+                Çətin nəticədən sonra nə edirsən?
               </h2>
               <div className="flex gap-4 w-full justify-center">
-                {[{ icon: '🔥', label: 'Qəzəblənirsən', val: '🔥' },
-                  { icon: '🤔', label: 'Analiz edirsən', val: '🤔' },
-                  { icon: '😄', label: 'Gülərsən',       val: '😄' }]
+                {[{ marker: 'R1', label: 'Daha çox çalışıram', val: '🔥' },
+                  { marker: 'R2', label: 'Analiz edirəm', val: '🤔' },
+                  { marker: 'R3', label: 'Sakit davam edirəm', val: '😄' }]
                   .map((opt) => (
                     <motion.button
                       key={opt.val}
@@ -550,7 +554,7 @@ function Step3({ answers, dispatch, onNext }: {
                       aria-label={opt.label}
                       aria-pressed={answers.q5 === opt.val}
                     >
-                      <span className="text-4xl">{opt.icon}</span>
+                      <span className="text-3xl font-black text-white">{opt.marker}</span>
                       <span className="text-[#9CA3AF] text-xs text-center">{opt.label}</span>
                     </motion.button>
                   ))}
@@ -565,7 +569,7 @@ function Step3({ answers, dispatch, onNext }: {
         disabled={!subCanNext}
         className="btn-purple px-10 py-3 text-lg w-full max-w-xs disabled:opacity-40"
       >
-        {subStep < 4 ? 'Növbəti →' : 'Nəticəyə bax ✨'}
+        {subStep < 4 ? 'Növbəti →' : 'Nəticəyə bax'}
       </motion.button>
     </div>
   )
@@ -614,7 +618,7 @@ function Step4({ answers, dispatch, onNext }: {
         className="text-center"
       >
         <h2 className="text-2xl font-black text-white">Bilik səviyyəni ölçək</h2>
-        <p className="text-[#9CA3AF] text-sm mt-1">Sistem özü müəyyən edəcək — rahat ol</p>
+        <p className="text-[#9CA3AF] text-sm mt-1">Cavablarına əsasən ilkin səviyyə təyin olunacaq.</p>
       </motion.div>
 
       {/* Circular progress */}
@@ -680,16 +684,7 @@ function Step4({ answers, dispatch, onNext }: {
   )
 }
 
-// ── Step 5 — Avatar reveal ────────────────────────────────────────────────
-
-const CONFETTI_COLORS = ['#3B82F6', '#9333EA', '#58CC02', '#F97316', '#EC4899', '#06B6D4', '#ffd700']
-const CONFETTI_PIECES = Array.from({ length: 20 }, (_, i) => ({
-  id: i,
-  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-  angle: (i / 20) * 360,
-  distance: 80 + Math.random() * 80,
-  size: 6 + Math.random() * 8,
-}))
+// ── Step 5 — Learning profile summary ─────────────────────────────────────
 
 function Step5({ answers, onDone }: {
   answers: Answers
@@ -714,82 +709,57 @@ function Step5({ answers, onDone }: {
         animate={{ opacity: 1, y: 0 }}
         className="text-2xl font-black text-white"
       >
-        Hazırsan, <span className="bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">{answers.name}</span>?
+        Öyrənmə profilin hazırdır, <span className="bg-gradient-to-r from-[#3B82F6] to-[#9333EA] bg-clip-text text-transparent">{answers.name}</span>
       </motion.h2>
 
-      {/* Gift box + avatar reveal */}
+      {/* Profile analysis reveal */}
       <div className="relative h-48 flex items-center justify-center">
-        {/* Confetti */}
-        <AnimatePresence>
-          {phase === 'revealed' && CONFETTI_PIECES.map((piece) => {
-            const rad = (piece.angle * Math.PI) / 180
-            return (
-              <motion.div
-                key={piece.id}
-                initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                animate={{
-                  x: Math.cos(rad) * piece.distance,
-                  y: Math.sin(rad) * piece.distance - 40,
-                  opacity: 0,
-                  scale: 0.3,
-                  rotate: piece.angle * 2,
-                }}
-                transition={{ duration: 1.2, ease: 'easeOut' as const }}
-                className="absolute rounded-sm"
-                style={{ width: piece.size, height: piece.size, backgroundColor: piece.color }}
-              />
-            )
-          })}
-        </AnimatePresence>
-
-        {/* Gift box */}
         <AnimatePresence mode="wait">
           {phase !== 'revealed' && (
             <motion.div
-              key="gift"
+              key="profile-analysis"
               exit={{ scale: 0, opacity: 0, y: -30 }}
               transition={{ duration: 0.4 }}
             >
-              <motion.span
-                className="text-8xl"
-                role="img" aria-label="Hədiyyə qutusu"
+              <motion.div
+                className="flex h-32 w-32 flex-col items-center justify-center rounded-3xl border border-[rgba(255,255,255,0.16)] bg-[rgba(255,255,255,0.06)] text-white"
                 animate={
                   phase === 'shaking'
-                    ? { rotate: [-8, 8, -8, 8, -5, 5, 0], x: [-4, 4, -4, 4, 0] }
+                    ? { scale: [1, 1.03, 1], borderColor: ['rgba(255,255,255,0.16)', '#9333EA', 'rgba(255,255,255,0.16)'] }
                     : phase === 'opening'
-                    ? { scale: [1, 1.3, 0.9, 1.15], rotate: [0, -10, 10, 0] }
+                    ? { scale: [1, 1.08, 1], borderColor: ['rgba(255,255,255,0.16)', '#3B82F6', '#9333EA'] }
                     : {}
                 }
                 transition={{ duration: phase === 'shaking' ? 1.2 : 0.5, ease: 'easeInOut' as const }}
               >
-                🎁
-              </motion.span>
+                <span className="text-xs uppercase tracking-[0.28em] text-[#9CA3AF]">Profil</span>
+                <span className="mt-2 text-3xl font-black">LC</span>
+                <span className="mt-1 text-xs text-[#9CA3AF]">hazırlanır</span>
+              </motion.div>
             </motion.div>
           )}
 
           {phase === 'revealed' && (
             <motion.div
-              key="avatar"
+              key="learning-profile"
               initial={{ y: 60, opacity: 0, scale: 0.5 }}
               animate={{ y: 0,  opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 14 }}
               className="flex flex-col items-center gap-2"
             >
-              {/* Glow ring */}
               <motion.div
                 className="relative"
                 animate={{ filter: [`drop-shadow(0 0 12px ${info.color})`, `drop-shadow(0 0 28px ${info.color})`, `drop-shadow(0 0 12px ${info.color})`] }}
                 transition={{ duration: 1.8, repeat: Infinity }}
               >
                 <div
-                  className="w-28 h-28 rounded-full flex items-center justify-center text-6xl border-4"
+                  className="w-28 h-28 rounded-3xl flex items-center justify-center text-4xl font-black border-4"
                   style={{ borderColor: info.color, backgroundColor: `${info.color}18` }}
                 >
-                  {info.avatarEmoji}
+                  {info.code}
                 </div>
               </motion.div>
               <div className="flex items-center gap-2 mt-1">
-                <span style={{ color: info.color }} className="text-xl">{info.emoji}</span>
                 <span className="text-white font-bold text-lg">{info.label}</span>
               </div>
             </motion.div>
@@ -804,26 +774,24 @@ function Step5({ answers, onDone }: {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-6 w-full"
           >
-            <p className="text-[#9CA3AF] text-sm">Bu sənin başlanğıc avatarındır!</p>
+            <p className="text-[#9CA3AF] text-sm">Bu, ilkin öyrənmə profilindir.</p>
 
-            {/* Sistem qeydi (neytral — personaj yoxdur) */}
             <div className="flex items-center gap-3 bg-[rgba(147,51,234,0.1)] border border-[rgba(147,51,234,0.25)] rounded-2xl px-5 py-3">
               <p className="text-[#9CA3AF] text-sm text-left">
-                Macəran başlayır, {answers.name}! Uğurlar! ✨
+                Bu seçimlər fərdiləşdirilmiş suallar və nəticə izləməsi üçün başlanğıc profil yaradır.
               </p>
             </div>
 
-            {/* Locked silhouettes */}
             <div className="flex gap-4 items-center justify-center">
               {[
-                { xp: 50,  label: 'Form 2' },
-                { xp: 200, label: 'Form 3' },
-                { xp: 500, label: 'Final' },
+                { xp: 50,  label: 'Mərhələ 2' },
+                { xp: 200, label: 'Mərhələ 3' },
+                { xp: 500, label: 'Tam profil' },
               ].map((lock) => (
                 <div key={lock.xp} className="flex flex-col items-center gap-1">
                   <div className="w-14 h-14 rounded-full bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)]
                                   flex items-center justify-center text-xl opacity-50">
-                    🔒
+                    {lock.label.slice(0, 2)}
                   </div>
                   <span className="text-[#9CA3AF] text-xs">{lock.xp} XP</span>
                   <span className="text-[#6B7280] text-[10px]">{lock.label}</span>
@@ -838,7 +806,7 @@ function Step5({ answers, onDone }: {
               className="btn-primary px-10 py-4 text-lg font-bold w-full"
               style={{ background: 'linear-gradient(135deg, #3B82F6, #9333EA)' }}
             >
-              🚀 Macəraya başla!
+              Platformaya keç
             </motion.button>
           </motion.div>
         )}
