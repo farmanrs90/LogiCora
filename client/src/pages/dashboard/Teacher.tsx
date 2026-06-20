@@ -403,6 +403,9 @@ export default function TeacherDashboard() {
                 Verified Müəllim
               </span>
             )}
+            <Link to="/results" className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-800 transition-colors">
+              📊 Tələbə nəticələri
+            </Link>
             <Link to="/analytics" className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-800 transition-colors">
               📊 Analitika
             </Link>

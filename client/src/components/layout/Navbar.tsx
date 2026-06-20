@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Settings, LogOut, ChevronDown, X, Menu, UserRound, SlidersHorizontal, MessageSquarePlus } from 'lucide-react'
+import { Bell, Settings, LogOut, ChevronDown, X, Menu, UserRound, SlidersHorizontal, MessageSquarePlus, BarChart3 } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { RootState } from '../../app/store'
@@ -530,6 +530,15 @@ export default function Navbar() {
                     </button>
 
                     <button
+                      onClick={() => { goTo(APP_ROUTES.RESULTS) }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                 text-gray-700 hover:text-gray-900 hover:bg-gray-100
+                                 transition-colors text-sm"
+                    >
+                      <BarChart3 size={15} /> Nəticələr
+                    </button>
+
+                    <button
                       onClick={() => { goTo(APP_ROUTES.FEEDBACK) }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
                                  text-gray-700 hover:text-gray-900 hover:bg-gray-100
@@ -647,6 +656,13 @@ export default function Navbar() {
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                 >
                   <Settings size={16} /> Tənzimləmələr
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goTo(APP_ROUTES.RESULTS)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                >
+                  <BarChart3 size={16} /> Nəticələr
                 </button>
                 <button
                   type="button"

@@ -637,11 +637,18 @@ export default function ParentDashboard() {
             </p>
             <p className="mt-1 text-xs text-gray-400">Salam, {user?.name?.split(' ')[0] ?? 'Valideyn'}</p>
           </div>
-          <button onClick={() => setShowLink(true)}
-            className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-800 transition-colors"
-          >
-            + Uşaq əlavə et
-          </button>
+          <div className="shrink-0 flex flex-wrap items-center gap-2">
+            <Link to="/results"
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-800 transition-colors"
+            >
+              📊 Övlad nəticələri
+            </Link>
+            <button onClick={() => setShowLink(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-800 transition-colors"
+            >
+              + Uşaq əlavə et
+            </button>
+          </div>
         </div>
 
         {/* ── Child selector ─────────────────────────────────────────── */}

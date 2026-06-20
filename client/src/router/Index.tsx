@@ -47,6 +47,7 @@ import ChildProgress from '../pages/parent/ChildProgress'
 import Chat from '../pages/chat/Index'
 import Settings from '../pages/settings/Index'
 import Feedback from '../pages/feedback/Index'
+import Results from '../pages/results/Index'
 import KidsHub from '../pages/kids/KidsHub'
 import VideoPlayer from '../pages/kids/VideoPlayer'
 import Admin from '../pages/admin/Index'
@@ -185,6 +186,7 @@ export default function AppRouter() {
         <Route path={APP_ROUTES.CHAT} element={<PW><Chat /></PW>} />
         <Route path={APP_ROUTES.SETTINGS} element={<PW><Settings /></PW>} />
         <Route path={APP_ROUTES.FEEDBACK} element={<PW><Feedback /></PW>} />
+        <Route path={APP_ROUTES.RESULTS} element={<PW><Results /></PW>} />
         <Route path={APP_ROUTES.KIDS_HUB} element={<KidsRoute><PageWrapper><KidsHub /></PageWrapper></KidsRoute>} />
         <Route path="/kids/:id" element={<KidsRoute><PageWrapper><VideoPlayer /></PageWrapper></KidsRoute>} />
 

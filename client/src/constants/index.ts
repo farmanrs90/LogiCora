@@ -167,6 +167,14 @@ export const API_ROUTES = {
     ADMIN_STATUS: (id: string) => `/feedback/admin/${id}/status`,
   },
 
+  // Results (Nəticələr Mərkəzi)
+  RESULTS: {
+    ME: '/results/me',
+    TEACHER: '/results/teacher',
+    STUDENT: (id: string) => `/results/student/${id}`,
+    PARENT_CHILD: (id: string) => `/results/parent/child/${id}`,
+  },
+
   // Groups
   GROUPS: {
     LIST:    '/groups',
@@ -205,6 +213,7 @@ export const APP_ROUTES = {
   ONBOARDING: '/onboarding',
   SETTINGS: '/settings',
   FEEDBACK: '/feedback',
+  RESULTS: '/results',
   DASHBOARD: {
     ROOT: '/dashboard',
     STUDENT: '/dashboard/student',
