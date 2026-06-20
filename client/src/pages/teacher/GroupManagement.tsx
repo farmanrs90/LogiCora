@@ -77,6 +77,7 @@ interface CreateGroupForm {
 const DAYS_AZ = ['Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə']
 const SUBJECTS = ['Python', 'Django', 'JavaScript', 'Data Science', 'Web Dizayn', 'Riyaziyyat', 'Fizika', 'Kimya', 'Biologiya', 'Tarix']
 const PIE_COLORS = ['#6366F1', '#8B5CF6', '#06B6D4', '#F59E0B']
+const INVITE_DISABLED_MESSAGE = 'Dəvət sistemi post-demo mərhələsində aktivləşdiriləcək.'
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('az-AZ', { day: 'numeric', month: 'long' })
@@ -173,15 +174,7 @@ type DrawerTab = 'members' | 'attendance' | 'competitions' | 'analytics'
 
 function MembersTab({ group, detail }: { group: Group; detail: GroupDetail }) {
   const qc = useQueryClient()
-  const [inviteEmail, setInviteEmail] = useState('')
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
-
-  const inviteMutation = useMutation({
-    mutationFn: (email: string) => api.post(API_ROUTES.GROUPS.INVITE(group.id), { email }).then(r => r.data),
-    // Uğur yalnız backend cavabından sonra: input təmizlə + üzv siyahısını yenilə.
-    onSuccess: () => { toast.success('Dəvət göndərildi.'); setInviteEmail(''); qc.invalidateQueries({ queryKey: ['group-detail', group.id] }) },
-    onError: () => toast.error('Tələbə dəvət olunmadı.'),
-  })
 
   const removeMutation = useMutation({
     mutationFn: (userId: string) => api.delete(API_ROUTES.GROUPS.REMOVE(group.id, userId)).then(r => r.data),
@@ -192,16 +185,21 @@ function MembersTab({ group, detail }: { group: Group; detail: GroupDetail }) {
   return (
     <div className="space-y-4">
       {/* Invite */}
-      <div className="flex gap-2">
-        <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-          placeholder="tələbə@email.com"
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
-        />
-        <button onClick={() => inviteEmail && inviteMutation.mutate(inviteEmail)} disabled={!inviteEmail || inviteMutation.isPending}
-          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
-        >
-          {inviteMutation.isPending ? '...' : 'Dəvət et'}
-        </button>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            disabled
+            placeholder="tələbə@email.com"
+            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white/35 cursor-not-allowed"
+          />
+          <button
+            disabled
+            className="px-4 py-2.5 bg-white/10 rounded-xl text-sm font-semibold text-white/35 cursor-not-allowed"
+          >
+            Dəvət et
+          </button>
+        </div>
+        <p className="text-xs text-white/45">{INVITE_DISABLED_MESSAGE}</p>
       </div>
 
       {/* Member list */}
