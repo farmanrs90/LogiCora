@@ -7,6 +7,7 @@ import {
   PolarAngleAxis, BarChart, Bar, LineChart, Line,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
+import toast from 'react-hot-toast'
 import api from '../../lib/api'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -146,6 +147,7 @@ export default function ChildProgress() {
   // Time capsule state (quick add from here)
   const [capsuleMsg, setCapsuleMsg] = useState('')
   const [capsuleDate, setCapsuleDate] = useState('')
+  const [capsuleError, setCapsuleError] = useState('')
 
   const { data: progress, isLoading, isError, refetch } = useQuery<FullProgress | null>({
     queryKey: ['child-progress', childId, period],
@@ -157,8 +159,13 @@ export default function ChildProgress() {
 
   const capsuleMutation = useMutation({
     mutationFn: () => api.post('/parent/time-capsule', { childId, message: capsuleMsg, openAt: capsuleDate }),
-    onSuccess: () => { setCapsuleMsg(''); setCapsuleDate(''); qc.invalidateQueries({ queryKey: ['time-capsules', childId] }) },
-    onError: () => { setCapsuleMsg(''); setCapsuleDate('') },
+    onMutate: () => { setCapsuleError('') },
+    onSuccess: () => { setCapsuleMsg(''); setCapsuleDate(''); setCapsuleError(''); qc.invalidateQueries({ queryKey: ['time-capsules', childId] }) },
+    onError: () => {
+      const message = 'Zaman kapsulu göndərilmədi. Mətn saxlanılmadı, yenidən cəhd edə bilərsiniz.'
+      setCapsuleError(message)
+      toast.error(message)
+    },
   })
 
   const handlePdf = async () => {
@@ -529,6 +536,11 @@ export default function ChildProgress() {
               {capsuleMutation.isPending ? '...' : capsuleMutation.isSuccess ? '✓ Göndərildi' : 'Göndər'}
             </button>
           </div>
+          {capsuleError && (
+            <p className="text-xs text-red-300" role="alert">
+              {capsuleError}
+            </p>
+          )}
         </div>
 
       </div>
