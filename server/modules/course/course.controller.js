@@ -36,12 +36,15 @@ const addLesson = async (req, res) => {
 };
 
 const enrollStudent = async (req, res) => {
-  const enrollment = await courseService.enrollStudent(
-    req.student,
-    req.body.courseId,
-    req.body.paymentId
-  );
-  res.status(201).json({ success: true, data: enrollment, message: 'Kursa qeydiyyat tamamlandı.' });
+  const enrollment = await courseService.enrollStudent(req.student, req.body.courseId);
+  const pending = enrollment && enrollment.status === 'pending_payment';
+  res.status(201).json({
+    success: true,
+    data: enrollment,
+    message: pending
+      ? 'Qoşulma sorğusu qeydə alındı. Ödəniş/təsdiq gözlənilir.'
+      : 'Kursa qeydiyyat tamamlandı.',
+  });
 };
 
 const completeLesson = async (req, res) => {

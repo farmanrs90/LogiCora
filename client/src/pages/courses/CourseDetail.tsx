@@ -497,31 +497,37 @@ function EnrollmentCard({
             )}
           </div>
         ) : (
-          <button
-            onClick={onEnroll}
-            disabled={isEnrolling}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-          >
-            {isEnrolling ? (
-              <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                {course.isFree ? 'Pulsuz qoşul' : 'Kursa yazıl'}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </>
+          <div className="space-y-2">
+            <button
+              onClick={onEnroll}
+              disabled={isEnrolling}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            >
+              {isEnrolling ? (
+                <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  {course.isFree ? 'Pulsuz qoşul' : 'Ödəniş/təsdiq tələb et'}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </>
+              )}
+            </button>
+            {!course.isFree && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5 leading-relaxed">
+                Pullu kurs — qoşulduqda dərhal açılmır. Ödəniş/təsdiq tələb olunur və valideynə bildiriş gedir. Real ödəniş sistemi post-demo mərhələsində aktivləşəcək.
+              </p>
             )}
-          </button>
+          </div>
         )}
 
-        {/* Trust signals */}
+        {/* Trust signals — yalnız dürüst platforma faktları (saxta zəmanət/ödəniş iddiası yox) */}
         <div className="pt-2 space-y-2 text-sm text-gray-500">
           {[
-            { icon: '🔒', text: '30 günlük geri qaytarma zəmanəti' },
-            { icon: '♾️', text: 'Ömürlük giriş' },
-            { icon: '📱', text: 'Mobil + masaüstü' },
-            { icon: '🏆', text: 'Tamamlama sertifikatı' },
+            { icon: '📱', text: 'Mobil + masaüstü dəstək' },
+            { icon: '📊', text: 'İrəliləyiş izləməsi' },
+            { icon: '🎓', text: 'Tamamlama sertifikatı (post-demo)' },
           ].map(({ icon, text }) => (
             <div key={text} className="flex items-center gap-2">
               <span>{icon}</span>
@@ -599,8 +605,15 @@ export default function CourseDetail() {
 
   const enrollMutation = useMutation({
     mutationFn: () => api.post(API_ROUTES.COURSES.ENROLL, { courseId: id }).then(r => r.data),
-    onSuccess: () => {
+    onSuccess: (resp: unknown) => {
       qc.invalidateQueries({ queryKey: ['course', id] })
+      // Pullu kurs → backend pending_payment qaytarır: giriş AÇILMIR (fake unlock yox).
+      const status = isRecord(resp) && isRecord(resp.data) ? resp.data.status : undefined
+      if (status === 'pending_payment') {
+        toast('Qoşulma sorğun göndərildi. Ödəniş/təsdiq gözlənilir — valideynə bildiriş göndərildi.', { icon: '⏳' })
+        return
+      }
+      // Pulsuz kurs → real aktiv qeydiyyat, dərslərə keç.
       if (course) openLessonsFlow(course)
     },
     onError: () => {

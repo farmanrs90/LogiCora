@@ -2,6 +2,8 @@ const Course = require('./course.model');
 const Lesson = require('./lesson.model');
 const Enrollment = require('./enrollment.model');
 const Teacher = require('../teacher/teacher.model');
+const Parent = require('../parent/parent.model');
+const notificationService = require('../notification/notification.service');
 
 const createCourse = async (userId, data) => {
   const teacher = await Teacher.findOne({ userId });
@@ -144,7 +146,25 @@ const addLesson = async (userId, courseId, data) => {
   return lesson;
 };
 
-const enrollStudent = async (student, courseId, paymentId = null) => {
+// Pullu kursda valideynə real bildiriş — əlaqə (Parent.children) varsa.
+// Bildiriş uğursuz olsa belə qeydiyyat sorğusu pozulmur.
+const notifyParentOfPaidEnrollment = async (student, course) => {
+  try {
+    const parent = await Parent.findOne({ children: student.userId }).select('userId');
+    if (!parent) return;
+    await notificationService.send({
+      userId: parent.userId,
+      type: 'payment_due',
+      title: 'Kurs üçün ödəniş/təsdiq gözlənilir',
+      message: `Övladınız "${course.title}" pullu kursuna qoşulmaq istəyir (${course.price} ₼). Ödəniş və ya təsdiq gözlənilir.`,
+      meta: { courseId: String(course._id), price: course.price },
+    });
+  } catch {
+    // Bildiriş xətası qeydiyyat axınını dayandırmır.
+  }
+};
+
+const enrollStudent = async (student, courseId) => {
   const course = await Course.findById(courseId);
   if (!course || !course.isPublished) {
     const error = new Error('Kurs tapılmadı.');
@@ -161,12 +181,16 @@ const enrollStudent = async (student, courseId, paymentId = null) => {
     };
   }
 
+  // Pulsuz (price=0) → aktiv; pullu (price>0) → pending_payment (giriş açılmır).
+  const isPaid = (course.price || 0) > 0;
+  const status = isPaid ? 'pending_payment' : 'active';
+
   let enrollment;
   try {
     enrollment = await Enrollment.create({
       studentId: student._id,
       courseId,
-      paymentId,
+      status,
     });
   } catch (error) {
     if (error && error.code === 11000) {
@@ -182,16 +206,23 @@ const enrollStudent = async (student, courseId, paymentId = null) => {
     throw error;
   }
 
-  course.totalEnrolled += 1;
-  await course.save();
+  if (isPaid) {
+    // Pullu: giriş AÇILMIR, enrolled sayı artmır; valideynə real bildiriş göndərilir.
+    await notifyParentOfPaidEnrollment(student, course);
+  } else {
+    // Pulsuz: dərhal aktiv qeydiyyat.
+    course.totalEnrolled += 1;
+    await course.save();
+  }
 
   return enrollment;
 };
 
 const completeLesson = async (student, courseId, lessonId) => {
   const enrollment = await Enrollment.findOne({ studentId: student._id, courseId });
-  if (!enrollment) {
-    const error = new Error('Bu kursa qeydiyyatınız yoxdur.');
+  // Pullu kursun dərsləri ödəniş/təsdiqdən (status 'active') əvvəl açılmır.
+  if (!enrollment || enrollment.status !== 'active') {
+    const error = new Error('Bu kursa aktiv qeydiyyatınız yoxdur. Pullu kurslar ödəniş/təsdiqdən sonra açılır.');
     error.statusCode = 403;
     throw error;
   }
@@ -223,7 +254,7 @@ const completeLesson = async (student, courseId, lessonId) => {
 
 const getMyEnrollments = async (student) => {
   const enrollments = await Enrollment.find({ studentId: student._id })
-    .populate('courseId', 'title thumbnail totalDuration rating teacherId');
+    .populate('courseId', 'title thumbnail totalDuration rating teacherId price');
   return enrollments;
 };
 

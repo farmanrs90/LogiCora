@@ -40,6 +40,13 @@ const enrollmentSchema = new mongoose.Schema(
       ref: 'Payment',
       default: null,
     },
+    // Pulsuz kurs → 'active' (dərhal giriş). Pullu kurs → 'pending_payment'
+    // (ödəniş/təsdiqə qədər giriş AÇILMIR). Additiv sahə: köhnə qeydlər default 'active'.
+    status: {
+      type: String,
+      enum: ['active', 'pending_payment'],
+      default: 'active',
+    },
   },
   { timestamps: true, versionKey: false }
 );
