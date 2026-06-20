@@ -44,20 +44,18 @@ const parseCorrectTotal = (desc = '') => {
 };
 
 // XP → 0-100 ustalıq faizi (UI-dakı bar üçün) və ulduz (0-5)
-const masteryPct = (xp) => Math.min(100, Math.round((xp / 2000) * 100));
+const masteryPct = (xp) => Math.min(100, Math.round(((xp || 0) / 2000) * 100));
 const starsFrom  = (xp) => Math.min(5, Math.max(1, Math.ceil(masteryPct(xp) / 20)));
 
 // ── Core ───────────────────────────────────────────────────────────────────────
 
 const getOrCreatePortfolio = async (studentId) => {
-  let portfolio = await Portfolio.findOne({ studentId });
-  if (!portfolio) {
-    portfolio = await Portfolio.create({
-      studentId,
-      shareableLink: generateShareableLink(),
-    });
-  }
-  return portfolio;
+  // Race-safe get or create with findOneAndUpdate (upsert)
+  return await Portfolio.findOneAndUpdate(
+    { studentId },
+    { $setOnInsert: { studentId, shareableLink: generateShareableLink() } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
 };
 
 // Authenticated tələbənin Student profili yoxdursa (köhnə və ya yarımçıq qeydiyyat)
@@ -71,42 +69,46 @@ const getOrCreateStudentByUserId = async (userId) => {
     { $setOnInsert: { userId, grade: 1 } },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
+
   // Gamification yoxdursa onu da real boş halda yarat (digər endpointlər də 404 verməsin).
   await Gamification.findOneAndUpdate(
     { studentId: student._id },
     { $setOnInsert: { studentId: student._id } },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
+
   return student;
 };
 
 // Xam Portfolio sənədini → frontend-in gözlədiyi zəngin view-model-ə çevirir.
 // Bütün rəqəmlər real mənbədən gəlir; mənbəyi olmayanlar boş/hesablanmış qalır.
 const buildViewModel = async (portfolio) => {
-  const studentId = portfolio.studentId._id || portfolio.studentId;
+  if (!portfolio) throw new Error('Portfolio tapılmadı.');
+
+  const studentId = portfolio.studentId?._id || portfolio.studentId;
   const student = await Student.findById(studentId);
   const user = student ? await User.findById(student.userId) : null;
   const game = await Gamification.findOne({ studentId });
 
-  const totalXP = game ? game.totalXP : 0;
-  const level   = game ? game.level : 1;
-  const streak  = game ? game.streak : 0;
-  const league  = game ? game.leagueTier : 'bronze';
+  const totalXP = game ? (game.totalXP || 0) : 0;
+  const level   = game ? (game.level || 1) : 1;
+  const streak  = game ? (game.streak || 0) : 0;
+  const league  = game ? (game.leagueTier || 'bronze') : 'bronze';
 
   // Milli sıra — bu şagirddən çox XP-yə malik şagirdlərin sayı + 1 (REAL)
   const rank = (await Gamification.countDocuments({ totalXP: { $gt: totalXP } })) + 1;
 
   // skillTree → skills
   const skills = (portfolio.skillTree || []).map((s) => ({
-    subject: s.subject,
-    xp: s.xp,
-    level: masteryPct(s.xp),          // 0-100 (UI bar)
-    stars: starsFrom(s.xp),
+    subject: s.subject || 'Naməlum',
+    xp: s.xp || 0,
+    level: masteryPct(s.xp || 0),          // 0-100 (UI bar)
+    stars: starsFrom(s.xp || 0),
     accuracy: 0,                       // fənn üzrə dəqiqlik hələ izlənmir
     questionsAnswered: 0,
     isWeak: false,
     isVerified: false,
-    worlds: { unlocked: starsFrom(s.xp), total: 5 },
+    worlds: { unlocked: starsFrom(s.xp || 0), total: 5 },
   }));
 
   // timeline → frontend timeline + yarışlar + ümumi dəqiqlik/sual sayı
@@ -206,10 +208,15 @@ const buildViewModel = async (portfolio) => {
 };
 
 const getMyPortfolio = async (userId) => {
-  // Student profili yoxdursa generic xəta vermə — onu təmin et və real boş pasport qaytar.
-  const student = await getOrCreateStudentByUserId(userId);
-  const portfolio = await getOrCreatePortfolio(student._id);
-  return buildViewModel(portfolio);
+  try {
+    // Student profili yoxdursa generic xəta vermə — onu təmin et və real boş pasport qaytar.
+    const student = await getOrCreateStudentByUserId(userId);
+    const portfolio = await getOrCreatePortfolio(student._id);
+    return await buildViewModel(portfolio);
+  } catch (error) {
+    console.error('Portfolio retrieval error:', error);
+    throw error; // Let the controller/error handler catch it
+  }
 };
 
 const parentCanViewStudent = async (viewerUserId, student) => {
@@ -300,7 +307,7 @@ const addTimelineEntry = async (studentId, entry) => {
   if (entry.type === 'competition') portfolio.totalCompetitions += 1;
 
   if (portfolio.skillTree.length > 0) {
-    const top = portfolio.skillTree.reduce((a, b) => (a.xp >= b.xp ? a : b));
+    const top = portfolio.skillTree.reduce((a, b) => ((a.xp || 0) >= (b.xp || 0) ? a : b));
     portfolio.topSubject = top.subject;
   }
 
@@ -319,8 +326,10 @@ const updateSkillTree = async (studentId, subject, xpToAdd) => {
     portfolio.skillTree.push({ subject, xp: xpToAdd, level: 1 });
   }
 
-  const top = portfolio.skillTree.reduce((a, b) => (a.xp >= b.xp ? a : b));
-  portfolio.topSubject = top.subject;
+  if (portfolio.skillTree.length > 0) {
+    const top = portfolio.skillTree.reduce((a, b) => ((a.xp || 0) >= (b.xp || 0) ? a : b));
+    portfolio.topSubject = top.subject;
+  }
 
   await portfolio.save();
   return portfolio;
