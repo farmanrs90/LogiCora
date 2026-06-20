@@ -74,7 +74,7 @@ interface AdminFeedback {
   handledBy?: string | null
 }
 
-type Tab = 'users' | 'courses' | 'groups' | 'feedback' | 'management'
+type Tab = 'users' | 'courses' | 'groups' | 'feedback' | 'centers' | 'management'
 
 type DrawerState =
   | { type: 'user'; user: AdminUser }
@@ -660,6 +660,231 @@ function FeedbackTab() {
   )
 }
 
+// ── Center applications (admin təsdiq axını) ─────────────────────────────────
+
+interface AdminCenterApplication {
+  _id: string
+  centerName: string
+  centerType: string
+  taxIdOrVoen: string
+  contactName: string
+  phone: string
+  address: string
+  city: string
+  description: string
+  documentUrl: string
+  status: string
+  adminNote: string
+  applicantName: string
+  applicantEmail: string
+  applicantRole: string
+  createdAt?: string
+  createdCenterId?: string | null
+}
+
+const CA_STATUS: Record<string, { label: string; cls: string }> = {
+  pending: { label: 'Gözləyir', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  approved: { label: 'Təsdiqləndi', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rejected: { label: 'Rədd edildi', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+}
+function caStatusBadge(s: string) {
+  return CA_STATUS[s] ?? { label: s, cls: 'bg-gray-100 text-gray-600 border-gray-200' }
+}
+const CA_STATUS_CHIPS: { value: string; label: string }[] = [
+  { value: '', label: 'Hamısı' },
+  { value: 'pending', label: 'Gözləyir' },
+  { value: 'approved', label: 'Təsdiqləndi' },
+  { value: 'rejected', label: 'Rədd edildi' },
+]
+const CA_TYPE: Record<string, string> = {
+  individual_teacher: 'Fərdi müəllim',
+  course_center: 'Hazırlıq / kurs mərkəzi',
+  school_or_org: 'Məktəb / təşkilat',
+}
+
+function CenterApplicationDrawer({ item, onClose }: { item: AdminCenterApplication; onClose: () => void }) {
+  const queryClient = useQueryClient()
+  const [adminNote, setAdminNote] = useState(item.adminNote ?? '')
+  const [err, setErr] = useState('')
+  const [doneMsg, setDoneMsg] = useState('')
+  const [joinCode, setJoinCode] = useState<string | null>(null)
+  const [markVerified, setMarkVerified] = useState(false)
+
+  // verified yalnız real sənəd (VÖEN/documentUrl) olduqda mümkündür — fake verification yox.
+  const hasProof = Boolean((item.taxIdOrVoen && item.taxIdOrVoen.trim()) || (item.documentUrl && item.documentUrl.trim()))
+
+  const reviewMutation = useMutation({
+    mutationFn: (status: 'approved' | 'rejected') =>
+      api.patch<{ data: { center: { joinCode: string } | null } }>(`/centers/applications/${item._id}/review`, {
+        status,
+        adminNote,
+        ...(status === 'approved' ? { verificationLevel: markVerified && hasProof ? 'verified' : 'basic' } : {}),
+      }).then((r) => r.data.data),
+    onSuccess: (res, status) => {
+      setErr('')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'center-applications'] })
+      if (status === 'approved') {
+        setJoinCode(res?.center?.joinCode ?? null)
+        setDoneMsg('Mərkəz yaradıldı və müraciət təsdiqləndi.')
+      } else {
+        setDoneMsg('Müraciət rədd edildi.')
+      }
+    },
+    onError: (e: unknown) => setErr(getApiErrorMessage(e, 'Əməliyyat alınmadı. Yenidən cəhd edin.')),
+  })
+
+  const showActions = item.status === 'pending' && !doneMsg
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog" aria-modal="true"
+    >
+      <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+        className="flex h-full w-full max-w-md flex-col border-l border-gray-200 bg-white shadow-xl"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5">
+          <h2 className="font-bold text-gray-900">Mərkəz müraciəti</h2>
+          <button onClick={onClose} aria-label="Bağla"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+            ✕
+          </button>
+        </div>
+
+        <div className="overflow-y-auto p-5">
+          <p className="pb-2 text-lg font-bold text-gray-900 break-words">{item.centerName}</p>
+          <div className="pb-3">
+            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${caStatusBadge(item.status).cls}`}>{caStatusBadge(item.status).label}</span>
+          </div>
+
+          <Row label="Növ" value={CA_TYPE[item.centerType] ?? item.centerType ?? '—'} />
+          <Row label="Göndərən" value={item.applicantName || '—'} />
+          <Row label="Email" value={item.applicantEmail || '—'} />
+          <Row label="Telefon" value={item.phone || '—'} />
+          <Row label="Ünvan" value={item.address || '—'} />
+          <Row label="Şəhər" value={item.city || '—'} />
+          <Row label="VÖEN / sənəd" value={item.taxIdOrVoen || '—'} />
+          <Row label="Əlaqə şəxsi" value={item.contactName || '—'} />
+          <Row label="Sənəd" value={item.documentUrl
+            ? <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 break-all">Bax →</a>
+            : '—'} />
+          <Row label="Tarix" value={fmtDate(item.createdAt)} />
+
+          {item.description && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 mb-1">Təsvir</p>
+              <p className="text-sm text-gray-900 whitespace-pre-wrap break-words rounded-xl bg-slate-50 border border-gray-200 p-3">{item.description}</p>
+            </div>
+          )}
+
+          {joinCode && (
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+              <p className="text-[11px] text-emerald-700 mb-0.5">Yaradılmış qoşulma kodu</p>
+              <span className="font-mono text-sm font-bold text-gray-900 tracking-wider">{joinCode}</span>
+            </div>
+          )}
+
+          {showActions ? (
+            <div className="mt-5 border-t border-gray-100 pt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Admin qeydi (istəyə bağlı)</label>
+                <textarea value={adminNote} onChange={(e) => setAdminNote(e.target.value)} rows={3} maxLength={1000}
+                  className={`${selectCls} w-full resize-none`} placeholder="Rədd səbəbi və ya qeyd" />
+              </div>
+              {/* Təsdiq səviyyəsi — verified yalnız VÖEN/sənəd olduqda */}
+              {hasProof ? (
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" checked={markVerified} onChange={(e) => setMarkVerified(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                  Təsdiqlənmiş (verified) kimi qeyd et
+                </label>
+              ) : (
+                <p className="text-[11px] text-gray-400">VÖEN/sənəd olmadığı üçün təsdiq “əsas” (basic) səviyyə ilə aparılacaq.</p>
+              )}
+              {err && <p className="text-xs text-rose-600">{err}</p>}
+              <div className="flex items-center gap-3">
+                <button onClick={() => reviewMutation.mutate('approved')} disabled={reviewMutation.isPending}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {reviewMutation.isPending ? '...' : 'Təsdiqlə'}
+                </button>
+                <button onClick={() => reviewMutation.mutate('rejected')} disabled={reviewMutation.isPending}
+                  className="px-4 py-2 bg-white border border-rose-300 text-rose-700 rounded-xl text-sm font-semibold transition-colors hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Rədd et
+                </button>
+              </div>
+            </div>
+          ) : doneMsg ? (
+            <p className="mt-4 text-sm font-medium text-emerald-700">{doneMsg}</p>
+          ) : item.status !== 'pending' ? (
+            <p className="mt-4 text-xs text-gray-400">Bu müraciət artıq baxılıb.{item.adminNote ? ` Qeyd: ${item.adminNote}` : ''}</p>
+          ) : null}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+function CenterApplicationsTab() {
+  const [status, setStatus] = useState('')
+  const [q, setQ] = useState('')
+  const qd = useDebounced(q)
+  const [selected, setSelected] = useState<AdminCenterApplication | null>(null)
+
+  const { data, isLoading, isError, refetch } = useQuery<Paged<AdminCenterApplication>>({
+    queryKey: ['admin', 'center-applications', status, qd],
+    queryFn: () => api.get<{ data: Paged<AdminCenterApplication> }>('/centers/applications', {
+      params: { status: status || undefined, q: qd || undefined, limit: 50 },
+    }).then((r) => r.data.data),
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SearchInput value={q} onChange={setQ} placeholder="Mərkəz adı, ad və ya email axtar..." />
+        <div className="flex flex-wrap gap-2">
+          {CA_STATUS_CHIPS.map((c) => (
+            <Chip key={c.value} active={status === c.value} onClick={() => setStatus(c.value)}>{c.label}</Chip>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between gap-3 p-4 border-b border-gray-100">
+          <h2 className="font-bold text-gray-900 text-sm">Mərkəz müraciətləri</h2>
+          {data && <span className="text-xs text-gray-400">Cəmi: {data.total.toLocaleString('az-AZ')}</span>}
+        </div>
+        {isLoading ? <StateBlock kind="loading" />
+          : isError ? <StateBlock kind="error" onRetry={() => refetch()} />
+          : data && data.items.length > 0 ? (
+            <ul className="divide-y divide-gray-100">
+              {data.items.map((a) => (
+                <li key={a._id}>
+                  <button onClick={() => setSelected(a)}
+                    className="flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:bg-slate-50">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">{a.centerName}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{a.applicantName || a.applicantEmail || '—'}{fmtDate(a.createdAt) !== '—' ? ` · ${fmtDate(a.createdAt)}` : ''}</p>
+                    </div>
+                    <span className={`shrink-0 text-[11px] px-2 py-0.5 rounded-full border ${caStatusBadge(a.status).cls}`}>{caStatusBadge(a.status).label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : <StateBlock kind="empty" />}
+        {data && data.total > data.items.length && (
+          <p className="px-4 py-3 text-center text-[11px] text-gray-400 border-t border-gray-100">İlk {data.items.length} nəticə göstərilir ({data.total.toLocaleString('az-AZ')} cəmi).</p>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {selected && <CenterApplicationDrawer item={selected} onClose={() => setSelected(null)} />}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ── Management tab ───────────────────────────────────────────────────────────
 
 function ManagementTab({ onUsers, onCourses, onFeedback }: { onUsers: () => void; onCourses: () => void; onFeedback: () => void }) {
@@ -733,6 +958,7 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'courses', label: 'Kurslar' },
   { value: 'groups', label: 'Qruplar' },
   { value: 'feedback', label: 'Təklif və İradlar' },
+  { value: 'centers', label: 'Mərkəz müraciətləri' },
   { value: 'management', label: 'İdarəetmə hazırlığı' },
 ]
 
@@ -807,6 +1033,7 @@ export default function Admin() {
         {tab === 'courses' && <CoursesTab status={courseStatus} setStatus={setCourseStatus} onOpen={(c) => setDrawer({ type: 'course', course: c })} />}
         {tab === 'groups' && <GroupsTab onOpen={(g) => setDrawer({ type: 'group', group: g })} />}
         {tab === 'feedback' && <FeedbackTab />}
+        {tab === 'centers' && <CenterApplicationsTab />}
         {tab === 'management' && <ManagementTab onUsers={() => openUsers('')} onCourses={() => setTab('courses')} onFeedback={() => setTab('feedback')} />}
       </div>
 

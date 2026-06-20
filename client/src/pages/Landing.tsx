@@ -63,7 +63,7 @@ const ROLES: { icon: LucideIcon; title: string; desc: string; cta: string; to: s
   { icon: GraduationCap, title: 'Şagird', desc: 'Gündəlik quiz, kurslar, yarışlar və ömürlük portfolio ilə öyrən.', cta: 'Başla', to: APP_ROUTES.REGISTER },
   { icon: Users, title: 'Müəllim', desc: 'Qrup, dərs iştirakı, tapşırıq və analitikanı bir paneldə idarə et.', cta: 'Başla', to: APP_ROUTES.REGISTER },
   { icon: Eye, title: 'Valideyn', desc: 'Övladının fəaliyyətini və inkişafını şəffaf izlə.', cta: 'Başla', to: APP_ROUTES.REGISTER },
-  { icon: Building2, title: 'Təhsil mərkəzi / Məktəb', desc: 'Müəllim və şagird axınını vahid sistemdə birləşdir.', cta: 'Daxil ol', to: APP_ROUTES.LOGIN },
+  { icon: Building2, title: 'Təhsil mərkəzi / Məktəb', desc: 'Mərkəzinizi LogiCora-ya qoşun — müəllim və şagird axınını vahid sistemdə birləşdirin.', cta: 'Mərkəzini qoş', to: APP_ROUTES.CENTER_APPLY },
 ]
 
 const FEATURES: { icon: LucideIcon; title: string; desc: string; tint: string }[] = [

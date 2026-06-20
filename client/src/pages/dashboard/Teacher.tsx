@@ -404,7 +404,13 @@ export default function TeacherDashboard() {
                 <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${centerInfo.center ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-gray-600 border-gray-200'}`}>
                   🏫 {centerInfo.center ? `Təhsil mərkəzi: ${centerInfo.center.name}` : 'Müstəqil müəllim'}
                 </span>
-                <p className="mt-1 text-[11px] text-gray-400">Bu müəllim profili fərdi və ya mərkəzə bağlı şəkildə işləyə bilər.</p>
+                {centerInfo.center ? (
+                  <p className="mt-1 text-[11px] text-gray-400">Bu müəllim profili fərdi və ya mərkəzə bağlı şəkildə işləyə bilər.</p>
+                ) : (
+                  <Link to="/centers/apply" className="mt-1 block text-[11px] font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                    Təhsil mərkəzi yaratmaq istəyirsiniz? →
+                  </Link>
+                )}
               </div>
             )}
           </div>

@@ -182,6 +182,10 @@ export const API_ROUTES = {
     PUBLIC: '/centers/public',
     ME: '/centers/me',
     ADMIN: '/centers/admin',
+    APPLY: '/centers/apply',
+    MY_APPLICATION: '/centers/my-application',
+    APPLICATIONS: '/centers/applications',
+    APPLICATION_REVIEW: (id: string) => `/centers/applications/${id}/review`,
   },
 
   // Results (Nəticələr Mərkəzi)
@@ -231,6 +235,7 @@ export const APP_ROUTES = {
   SETTINGS: '/settings',
   FEEDBACK: '/feedback',
   RESULTS: '/results',
+  CENTER_APPLY: '/centers/apply',
   DASHBOARD: {
     ROOT: '/dashboard',
     STUDENT: '/dashboard/student',

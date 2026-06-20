@@ -746,20 +746,46 @@ function ParentChildSupport() {
 
 // ── Müəllim: təhsil mərkəzi (read-only) ────────────────────────────────────
 function TeacherCenterCard() {
+  // Linked üzv (və ya teacher-owner) məlumatı
   const { data } = useQuery<{ center: { name: string; city?: string } | null; status: string }>({
     queryKey: ['centers', 'me'],
     queryFn: () => api.get<{ data: { center: { name: string; city?: string } | null; status: string } }>(API_ROUTES.CENTERS.ME).then(r => r.data.data),
   })
+  // Sahiblik + joinCode (müraciət təsdiqlənibsə)
+  const { data: appData } = useQuery<{ status: string; center: { name: string; joinCode: string } | null }>({
+    queryKey: ['centers', 'my-application'],
+    queryFn: () => api.get<{ data: { status: string; center: { name: string; joinCode: string } | null } }>(API_ROUTES.CENTERS.MY_APPLICATION).then(r => r.data.data),
+  })
+
   const center = data?.center ?? null
+  const ownedCenter = appData?.status === 'approved' ? appData.center : null
+
   return (
     <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-2">
       <h2 className="font-bold text-gray-900">Təhsil mərkəzi</h2>
-      {center ? (
-        <p className="text-sm text-gray-700"><span className="font-medium">{center.name}</span>{center.city ? ` · ${center.city}` : ''}</p>
+
+      {ownedCenter ? (
+        <>
+          <p className="text-sm text-gray-700">Mərkəz sahibi · <span className="font-medium">{ownedCenter.name}</span></p>
+          <div className="rounded-xl border border-gray-200 bg-slate-50 p-3">
+            <p className="text-[11px] text-gray-500 mb-0.5">Qoşulma kodu</p>
+            <span className="font-mono text-sm font-bold text-gray-900 tracking-wider">{ownedCenter.joinCode}</span>
+          </div>
+          <p className="text-[11px] text-gray-400">Bu kodu müəllimlərə paylaşın — qeydiyyatda daxil etdikdə mərkəzə bağlanırlar.</p>
+        </>
+      ) : center ? (
+        <>
+          <p className="text-sm text-gray-700"><span className="font-medium">{center.name}</span>{center.city ? ` · ${center.city}` : ''}</p>
+          <p className="text-[11px] text-gray-400">Mərkəz əlaqəsi qeydiyyatda verilən kodla təyin olunur.</p>
+        </>
       ) : (
-        <p className="text-sm text-gray-700">Müstəqil müəllim</p>
+        <>
+          <p className="text-sm text-gray-700">Müstəqil müəllim</p>
+          <Link to={APP_ROUTES.CENTER_APPLY} className="inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+            Təhsil mərkəzi yaratmaq istəyirsiniz? →
+          </Link>
+        </>
       )}
-      <p className="text-[11px] text-gray-400">Mərkəz əlaqəsi qeydiyyatda verilən kodla təyin olunur. Dəyişdirmə post-demo mərhələsində əlavə ediləcək.</p>
     </section>
   )
 }
