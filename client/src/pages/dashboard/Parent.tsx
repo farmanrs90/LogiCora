@@ -81,16 +81,16 @@ const LEAGUE_EMOJI: Record<string, string> = {
 }
 
 const ZONE_META: Record<string, { label: string; color: string; dot: string }> = {
-  school: { label: 'Məktəbdədir', color: 'text-emerald-400', dot: '🟢' },
-  home: { label: 'Evdədir', color: 'text-blue-400', dot: '🔵' },
-  other: { label: 'Başqa yerdə', color: 'text-amber-400', dot: '🟡' },
+  school: { label: 'Məktəbdədir', color: 'text-emerald-600', dot: '🟢' },
+  home: { label: 'Evdədir', color: 'text-blue-600', dot: '🔵' },
+  other: { label: 'Başqa yerdə', color: 'text-amber-600', dot: '🟡' },
 }
 
 const ATTEND_COLOR: Record<string, string> = {
   present: 'bg-emerald-500',
   absent: 'bg-rose-500',
   distant: 'bg-blue-500',
-  none: 'bg-white/10',
+  none: 'bg-gray-200',
 }
 
 const SHOW_PARENT_LOCATION_MAP = false
@@ -104,9 +104,9 @@ function CardError({ label, onRetry }: { label: string; onRetry?: () => void }) 
   return (
     <div className="text-center py-6">
       <div className="text-2xl mb-1">⚠️</div>
-      <p className="text-xs text-white/50">{label}</p>
+      <p className="text-xs text-gray-500">{label}</p>
       {onRetry && (
-        <button onClick={onRetry} className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+        <button onClick={onRetry} className="mt-2 text-xs text-indigo-600 hover:text-indigo-700 transition-colors">
           Yenidən yoxla
         </button>
       )}
@@ -115,7 +115,7 @@ function CardError({ label, onRetry }: { label: string; onRetry?: () => void }) 
 }
 
 function CardEmpty({ label }: { label: string }) {
-  return <div className="text-center py-6 text-xs text-white/40">{label}</div>
+  return <div className="text-center py-6 text-xs text-gray-400">{label}</div>
 }
 
 function getApiErrorMessage(err: unknown, fallback: string): string {
@@ -153,32 +153,32 @@ function LinkChildModal({ onClose }: { onClose: () => void }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <motion.div initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.93, opacity: 0 }}
-        className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-sm p-6 space-y-5"
+        className="bg-white border border-gray-200 rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-xl"
       >
         <div className="text-center">
           <div className="text-5xl mb-3">👨‍👩‍👦</div>
-          <h2 className="text-lg font-bold">Uşaq Əlavə Et</h2>
-          <p className="text-sm text-white/50 mt-1">Övladınızın LogiCora hesabındakı email ünvanını daxil edin</p>
+          <h2 className="text-lg font-bold text-gray-900">Uşaq Əlavə Et</h2>
+          <p className="text-sm text-gray-500 mt-1">Övladınızın LogiCora hesabındakı email ünvanını daxil edin</p>
         </div>
         <div className="space-y-2">
-          <label className="block text-xs font-medium text-white/60">Uşaq emaili</label>
+          <label className="block text-xs font-medium text-gray-600">Uşaq emaili</label>
           <input
             type="email"
             value={childEmail}
             onChange={e => { setChildEmail(e.target.value); if (error) setError('') }}
             placeholder="student2@logicora.az"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 text-center"
+            className="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-center"
           />
-          {error && <p className="text-xs text-rose-400 text-center">{error}</p>}
+          {error && <p className="text-xs text-rose-600 text-center">{error}</p>}
         </div>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 rounded-xl text-sm text-white/60 hover:text-white transition-colors">Ləğv et</button>
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors">Ləğv et</button>
           <button onClick={handleSubmit} disabled={linkMutation.isPending}
-            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {linkMutation.isPending ? 'Bağlanır...' : 'Bağla'}
           </button>
@@ -195,28 +195,28 @@ function MapModal({ location, childName, onClose }: {
   const zone = ZONE_META[location.zone]
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden"
+        className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-xl"
       >
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div>
-            <h2 className="font-bold">{childName} — Məkan</h2>
-            <p className="text-xs text-white/40">Son yenilənmə: {location.updatedAt}</p>
+            <h2 className="font-bold text-gray-900">{childName} — Məkan</h2>
+            <p className="text-xs text-gray-400">Son yenilənmə: {location.updatedAt}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/50 hover:text-white">✕</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">✕</button>
         </div>
 
         {/* Map placeholder — Leaflet SSR issues on Vite; render a styled mock */}
-        <div className="relative h-72 bg-[#0D1117] overflow-hidden">
+        <div className="relative h-72 bg-slate-100 overflow-hidden">
           {/* Grid background simulating map tiles */}
-          <div className="absolute inset-0 opacity-20"
-            style={{ backgroundImage: 'linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+          <div className="absolute inset-0 opacity-30"
+            style={{ backgroundImage: 'linear-gradient(rgba(99,102,241,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.25) 1px, transparent 1px)', backgroundSize: '40px 40px' }}
           />
           {/* Azerbaijan map outline mock */}
-          <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 400 200">
+          <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 200">
             <path d="M80,90 Q120,60 160,70 Q200,80 230,65 Q260,50 290,70 Q320,90 330,110 Q320,130 290,140 Q260,150 230,140 Q200,130 160,140 Q120,150 90,130 Z"
               fill="none" stroke="rgba(99,102,241,0.6)" strokeWidth="2" />
           </svg>
@@ -240,14 +240,14 @@ function MapModal({ location, childName, onClose }: {
 
           {/* Zone label */}
           <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-            <div className="bg-black/60 backdrop-blur-sm border border-white/15 rounded-xl px-4 py-2 text-center">
+            <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2 text-center shadow-sm">
               <p className={`font-semibold text-sm ${zone.color}`}>{zone.dot} {zone.label}</p>
-              <p className="text-xs text-white/40 mt-0.5">Son yenilənmə: {location.updatedAt}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Son yenilənmə: {location.updatedAt}</p>
             </div>
           </div>
         </div>
 
-        <div className="p-4 flex items-center gap-2 text-xs text-white/40">
+        <div className="p-4 flex items-center gap-2 text-xs text-gray-400">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" />
           </svg>
@@ -298,7 +298,7 @@ function NotifSettings() {
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
     <button onClick={() => onChange(!value)}
-      className={`relative w-10 h-5 rounded-full transition-colors ${value ? 'bg-indigo-600' : 'bg-white/15'}`}
+      className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${value ? 'bg-indigo-600' : 'bg-gray-300'}`}
     >
       <motion.div animate={{ x: value ? 20 : 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm"
@@ -307,22 +307,22 @@ function NotifSettings() {
   )
 
   return (
-    <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
-      <h2 className="font-bold text-sm">🔔 Bildiriş Ayarları</h2>
+    <div className="mt-5 pt-5 border-t border-gray-100 space-y-4">
+      <h3 className="font-bold text-sm text-gray-900">🔔 Bildiriş Ayarları</h3>
       {[
         { label: 'SMS bildiriş', sub: 'Telefon nömrənizə', value: sms, onChange: (v: boolean) => prefMutation.mutate({ email, sms: v, instant }) },
         { label: 'Email bildiriş', sub: 'E-poçtunuza', value: email, onChange: (v: boolean) => prefMutation.mutate({ email: v, sms, instant }) },
         { label: 'Gəlmədikdə dərhal xəbər ver', sub: 'Davamiyyət bildirişi', value: instant, onChange: (v: boolean) => prefMutation.mutate({ email, sms, instant: v }) },
       ].map(({ label, sub, value, onChange }) => (
-        <div key={label} className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">{label}</p>
-            <p className="text-xs text-white/40">{sub}</p>
+        <div key={label} className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900">{label}</p>
+            <p className="text-xs text-gray-400">{sub}</p>
           </div>
           <Toggle value={value} onChange={onChange} />
         </div>
       ))}
-      {prefError && <p className="text-xs text-rose-400">{prefError}</p>}
+      {prefError && <p className="text-xs text-rose-600">{prefError}</p>}
     </div>
   )
 }
@@ -354,44 +354,46 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
   })
 
   return (
-    <div className="bg-gradient-to-br from-purple-950/60 to-indigo-950/40 border border-purple-500/20 rounded-2xl p-5 space-y-4">
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">💌</span>
-        <h2 className="font-bold">Zaman Kapsulu</h2>
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg shrink-0">💌</div>
+        <div>
+          <h2 className="font-bold text-gray-900">Zaman Kapsulu</h2>
+          <p className="text-xs text-gray-500">Uşağınıza gizli mesaj yazın — seçdiyiniz tarixdə açılacaq</p>
+        </div>
       </div>
-      <p className="text-xs text-white/50">Uşağınıza gizli mesaj yazın — seçdiyiniz tarixdə açılacaq</p>
       <textarea value={message} onChange={e => { setMessage(e.target.value); if (sendError) setSendError('') }} rows={3}
         placeholder="Sevgili Anar, bu günü xatırlayanda..."
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 resize-none"
+        className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-none"
       />
       <div className="flex gap-3">
         <input type="date" value={openAt} onChange={e => setOpenAt(e.target.value)}
           min={new Date().toISOString().split('T')[0]}
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+          className="flex-1 min-w-0 bg-slate-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
         />
         <button onClick={() => message && openAt && sendMutation.mutate()} disabled={!message || !openAt || sendMutation.isPending}
-          className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+          className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
         >
           {sendMutation.isPending ? '...' : 'Göndər'}
         </button>
       </div>
-      {sendError && <p className="text-xs text-rose-400">{sendError}</p>}
+      {sendError && <p className="text-xs text-rose-600">{sendError}</p>}
       {/* Capsule list */}
       {capsulesError ? (
-        <p className="text-xs text-rose-300/70 pt-2 border-t border-white/10">Kapsullar yüklənmədi.</p>
+        <p className="text-xs text-rose-500 pt-2 border-t border-gray-100">Kapsullar yüklənmədi.</p>
       ) : capsules && capsules.length > 0 ? (
-        <div className="space-y-2 pt-2 border-t border-white/10">
-          <p className="text-xs text-white/40">Yazılmış kapsullar</p>
+        <div className="space-y-2 pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-400">Yazılmış kapsullar</p>
           {capsules.map(cap => (
-            <div key={cap.id} className={`flex items-center gap-3 p-3 rounded-xl border ${cap.opened ? 'border-purple-500/30 bg-purple-500/10' : 'border-white/10 bg-white/5'}`}>
+            <div key={cap.id} className={`flex items-center gap-3 p-3 rounded-xl border ${cap.opened ? 'border-purple-200 bg-purple-50' : 'border-gray-200 bg-slate-50'}`}>
               <span className="text-xl">{cap.opened ? '💌' : '🔒'}</span>
               <div className="flex-1 min-w-0">
                 {cap.opened ? (
-                  <p className="text-xs text-white/70 italic">"{cap.message}"</p>
+                  <p className="text-xs text-gray-700 italic">"{cap.message}"</p>
                 ) : (
-                  <p className="text-xs text-white/50">Kilidli mesaj</p>
+                  <p className="text-xs text-gray-500">Kilidli mesaj</p>
                 )}
-                <p className="text-xs text-white/30 mt-0.5">
+                <p className="text-xs text-gray-400 mt-0.5">
                   {cap.opened ? 'Açıldı' : `Açılacaq: ${fmtDate(cap.openAt)}`}
                 </p>
               </div>
@@ -399,7 +401,7 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
           ))}
         </div>
       ) : capsules ? (
-        <p className="text-xs text-white/40 pt-2 border-t border-white/10">Hələ kapsul yoxdur.</p>
+        <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">Hələ kapsul yoxdur.</p>
       ) : null}
     </div>
   )
@@ -428,13 +430,18 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
   }
 
   return (
-    <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4">
-      <h2 className="font-bold text-sm">♿ Xüsusi dəstək / Adaptiv öyrənmə</h2>
-      <p className="text-xs text-white/50">Bu məlumat könüllüdür və tibbi diaqnoz deyil. Seçim edildikdə uşağın testləri və Uşaq Klubu daha böyük düymələr və daha sadə görünüşlə göstərilir.</p>
+    <div className="bg-white border border-indigo-200 rounded-2xl p-5 space-y-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shrink-0">♿</div>
+        <div>
+          <h2 className="font-bold text-gray-900">Xüsusi dəstək / Adaptiv öyrənmə</h2>
+          <p className="text-xs text-gray-500 mt-1">Bu məlumat könüllüdür və tibbi diaqnoz deyil. Seçim edildikdə uşağın testləri və Uşaq Klubu daha böyük düymələr və daha sadə görünüşlə göstərilir.</p>
+        </div>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {[['yes', 'Bəli'], ['no', 'Xeyr'], ['prefer_not', 'Cavablamaq istəmirəm']].map(([val, label]) => (
           <button key={val} onClick={() => setAnswer(val as typeof answer)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${answer === val ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${answer === val ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
           >
             {label}
@@ -446,18 +453,18 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden space-y-3"
           >
-            <p className="text-xs text-white/50">Növ seçin (birdən çox ola bilər):</p>
+            <p className="text-xs text-gray-500">Növ seçin (birdən çox ola bilər):</p>
             <div className="flex flex-wrap gap-2">
               {TYPES.map(t => (
                 <button key={t} onClick={() => setTypes(arr => arr.includes(t) ? arr.filter(x => x !== t) : [...arr, t])}
-                  className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${types.includes(t) ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-white/10 text-white/50 hover:text-white'
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${types.includes(t) ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   {t}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-indigo-400/80 leading-relaxed">
+            <p className="text-xs text-indigo-700 leading-relaxed bg-indigo-50 border border-indigo-100 rounded-lg p-3">
               💡 Bu rejim böyük düymələr, daha sadə görünüş və azaldılmış vizual yük üçün istifadə olunur. Tam tənzimləmələri Ayarlar səhifəsindən idarə edə bilərsiniz.
             </p>
           </motion.div>
@@ -465,12 +472,12 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
       </AnimatePresence>
       {answer && answer !== 'prefer_not' && (
         <button onClick={handleSave}
-          className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${saved ? 'bg-emerald-600 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}
+          className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${saved ? 'bg-emerald-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
         >
           {saved ? '✓ Saxlandı' : 'Yadda saxla'}
         </button>
       )}
-      {saveError && <p className="text-xs text-rose-400">{saveError}</p>}
+      {saveError && <p className="text-xs text-rose-600">{saveError}</p>}
     </div>
   )
 }
@@ -551,17 +558,17 @@ export default function ParentDashboard() {
   // ── Error state — children gətirilə bilmədi (fake uşaq göstərmirik) ──────────
   if (childrenError) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center p-4">
-        <div className="text-center space-y-5 max-w-sm">
-          <div className="text-7xl mx-auto">⚠️</div>
+      <div className="min-h-screen bg-slate-50 text-gray-900 flex items-center justify-center p-4">
+        <div className="text-center space-y-5 max-w-sm bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+          <div className="text-6xl mx-auto">⚠️</div>
           <div>
-            <h1 className="text-2xl font-bold">Övlad məlumatları yüklənmədi</h1>
-            <p className="text-white/50 text-sm mt-2">Zəhmət olmasa yenidən cəhd edin.</p>
+            <h1 className="text-xl font-bold text-gray-900">Övlad məlumatları yüklənmədi</h1>
+            <p className="text-gray-500 text-sm mt-2">Zəhmət olmasa yenidən cəhd edin.</p>
           </div>
           <button onClick={() => refetchChildren()}
-            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-lg transition-all"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors"
           >
-            🔄 Yenidən yoxla
+            Yenidən yoxla
           </button>
         </div>
       </div>
@@ -571,20 +578,20 @@ export default function ParentDashboard() {
   // ── Empty state — no children ───────────────────────────────────────────────
   if (!childrenLoading && (!children || children.length === 0)) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center p-4">
-        <div className="text-center space-y-5 max-w-sm">
+      <div className="min-h-screen bg-slate-50 text-gray-900 flex items-center justify-center p-4">
+        <div className="text-center space-y-5 max-w-sm bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           {/* Boş hal */}
           <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity }}
-            className="text-8xl mx-auto"
-          >😔</motion.div>
+            className="text-7xl mx-auto"
+          >👨‍👩‍👦</motion.div>
           <div>
-            <h1 className="text-2xl font-bold">Hələ övlad əlavə edilməyib</h1>
-            <p className="text-white/50 text-sm mt-2">
-              Sistem qeydi: Övladınızın inkişafını birlikdə izləyək.
+            <h1 className="text-xl font-bold text-gray-900">Hələ övlad əlavə edilməyib</h1>
+            <p className="text-gray-500 text-sm mt-2">
+              Övladınızın email ünvanı ilə hesabını bağlayın və inkişafını birlikdə izləyək.
             </p>
           </div>
           <button onClick={() => setShowLink(true)}
-            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-lg transition-all"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors"
           >
             👨‍👩‍👦 Uşaq Əlavə Et
           </button>
@@ -597,23 +604,20 @@ export default function ParentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white">
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-slate-50 text-gray-900 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
 
-        {/* ── Header (Övladım bölməsi) ───────────────────────────────── */}
-        <div id="child-section" className="scroll-mt-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* ── Header ───────────────────────────────────────────────────── */}
+        <div id="child-section" className="scroll-mt-24 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">
-              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Salam, {user?.name?.split(' ')[0] ?? 'Valideyn'}!
-              </span>{' '}👋
-            </h1>
-            <p className="text-white/40 text-sm mt-0.5">
-              Övladınızın bu günkü vəziyyəti:
+            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">Valideyn paneli</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Övladının öyrənmə yolunu, irəliləyişini və dəstək ehtiyaclarını bir yerdə izlə.
             </p>
+            <p className="mt-1 text-xs text-gray-400">Salam, {user?.name?.split(' ')[0] ?? 'Valideyn'}</p>
           </div>
           <button onClick={() => setShowLink(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-white/15 hover:border-white/30 rounded-xl text-sm text-white/60 hover:text-white transition-colors"
+            className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-semibold text-gray-800 transition-colors"
           >
             + Uşaq əlavə et
           </button>
@@ -621,15 +625,15 @@ export default function ParentDashboard() {
 
         {/* ── Child selector ─────────────────────────────────────────── */}
         {children && children.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex gap-2 flex-wrap">
             {children.map(child => (
               <button key={child.id} onClick={() => setSelectedChildId(child.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shrink-0 ${selectedChildId === child.id
-                    ? 'border-indigo-500 bg-indigo-500/20 text-indigo-200'
-                    : 'border-white/10 bg-white/5 text-white/60 hover:text-white'
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${selectedChildId === child.id
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                   }`}
               >
-                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
                   {child.name[0]}
                 </div>
                 <span className="text-sm font-medium">{child.name}</span>
@@ -639,43 +643,76 @@ export default function ParentDashboard() {
           </div>
         )}
 
+        {/* ── Child summary card ─────────────────────────────────────── */}
+        {childrenLoading && !activeChild ? (
+          <div className="h-24 bg-white border border-gray-200 rounded-2xl animate-pulse" />
+        ) : activeChild ? (
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl font-bold shrink-0">
+                {activeChild.name[0]}
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-gray-900 truncate">{activeChild.name}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  {activeChild.ageGroup && (
+                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-gray-600 text-xs font-medium">{activeChild.ageGroup}</span>
+                  )}
+                  <span className="text-sm text-gray-500">Səviyyə {stats?.level ?? activeChild.level}</span>
+                  {LEAGUE_EMOJI[activeChild.league] && <span className="text-base">{LEAGUE_EMOJI[activeChild.league]}</span>}
+                </div>
+                {stats && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Bu ay +{stats.xpThisMonth.toLocaleString()} XP · Cəmi {stats.totalXP.toLocaleString()} XP
+                  </p>
+                )}
+              </div>
+            </div>
+            <Link to={`/child/${selectedChildId}/progress`}
+              className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors"
+            >
+              İrəliləyişə bax →
+            </Link>
+          </div>
+        ) : null}
+
         {statsLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-36 bg-white/5 rounded-2xl animate-pulse" />)}
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-36 bg-white border border-gray-200 rounded-2xl animate-pulse" />)}
           </div>
         ) : statsError ? (
-          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
             <CardError label="Övladın məlumatları yüklənmədi." onRetry={() => refetchStats()} />
           </div>
         ) : stats && activeChild ? (
           <>
             {/* ── Stats Row ───────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 overflow-x-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Card 1 — Daily activity */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
-                className={`bg-[#141414] border rounded-2xl p-4 ${stats.todayActive ? 'border-emerald-500/30' : 'border-amber-500/30'}`}
+                className={`bg-white border rounded-2xl p-4 shadow-sm ${stats.todayActive ? 'border-emerald-200' : 'border-amber-200'}`}
               >
-                <p className="text-xs text-white/50 mb-2">Bu günkü aktivlik</p>
+                <p className="text-xs text-gray-500 mb-2">Bu günkü aktivlik</p>
                 <div className="text-2xl mb-1">{stats.todayActive ? '✅' : '⏰'}</div>
-                <p className="text-sm font-bold">{stats.todayActive ? 'Aktiv!' : 'Hələ girməyib'}</p>
-                <p className="text-xs text-white/40 mt-1">
+                <p className="text-sm font-bold text-gray-900">{stats.todayActive ? 'Aktiv!' : 'Hələ girməyib'}</p>
+                <p className="text-xs text-gray-400 mt-1">
                   {stats.todayActive
                     ? `🔥 ${stats.streak} gün · +${stats.todayXP} XP`
-                    : 'Bildiriş göndər'}
+                    : 'Bu gün hələ giriş etməyib'}
                 </p>
-                {stats.quizDone && <p className="text-xs text-emerald-400 mt-1">Quiz ✓</p>}
+                {stats.quizDone && <p className="text-xs text-emerald-600 mt-1">Quiz ✓</p>}
               </motion.div>
 
               {/* Card 2 — Attendance */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}
-                className="bg-[#141414] border border-white/10 rounded-2xl p-4"
+                className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm"
               >
-                <p className="text-xs text-white/50 mb-2">Davamiyyət</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xs text-gray-500 mb-2">Davamiyyət</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {stats.attendance.thisMonth}
-                  <span className="text-sm text-white/30">/{stats.attendance.total} gün</span>
+                  <span className="text-sm text-gray-400">/{stats.attendance.total} gün</span>
                 </p>
-                <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div className="h-full rounded-full"
                     style={{ backgroundColor: stats.attendance.thisMonth / stats.attendance.total > 0.8 ? '#10B981' : stats.attendance.thisMonth / stats.attendance.total > 0.6 ? '#F59E0B' : '#EF4444' }}
                     initial={{ width: 0 }}
@@ -684,75 +721,75 @@ export default function ParentDashboard() {
                   />
                 </div>
                 {stats.attendance.lastMissed && (
-                  <p className="text-xs text-white/30 mt-1">Son: {fmtDate(stats.attendance.lastMissed)}</p>
+                  <p className="text-xs text-gray-400 mt-1">Son: {fmtDate(stats.attendance.lastMissed)}</p>
                 )}
-                <Link to={`/child/${selectedChildId}/progress`} className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 block transition-colors">
+                <Link to={`/child/${selectedChildId}/progress`} className="text-xs text-indigo-600 hover:text-indigo-700 mt-1 block transition-colors">
                   Tam jurnal →
                 </Link>
               </motion.div>
 
               {/* Card 3 — Level & XP */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
-                className="bg-[#141414] border border-white/10 rounded-2xl p-4"
+                className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm"
               >
-                <p className="text-xs text-white/50 mb-2">Səviyyə & XP</p>
+                <p className="text-xs text-gray-500 mb-2">Səviyyə & XP</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-3xl font-bold">{stats.level}</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.level}</p>
                   <span className="text-xl">{LEAGUE_EMOJI[stats.league]}</span>
                 </div>
-                <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div className="h-full bg-indigo-500 rounded-full"
                     initial={{ width: 0 }} animate={{ width: `${(stats.totalXP % 1000) / 10}%` }} transition={{ duration: 0.8 }} />
                 </div>
-                <p className="text-xs text-white/40 mt-1">Bu ay +{stats.xpThisMonth.toLocaleString()} XP</p>
+                <p className="text-xs text-gray-400 mt-1">Bu ay +{stats.xpThisMonth.toLocaleString()} XP</p>
               </motion.div>
 
-              {/* Card 4 — Location */}
+              {/* Card 4 — Location / Rank */}
               {SHOW_PARENT_LOCATION_MAP && stats.location?.showMap ? (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}
-                  className="bg-[#141414] border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-white/20 transition-colors"
+                  className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors"
                   onClick={() => setShowMap(true)}
                 >
-                  <p className="text-xs text-white/50 mb-2">Yer mövqeyi</p>
-                  <div className="h-12 bg-indigo-950/50 rounded-xl flex items-center justify-center mb-2 text-2xl">
+                  <p className="text-xs text-gray-500 mb-2">Yer mövqeyi</p>
+                  <div className="h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-2 text-2xl">
                     {stats.location.zone === 'school' ? '🏫' : stats.location.zone === 'home' ? '🏠' : '📍'}
                   </div>
                   <p className={`text-xs font-semibold ${ZONE_META[stats.location.zone].color}`}>
                     {ZONE_META[stats.location.zone].dot} {ZONE_META[stats.location.zone].label}
                   </p>
-                  <p className="text-xs text-white/30 mt-0.5">{stats.location.updatedAt}</p>
-                  <p className="text-xs text-indigo-400 mt-1">Canlı izlə →</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{stats.location.updatedAt}</p>
+                  <p className="text-xs text-indigo-600 mt-1">Canlı izlə →</p>
                 </motion.div>
               ) : (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}
-                  className="bg-[#141414] border border-white/10 rounded-2xl p-4"
+                  className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm"
                 >
-                  <p className="text-xs text-white/50 mb-2">Milli Reyting</p>
-                  <p className="text-3xl font-bold text-indigo-300">#{stats.rank}</p>
-                  <p className="text-xs text-white/40 mt-1">Platforma üzrə</p>
+                  <p className="text-xs text-gray-500 mb-2">Milli Reyting</p>
+                  <p className="text-3xl font-bold text-indigo-600">#{stats.rank}</p>
+                  <p className="text-xs text-gray-400 mt-1">Platforma üzrə</p>
                 </motion.div>
               )}
             </div>
 
             {/* ── Weekly AI Report ────────────────────────────────────── */}
             {reportError ? (
-              <div id="progress-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
+              <div id="progress-section" className="scroll-mt-24 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                 <CardError label="Həftəlik hesabat yüklənmədi." onRetry={() => refetchReport()} />
               </div>
             ) : report ? (
               <motion.div id="progress-section" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="scroll-mt-24 bg-gradient-to-br from-amber-950/50 to-orange-950/30 border border-amber-500/30 rounded-2xl p-5"
+                className="scroll-mt-24 bg-amber-50 border border-amber-200 rounded-2xl p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">🌟</div>
                     <div className="flex-1">
-                      <p className="text-xs text-amber-400 font-semibold mb-1">Bu həftənin xülasəsi</p>
-                      <p className="text-sm text-white/80 leading-relaxed mb-3">{report.summary}</p>
+                      <p className="text-xs text-amber-700 font-semibold mb-1">Bu həftənin xülasəsi</p>
+                      <p className="text-sm text-gray-700 leading-relaxed mb-3">{report.summary}</p>
                       <ul className="space-y-1.5">
                         {report.bullets.map((b, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-white/60">
-                            <span className="text-amber-400 mt-0.5 shrink-0">•</span>
+                          <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                            <span className="text-amber-500 mt-0.5 shrink-0">•</span>
                             {b}
                           </li>
                         ))}
@@ -760,7 +797,7 @@ export default function ParentDashboard() {
                     </div>
                   </div>
                   <Link to={`/child/${selectedChildId}/progress`}
-                    className="shrink-0 px-3 py-2 bg-amber-500/20 border border-amber-400/30 rounded-xl text-xs text-amber-300 hover:bg-amber-500/30 transition-colors"
+                    className="shrink-0 px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
                   >
                     Tam →
                   </Link>
@@ -772,9 +809,9 @@ export default function ParentDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {/* Left 2/3 */}
               <div className="lg:col-span-2 space-y-5">
-                {/* Attendance week grid */}
-                <div id="attendance-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
-                  <h2 className="font-bold text-sm mb-4">📋 Son Davamiyyət</h2>
+                {/* Attendance week grid + notification settings */}
+                <div id="attendance-section" className="scroll-mt-24 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <h2 className="font-bold text-gray-900 mb-4">📋 Son Davamiyyət</h2>
                   {attendanceError ? (
                     <CardError label="Davamiyyət yüklənmədi." onRetry={() => refetchAttendance()} />
                   ) : attendance && attendance.length > 0 ? (
@@ -783,13 +820,13 @@ export default function ParentDashboard() {
                         {attendance.slice(-14).map((day, i) => (
                           <div key={i} className="group relative">
                             <div className={`w-8 h-8 rounded-lg ${ATTEND_COLOR[day.status]}`} title={`${fmtDate(day.date)}: ${day.status}`} />
-                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
                               {fmtDate(day.date)}
                             </div>
                           </div>
                         ))}
                       </div>
-                      <div className="flex gap-4 mt-3 text-xs text-white/40">
+                      <div className="flex gap-4 mt-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Gəldi</span>
                         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Gəlmədi</span>
                         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" /> Distant</span>
@@ -802,8 +839,8 @@ export default function ParentDashboard() {
                 </div>
 
                 {/* Activity feed */}
-                <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-                  <h2 className="font-bold text-sm mb-4">⚡ Son Aktivliklər</h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <h2 className="font-bold text-gray-900 mb-4">⚡ Son Aktivliklər</h2>
                   {feedError ? (
                     <CardError label="Aktivliklər yüklənmədi." onRetry={() => refetchFeed()} />
                   ) : feed && feed.length > 0 ? (
@@ -811,21 +848,21 @@ export default function ParentDashboard() {
                       {feed.map((item, i) => (
                         <motion.div key={item.id}
                           initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
-                          className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl"
+                          className="flex items-center gap-3 p-3 bg-slate-50 border border-gray-200 rounded-xl"
                         >
                           <span className="text-xl shrink-0">{item.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm">{item.text}</p>
-                            <p className="text-xs text-white/30">{item.time}</p>
+                            <p className="text-sm text-gray-900">{item.text}</p>
+                            <p className="text-xs text-gray-400">{item.time}</p>
                           </div>
                           {item.xp && (
-                            <span className="text-xs text-emerald-400 font-semibold shrink-0">+{item.xp} XP</span>
+                            <span className="text-xs text-emerald-600 font-semibold shrink-0">+{item.xp} XP</span>
                           )}
                         </motion.div>
                       ))}
                     </div>
                   ) : feed ? (
-                    <CardEmpty label="Hələ aktivlik yoxdur." />
+                    <CardEmpty label="Bu gün üçün yeni bildiriş yoxdur." />
                   ) : null}
                 </div>
 
@@ -839,28 +876,28 @@ export default function ParentDashboard() {
               {/* Right 1/3 */}
               <div className="space-y-5">
                 {/* Teachers */}
-                <div className="bg-[#141414] border border-white/10 rounded-2xl p-5">
-                  <h2 className="font-bold text-sm mb-4">👨‍🏫 Müəllimlər</h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <h2 className="font-bold text-gray-900 mb-4">👨‍🏫 Müəllimlər</h2>
                   {teachersError ? (
                     <CardError label="Müəllimlər yüklənmədi." onRetry={() => refetchTeachers()} />
                   ) : teachers && teachers.length > 0 ? (
                     <div className="space-y-3">
                       {teachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-start gap-3 p-3 bg-white/5 border border-white/8 rounded-xl">
-                          <div className="w-10 h-10 rounded-full bg-indigo-600/60 flex items-center justify-center text-sm font-bold shrink-0 relative">
+                        <div key={teacher.id} className="flex items-start gap-3 p-3 bg-slate-50 border border-gray-200 rounded-xl">
+                          <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold shrink-0 relative">
                             {teacher.name[0]}
                             {teacher.unreadCount > 0 && (
-                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[9px] font-bold flex items-center justify-center">
+                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
                                 {teacher.unreadCount}
                               </span>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{teacher.name}</p>
-                            <p className="text-xs text-white/40">{teacher.subject}</p>
-                            <p className="text-xs text-white/30 mt-0.5 truncate">{teacher.lastMessage}</p>
+                            <p className="text-sm font-medium text-gray-900">{teacher.name}</p>
+                            <p className="text-xs text-gray-400">{teacher.subject}</p>
+                            <p className="text-xs text-gray-400 mt-0.5 truncate">{teacher.lastMessage}</p>
                           </div>
-                          <Link to="/chat" className="text-xs text-indigo-400 border border-indigo-400/30 px-2 py-1 rounded-lg hover:bg-indigo-400/10 transition-colors shrink-0">
+                          <Link to="/chat" className="text-xs text-indigo-600 border border-indigo-200 bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors shrink-0">
                             Mesaj
                           </Link>
                         </div>
@@ -871,25 +908,25 @@ export default function ParentDashboard() {
                   ) : null}
                 </div>
 
-                {/* Payments */}
-                <div id="payments-section" className="scroll-mt-24 bg-[#141414] border border-white/10 rounded-2xl p-5">
+                {/* Payments — ödəniş axını hələ aktiv deyil, dürüst şəkildə deaktiv göstərilir */}
+                <div id="payments-section" className="scroll-mt-24 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-bold text-sm">💳 Ödənişlər</h2>
-                    <span className="text-xs bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">Tezliklə</span>
+                    <h2 className="font-bold text-gray-900">💳 Ödənişlər</h2>
+                    <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">Tezliklə</span>
                   </div>
                   {paymentsError ? (
                     <CardError label="Ödənişlər yüklənmədi." onRetry={() => refetchPayments()} />
                   ) : payments && payments.length > 0 ? (
                     <div className="space-y-2">
                       {payments.map(p => (
-                        <div key={p.id} className="flex items-center gap-3 p-3 bg-white/5 border border-white/8 rounded-xl">
+                        <div key={p.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-gray-200 rounded-xl">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{p.courseName}</p>
-                            <p className="text-xs text-white/30">{p.teacherName}</p>
+                            <p className="text-xs font-medium text-gray-900 truncate">{p.courseName}</p>
+                            <p className="text-xs text-gray-400">{p.teacherName}</p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-xs font-bold">{p.amount} ₼</p>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${p.status === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                            <p className="text-xs font-bold text-gray-900">{p.amount} ₼</p>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${p.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
                               {p.status === 'paid' ? 'Ödənildi' : 'Gözlənilir'}
                             </span>
                           </div>
@@ -899,25 +936,27 @@ export default function ParentDashboard() {
                   ) : payments ? (
                     <CardEmpty label="Hələ ödəniş yoxdur." />
                   ) : null}
-                  <button className="w-full mt-3 py-2 border border-white/10 rounded-xl text-xs text-white/40 cursor-not-allowed">
+                  <button disabled aria-disabled="true"
+                    className="w-full mt-3 py-2 border border-gray-200 bg-gray-50 rounded-xl text-xs text-gray-400 cursor-not-allowed"
+                  >
                     Ödəniş et (Tezliklə)
                   </button>
                 </div>
 
                 {/* Quick navigate */}
-                <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-2">
-                  <h2 className="font-bold text-sm mb-3">Sürətli Keçidlər</h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-2 shadow-sm">
+                  <h2 className="font-bold text-gray-900 mb-3">Sürətli Keçidlər</h2>
                   {[
                     { icon: '📊', label: 'Tam irəliləyiş', to: `/child/${selectedChildId}/progress` },
                     { icon: '💬', label: 'Müəllim ilə chat', to: '/chat' },
                     { icon: '📋', label: 'Davamiyyət jurnalı', to: `/child/${selectedChildId}/progress` },
                   ].map(({ icon, label, to }) => (
                     <Link key={to + label} to={to}
-                      className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/8 hover:border-white/15 rounded-xl transition-colors"
+                      className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors"
                     >
                       <span className="text-xl">{icon}</span>
-                      <span className="text-sm">{label}</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-auto text-white/30">
+                      <span className="text-sm text-gray-900">{label}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-auto text-gray-400">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
                     </Link>
