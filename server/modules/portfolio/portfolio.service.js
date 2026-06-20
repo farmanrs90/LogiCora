@@ -60,6 +60,26 @@ const getOrCreatePortfolio = async (studentId) => {
   return portfolio;
 };
 
+// Authenticated tələbənin Student profili yoxdursa (köhnə və ya yarımçıq qeydiyyat)
+// onu real minimal profil kimi təmin et. FAKE DATA YOX — yalnız real user ↔ student
+// bağlantısı (qeydiyyatdakı createRoleProfile ilə eyni: grade:1 + boş Gamification).
+// Bu funksiyaya yalnız checkRole('student') keçən sorğular çatır, ona görə yaradılan
+// profil həqiqətən mövcud tələbəyə aiddir. Upsert ilə race-safe-dir.
+const getOrCreateStudentByUserId = async (userId) => {
+  const student = await Student.findOneAndUpdate(
+    { userId },
+    { $setOnInsert: { userId, grade: 1 } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+  // Gamification yoxdursa onu da real boş halda yarat (digər endpointlər də 404 verməsin).
+  await Gamification.findOneAndUpdate(
+    { studentId: student._id },
+    { $setOnInsert: { studentId: student._id } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+  return student;
+};
+
 // Xam Portfolio sənədini → frontend-in gözlədiyi zəngin view-model-ə çevirir.
 // Bütün rəqəmlər real mənbədən gəlir; mənbəyi olmayanlar boş/hesablanmış qalır.
 const buildViewModel = async (portfolio) => {
@@ -186,13 +206,8 @@ const buildViewModel = async (portfolio) => {
 };
 
 const getMyPortfolio = async (userId) => {
-  const student = await Student.findOne({ userId });
-  if (!student) {
-    const error = new Error('Tələbə profili tapılmadı.');
-    error.statusCode = 404;
-    throw error;
-  }
-
+  // Student profili yoxdursa generic xəta vermə — onu təmin et və real boş pasport qaytar.
+  const student = await getOrCreateStudentByUserId(userId);
   const portfolio = await getOrCreatePortfolio(student._id);
   return buildViewModel(portfolio);
 };
@@ -262,13 +277,7 @@ const getPortfolioByLink = async (shareableLink, viewer) => {
 };
 
 const updateVisibility = async (userId, isPublic) => {
-  const student = await Student.findOne({ userId });
-  if (!student) {
-    const error = new Error('Tələbə profili tapılmadı.');
-    error.statusCode = 404;
-    throw error;
-  }
-
+  const student = await getOrCreateStudentByUserId(userId);
   const portfolio = await getOrCreatePortfolio(student._id);
   portfolio.isPublic = isPublic;
   await portfolio.save();
@@ -318,13 +327,7 @@ const updateSkillTree = async (studentId, subject, xpToAdd) => {
 };
 
 const regenerateLink = async (userId) => {
-  const student = await Student.findOne({ userId });
-  if (!student) {
-    const error = new Error('Tələbə profili tapılmadı.');
-    error.statusCode = 404;
-    throw error;
-  }
-
+  const student = await getOrCreateStudentByUserId(userId);
   const portfolio = await getOrCreatePortfolio(student._id);
   portfolio.shareableLink = generateShareableLink();
   await portfolio.save();

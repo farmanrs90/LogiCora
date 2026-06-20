@@ -909,23 +909,23 @@ function PassportErrorState({ onRetry }: { onRetry: () => void }) {
   )
 }
 
-// Backend 200 amma məzmun yoxdursa — empty state (fake nailiyyət göstərilmir).
-function PassportEmptyState() {
+// Pasport hələ boşdursa (yeni/ilk dəfə) — dürüst first-time state (fake nailiyyət yox).
+function PassportEmptyState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="min-h-screen bg-slate-50 text-gray-900 flex items-center justify-center px-4">
       <div className="text-center max-w-sm">
         <div className="text-7xl mb-4">📭</div>
         <h1 className="text-2xl font-bold mb-2">Təhsil pasportun hələ formalaşmayıb</h1>
-        <p className="text-gray-500 text-sm mb-6">Quiz həll et, kurslara qoşul — nailiyyətlərin burada toplanacaq.</p>
-        <div className="flex items-center justify-center gap-3">
-          <Link to={APP_ROUTES.DAILY}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold transition-all">
-            Quizə başla
-          </Link>
-          <Link to={APP_ROUTES.COURSES}
+        <p className="text-gray-500 text-sm mb-6">Quiz, kurs, yarış və sertifikat nəticələrin toplandıqca burada görünəcək.</p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link to={APP_ROUTES.DASHBOARD.STUDENT}
             className="px-5 py-2.5 rounded-xl bg-white border border-gray-300 text-sm font-semibold hover:bg-gray-50 transition-colors">
-            Kurslara bax
+            Dashboard-a qayıt
           </Link>
+          <button onClick={onRetry}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold transition-all">
+            Yenidən yoxla
+          </button>
         </div>
       </div>
     </div>
@@ -1007,7 +1007,7 @@ export default function MyPortfolio() {
 
   // Portfolio yoxdursa → empty state
   if (!portfolio) {
-    return <PassportEmptyState />
+    return <PassportEmptyState onRetry={() => refetch()} />
   }
 
   // Backend 200 amma bütün məzmun boşdursa → empty state
@@ -1018,7 +1018,7 @@ export default function MyPortfolio() {
     !portfolio.certificates?.length &&
     !portfolio.competitions?.length
   if (isEmptyPassport) {
-    return <PassportEmptyState />
+    return <PassportEmptyState onRetry={() => refetch()} />
   }
 
   const summary = [
