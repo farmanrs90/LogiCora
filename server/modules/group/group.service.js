@@ -18,6 +18,12 @@ const ATT_STATUS_MAP = { present: 'present', absent: 'absent', late: 'late', dis
 
 const getTeacherByUser = (userId) => Teacher.findOne({ userId });
 
+const createError = (message, statusCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
 // İcazə: admin/manager hər qrupu, teacher YALNIZ öz qrupunu idarə edə bilər.
 const assertCanManageGroup = async (user, groupId) => {
   const group = await Group.findById(groupId);
@@ -126,13 +132,17 @@ const createGroup = async (user, body) => {
     ? { day: DAY_MAP_AZ_TO_EN[days[0]] || 'monday', startTime: body.time || '', endTime: body.time || '' }
     : undefined;
 
-  const group = await Group.create({
+  const payload = {
     name: String(body.name).trim(),
     teacherId,
     description: body.subject || body.description || '',
     ...(schedule ? { schedule } : {}),
-    ...(Array.isArray(body.studentIds) ? { studentIds: body.studentIds } : {}),
-  });
+  };
+  if (user.role !== 'teacher' && Array.isArray(body.studentIds)) {
+    payload.studentIds = body.studentIds;
+  }
+
+  const group = await Group.create(payload);
   return group;
 };
 
@@ -190,6 +200,9 @@ const deleteGroup = async (groupId) => {
 
 const addStudentToGroup = async (user, groupId, studentId) => {
   await assertCanManageGroup(user, groupId);
+  if (user.role === 'teacher') {
+    throw createError('Tələbə əlavə etmə yalnız təsdiqlənmiş əlaqə ilə mümkündür.', 403);
+  }
   const studentExists = await Student.findById(studentId);
   if (!studentExists) {
     const error = new Error('Tələbə tapılmadı.');
@@ -207,6 +220,9 @@ const addStudentToGroup = async (user, groupId, studentId) => {
 // Email ilə dəvət — User → Student tapılır, sonra qrupa əlavə olunur (fake yox, real).
 const inviteStudentByEmail = async (user, groupId, email) => {
   await assertCanManageGroup(user, groupId);
+  if (user.role === 'teacher') {
+    throw createError('Dəvət sistemi post-demo mərhələsində aktivləşdiriləcək.', 501);
+  }
   const normalized = String(email || '').trim().toLowerCase();
   if (!normalized) {
     const error = new Error('Email tələb olunur.');

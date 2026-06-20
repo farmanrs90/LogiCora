@@ -1,6 +1,9 @@
 const Portfolio = require('./portfolio.model');
 const Student = require('../student/student.model');
 const User = require('../user/user.model');
+const Parent = require('../parent/parent.model');
+const Teacher = require('../teacher/teacher.model');
+const Group = require('../group/group.model');
 const Gamification = require('../gamification/gamification.model');
 const crypto = require('crypto');
 
@@ -194,6 +197,32 @@ const getMyPortfolio = async (userId) => {
   return buildViewModel(portfolio);
 };
 
+const parentCanViewStudent = async (viewerUserId, student) => {
+  if (!student) return false;
+
+  const parent = await Parent.findOne({ userId: viewerUserId }).select('_id children');
+  if (!parent) return false;
+
+  const linkedByProfile = student.parentId && String(student.parentId) === String(parent._id);
+  const linkedByChildren = (parent.children || []).some(
+    (childUserId) => String(childUserId) === String(student.userId)
+  );
+
+  return linkedByProfile || linkedByChildren;
+};
+
+const teacherCanViewStudent = async (viewerUserId, studentId) => {
+  const teacher = await Teacher.findOne({ userId: viewerUserId }).select('_id');
+  if (!teacher) return false;
+
+  return Boolean(
+    await Group.exists({
+      teacherId: teacher._id,
+      studentIds: studentId,
+    })
+  );
+};
+
 const getPortfolioByLink = async (shareableLink, viewer) => {
   const portfolio = await Portfolio.findOne({ shareableLink });
   if (!portfolio) {
@@ -203,19 +232,24 @@ const getPortfolioByLink = async (shareableLink, viewer) => {
   }
 
   const ownerStudentId = portfolio.studentId.toString();
+  const ownerStudent = await Student.findById(portfolio.studentId).select('userId parentId');
 
-  // İcazə: admin/müəllim hamısını, şagird özünü, valideyn öz uşağını, qalanları isPublic
+  // İcazə: public portfolio hamıya; private yalnız owner, bağlı parent/teacher və admin.
   const canSee = async () => {
-    if (viewer && (viewer.role === 'admin' || viewer.role === 'teacher')) return true;
+    if (portfolio.isPublic) return true;
+    if (!viewer) return false;
+    if (viewer.role === 'admin') return true;
     if (viewer && viewer.role === 'student') {
       const s = await Student.findOne({ userId: viewer._id });
       if (s && s._id.toString() === ownerStudentId) return true;
     }
     if (viewer && viewer.role === 'parent') {
-      const child = await Student.findOne({ _id: portfolio.studentId, parentId: viewer._id });
-      if (child) return true;
+      return parentCanViewStudent(viewer._id, ownerStudent);
     }
-    return portfolio.isPublic;
+    if (viewer && viewer.role === 'teacher') {
+      return teacherCanViewStudent(viewer._id, portfolio.studentId);
+    }
+    return false;
   };
 
   if (!(await canSee())) {

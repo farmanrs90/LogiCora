@@ -2,6 +2,7 @@ const Course = require('./course.model');
 const Lesson = require('./lesson.model');
 const Enrollment = require('./enrollment.model');
 const Teacher = require('../teacher/teacher.model');
+const Student = require('../student/student.model');
 const Parent = require('../parent/parent.model');
 const notificationService = require('../notification/notification.service');
 
@@ -105,6 +106,43 @@ const getCourses = async (filters = {}) => {
   return courses;
 };
 
+const getLessonAccessForCourse = async (course, requesterUserId) => {
+  if ((course.price || 0) <= 0) {
+    return { canViewLessons: true, lessonsLocked: false };
+  }
+
+  if (!requesterUserId) {
+    return { canViewLessons: false, lessonsLocked: true, lockReason: 'enrollment_required' };
+  }
+
+  const ownerUserId = course.teacherId && course.teacherId.userId;
+  if (ownerUserId && String(ownerUserId) === String(requesterUserId)) {
+    return { canViewLessons: true, lessonsLocked: false };
+  }
+
+  const student = await Student.findOne({ userId: requesterUserId }).select('_id');
+  if (!student) {
+    return { canViewLessons: false, lessonsLocked: true, lockReason: 'enrollment_required' };
+  }
+
+  const enrollment = await Enrollment.findOne({
+    studentId: student._id,
+    courseId: course._id,
+  }).select('status');
+
+  if (enrollment && enrollment.status === 'active') {
+    return { canViewLessons: true, lessonsLocked: false };
+  }
+
+  return {
+    canViewLessons: false,
+    lessonsLocked: true,
+    lockReason: enrollment && enrollment.status === 'pending_payment'
+      ? 'payment_required'
+      : 'enrollment_required',
+  };
+};
+
 const getCourseById = async (courseId, requesterUserId = null) => {
   const course = await Course.findById(courseId)
     .populate('teacherId', 'userId specialization rating bio');
@@ -126,8 +164,18 @@ const getCourseById = async (courseId, requesterUserId = null) => {
     }
   }
 
+  const access = await getLessonAccessForCourse(course, requesterUserId);
+  if (!access.canViewLessons) {
+    return {
+      course,
+      lessons: [],
+      lessonsLocked: true,
+      lockReason: access.lockReason,
+    };
+  }
+
   const lessons = await Lesson.find({ courseId }).sort({ order: 1 });
-  return { course, lessons };
+  return { course, lessons, lessonsLocked: false };
 };
 
 const addLesson = async (userId, courseId, data) => {

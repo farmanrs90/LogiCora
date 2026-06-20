@@ -267,9 +267,24 @@ const addChild = async (userId, childInput) => {
 };
 
 const removeChild = async (userId, childId) => {
+  const parentProfile = await getParentOrThrow(userId);
+  let childUserIdToRemove = childId;
+  let linkedStudent = null;
+
+  if (mongoose.Types.ObjectId.isValid(childId)) {
+    linkedStudent = await Student.findOne({
+      parentId: parentProfile._id,
+      $or: [{ userId: childId }, { _id: childId }],
+    }).select('_id userId');
+
+    if (linkedStudent?.userId) {
+      childUserIdToRemove = linkedStudent.userId;
+    }
+  }
+
   const parent = await Parent.findOneAndUpdate(
-    { userId },
-    { $pull: { children: childId } },
+    { _id: parentProfile._id },
+    { $pull: { children: childUserIdToRemove } },
     { new: true }
   ).populate('children', 'name email');
 
@@ -277,6 +292,13 @@ const removeChild = async (userId, childId) => {
     const error = new Error('Parent profile not found');
     error.statusCode = 404;
     throw error;
+  }
+
+  if (linkedStudent) {
+    await Student.updateOne(
+      { _id: linkedStudent._id, parentId: parentProfile._id },
+      { $unset: { parentId: '' } }
+    );
   }
 
   return parent;
