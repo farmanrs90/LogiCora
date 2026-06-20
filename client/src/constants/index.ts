@@ -159,6 +159,14 @@ export const API_ROUTES = {
     UPDATE: '/accessibility/me',
   },
 
+  // Feedback (Təklif və İradlar)
+  FEEDBACK: {
+    CREATE: '/feedback',
+    MY: '/feedback/my',
+    ADMIN: '/feedback/admin',
+    ADMIN_STATUS: (id: string) => `/feedback/admin/${id}/status`,
+  },
+
   // Groups
   GROUPS: {
     LIST:    '/groups',
@@ -196,6 +204,7 @@ export const APP_ROUTES = {
   REGISTER: '/register',
   ONBOARDING: '/onboarding',
   SETTINGS: '/settings',
+  FEEDBACK: '/feedback',
   DASHBOARD: {
     ROOT: '/dashboard',
     STUDENT: '/dashboard/student',

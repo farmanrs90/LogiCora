@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Settings, LogOut, ChevronDown, X, Menu, UserRound, SlidersHorizontal } from 'lucide-react'
+import { Bell, Settings, LogOut, ChevronDown, X, Menu, UserRound, SlidersHorizontal, MessageSquarePlus } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { RootState } from '../../app/store'
@@ -530,6 +530,15 @@ export default function Navbar() {
                     </button>
 
                     <button
+                      onClick={() => { goTo(APP_ROUTES.FEEDBACK) }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                 text-gray-700 hover:text-gray-900 hover:bg-gray-100
+                                 transition-colors text-sm"
+                    >
+                      <MessageSquarePlus size={15} /> Təklif və İradlar
+                    </button>
+
+                    <button
                       onClick={() => { handleLogout(); setAvatarOpen(false) }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
                                  text-red-600 hover:bg-red-50
@@ -638,6 +647,13 @@ export default function Navbar() {
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                 >
                   <Settings size={16} /> Tənzimləmələr
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goTo(APP_ROUTES.FEEDBACK)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                >
+                  <MessageSquarePlus size={16} /> Təklif və İradlar
                 </button>
                 <button
                   type="button"

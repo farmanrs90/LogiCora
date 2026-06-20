@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api'
 import type { Role } from '../../types'
 
@@ -51,7 +51,30 @@ interface Paged<T> {
   totalPages: number
 }
 
-type Tab = 'users' | 'courses' | 'groups' | 'management'
+interface AdminFeedbackUser {
+  _id: string
+  name: string | null
+  email: string | null
+  role: string | null
+}
+
+interface AdminFeedback {
+  _id: string
+  category: string
+  type: string
+  title: string
+  message: string
+  priority: string
+  status: string
+  adminNote: string
+  role: string
+  createdAt?: string
+  handledAt?: string | null
+  user: AdminFeedbackUser | null
+  handledBy?: string | null
+}
+
+type Tab = 'users' | 'courses' | 'groups' | 'feedback' | 'management'
 
 type DrawerState =
   | { type: 'user'; user: AdminUser }
@@ -89,6 +112,62 @@ const COURSE_STATUS_CHIPS: { value: string; label: string }[] = [
   { value: 'published', label: 'Yayımda' },
   { value: 'draft', label: 'Qaralama' },
 ]
+
+// ── Feedback sabitləri ───────────────────────────────────────────────────────
+
+const FB_STATUS: Record<string, { label: string; cls: string }> = {
+  new: { label: 'Yeni', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+  reviewing: { label: 'Baxılır', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  resolved: { label: 'Həll olundu', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rejected: { label: 'Rədd edildi', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+}
+
+const FB_TYPE: Record<string, string> = {
+  suggestion: 'Təklif', complaint: 'Şikayət', bug: 'Səhv', improvement: 'Təkmilləşdirmə',
+}
+
+const FB_CATEGORY: Record<string, string> = {
+  ui: 'İnterfeys', lesson: 'Dərs', teacher: 'Müəllim', payment: 'Ödəniş',
+  technical: 'Texniki', accessibility: 'Əlçatımlılıq', suggestion: 'Təklif', other: 'Digər',
+}
+
+const FB_PRIORITY: Record<string, string> = { low: 'Aşağı', medium: 'Orta', high: 'Yüksək' }
+
+const FB_STATUS_CHIPS: { value: string; label: string }[] = [
+  { value: '', label: 'Hamısı' },
+  { value: 'new', label: 'Yeni' },
+  { value: 'reviewing', label: 'Baxılır' },
+  { value: 'resolved', label: 'Həll olundu' },
+  { value: 'rejected', label: 'Rədd edildi' },
+]
+
+const FB_CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'Bütün kateqoriyalar' },
+  ...Object.entries(FB_CATEGORY).map(([value, label]) => ({ value, label })),
+]
+
+const selectCls =
+  'bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors'
+
+function fbStatusBadge(s: string) {
+  return FB_STATUS[s] ?? { label: s, cls: 'bg-gray-100 text-gray-600 border-gray-200' }
+}
+
+// Backend xəta mesajını dürüst göstər (validation errors[] və ya message).
+function getApiErrorMessage(err: unknown, fallback: string): string {
+  const response = err && typeof err === 'object' && 'response' in err ? (err as { response?: unknown }).response : null
+  if (!response || typeof response !== 'object') return fallback
+  const data = 'data' in response ? (response as { data?: unknown }).data : null
+  if (!data || typeof data !== 'object') return fallback
+  if ('errors' in data && Array.isArray((data as { errors?: unknown[] }).errors) && (data as { errors: unknown[] }).errors.length) {
+    const first = (data as { errors: unknown[] }).errors[0]
+    if (typeof first === 'string' && first.trim()) return first
+  }
+  if ('message' in data && typeof (data as { message?: unknown }).message === 'string' && (data as { message: string }).message.trim()) {
+    return (data as { message: string }).message
+  }
+  return fallback
+}
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—'
@@ -417,9 +496,173 @@ function GroupsTab({ onOpen }: { onOpen: (g: AdminGroup) => void }) {
   )
 }
 
+// ── Feedback drawer (admin — status/qeyd yenilənir) ──────────────────────────
+
+function FeedbackDrawer({ item, onClose, onUpdated }: { item: AdminFeedback; onClose: () => void; onUpdated: (u: AdminFeedback) => void }) {
+  const queryClient = useQueryClient()
+  const [status, setStatus] = useState(item.status)
+  const [adminNote, setAdminNote] = useState(item.adminNote ?? '')
+  const [err, setErr] = useState('')
+  const [ok, setOk] = useState(false)
+
+  const mutation = useMutation({
+    mutationFn: () => api.patch<{ data: AdminFeedback }>(`/feedback/admin/${item._id}/status`, { status, adminNote })
+      .then((r) => r.data.data),
+    onSuccess: (updated) => {
+      setErr('')
+      setOk(true)
+      queryClient.invalidateQueries({ queryKey: ['admin', 'feedback'] })
+      onUpdated(updated)
+      setTimeout(() => setOk(false), 2000)
+    },
+    onError: (e: unknown) => { setOk(false); setErr(getApiErrorMessage(e, 'Status yenilənmədi. Yenidən cəhd edin.')) },
+  })
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog" aria-modal="true"
+    >
+      <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+        className="flex h-full w-full max-w-md flex-col border-l border-gray-200 bg-white shadow-xl"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5">
+          <h2 className="font-bold text-gray-900">Təklif / İrad detalı</h2>
+          <button onClick={onClose} aria-label="Bağla"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+            ✕
+          </button>
+        </div>
+
+        <div className="overflow-y-auto p-5">
+          <p className="pb-2 text-lg font-bold text-gray-900 break-words">{item.title}</p>
+          <div className="flex flex-wrap gap-2 pb-3">
+            <span className="text-[11px] px-2 py-0.5 rounded-full border bg-slate-100 text-gray-600 border-gray-200">{FB_TYPE[item.type] ?? item.type}</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full border bg-slate-100 text-gray-600 border-gray-200">{FB_CATEGORY[item.category] ?? item.category}</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${fbStatusBadge(item.status).cls}`}>{fbStatusBadge(item.status).label}</span>
+          </div>
+
+          <Row label="Göndərən" value={item.user?.name || '—'} />
+          <Row label="Email" value={item.user?.email || '—'} />
+          <Row label="Rol" value={item.user?.role ? (roleBadge(item.user.role).label) : (roleBadge(item.role).label)} />
+          <Row label="Prioritet" value={FB_PRIORITY[item.priority] ?? item.priority} />
+          <Row label="Tarix" value={fmtDate(item.createdAt)} />
+          {item.handledBy && <Row label="Baxan admin" value={item.handledBy} />}
+
+          <div className="mt-3">
+            <p className="text-xs text-gray-500 mb-1">Mesaj</p>
+            <p className="text-sm text-gray-900 whitespace-pre-wrap break-words rounded-xl bg-slate-50 border border-gray-200 p-3">{item.message}</p>
+          </div>
+
+          {/* Status / admin qeyd yeniləmə */}
+          <div className="mt-5 border-t border-gray-100 pt-4 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className={`${selectCls} w-full`}>
+                {Object.entries(FB_STATUS).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Admin qeydi</label>
+              <textarea value={adminNote} onChange={(e) => setAdminNote(e.target.value)} rows={3} maxLength={2000}
+                placeholder="İstifadəçiyə görünən qeyd (istəyə bağlı)" className={`${selectCls} w-full resize-none`} />
+            </div>
+            {err && <p className="text-xs text-rose-600">{err}</p>}
+            <div className="flex items-center gap-3">
+              <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                {mutation.isPending ? 'Saxlanılır...' : 'Yadda saxla'}
+              </button>
+              {ok && <span className="text-sm text-emerald-600 font-medium">✓ Yeniləndi</span>}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Feedback tab (admin) ─────────────────────────────────────────────────────
+
+function FeedbackTab() {
+  const [status, setStatus] = useState('')
+  const [role, setRole] = useState('')
+  const [category, setCategory] = useState('')
+  const [q, setQ] = useState('')
+  const qd = useDebounced(q)
+  const [selected, setSelected] = useState<AdminFeedback | null>(null)
+
+  const { data, isLoading, isError, refetch } = useQuery<Paged<AdminFeedback>>({
+    queryKey: ['admin', 'feedback', status, role, category, qd],
+    queryFn: () => api.get<{ data: Paged<AdminFeedback> }>('/feedback/admin', {
+      params: { status: status || undefined, role: role || undefined, category: category || undefined, q: qd || undefined, limit: 50 },
+    }).then((r) => r.data.data),
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <SearchInput value={q} onChange={setQ} placeholder="Başlıq və ya mesaj axtar..." />
+          <div className="flex flex-wrap gap-2">
+            {FB_STATUS_CHIPS.map((c) => (
+              <Chip key={c.value} active={status === c.value} onClick={() => setStatus(c.value)}>{c.label}</Chip>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <select value={role} onChange={(e) => setRole(e.target.value)} className={selectCls} aria-label="Rol filtri">
+            <option value="">Bütün rollar</option>
+            {USER_ROLE_CHIPS.filter((c) => c.value).map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className={selectCls} aria-label="Kateqoriya filtri">
+            {FB_CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between gap-3 p-4 border-b border-gray-100">
+          <h2 className="font-bold text-gray-900 text-sm">Təklif və İradlar</h2>
+          {data && <span className="text-xs text-gray-400">Cəmi: {data.total.toLocaleString('az-AZ')}</span>}
+        </div>
+        {isLoading ? <StateBlock kind="loading" />
+          : isError ? <StateBlock kind="error" onRetry={() => refetch()} />
+          : data && data.items.length > 0 ? (
+            <ul className="divide-y divide-gray-100">
+              {data.items.map((f) => (
+                <li key={f._id}>
+                  <button onClick={() => setSelected(f)}
+                    className="flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:bg-slate-50">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">{f.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {(FB_TYPE[f.type] ?? f.type)} · {(FB_CATEGORY[f.category] ?? f.category)} · {roleBadge(f.role).label}{fmtDate(f.createdAt) !== '—' ? ` · ${fmtDate(f.createdAt)}` : ''}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 text-[11px] px-2 py-0.5 rounded-full border ${fbStatusBadge(f.status).cls}`}>{fbStatusBadge(f.status).label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : <StateBlock kind="empty" />}
+        {data && data.total > data.items.length && (
+          <p className="px-4 py-3 text-center text-[11px] text-gray-400 border-t border-gray-100">İlk {data.items.length} nəticə göstərilir ({data.total.toLocaleString('az-AZ')} cəmi).</p>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {selected && <FeedbackDrawer item={selected} onClose={() => setSelected(null)} onUpdated={(u) => setSelected(u)} />}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ── Management tab ───────────────────────────────────────────────────────────
 
-function ManagementTab({ onUsers, onCourses }: { onUsers: () => void; onCourses: () => void }) {
+function ManagementTab({ onUsers, onCourses, onFeedback }: { onUsers: () => void; onCourses: () => void; onFeedback: () => void }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Aktiv (read-only) — mövcud tab-a keçir */}
@@ -451,25 +694,34 @@ function ManagementTab({ onUsers, onCourses }: { onUsers: () => void; onCourses:
         </div>
       </button>
 
-      {/* Disabled / post-demo — klikləncək deyil */}
-      {[
-        { icon: '🔐', title: 'Rol və icazələr', desc: 'Rol təyini və icazə tənzimləmələri' },
-        { icon: '📨', title: 'Təklif və iradlar', desc: 'İstifadəçi geri-bildirimləri' },
-      ].map((r) => (
-        <div key={r.title} aria-disabled="true"
-          className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm opacity-70 cursor-not-allowed select-none">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-lg text-gray-500">{r.icon}</div>
-              <div className="min-w-0">
-                <p className="font-semibold text-gray-700">{r.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{r.desc}</p>
-              </div>
+      <button onClick={onFeedback}
+        className="text-left bg-white border border-gray-200 rounded-2xl p-5 shadow-sm transition-all hover:shadow-md hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-lg text-amber-600">📨</div>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900">Təklif və iradlar</p>
+              <p className="text-xs text-gray-500 mt-0.5">İstifadəçi geri-bildirimlərini idarə et</p>
             </div>
-            <span className="shrink-0 text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">Tezliklə</span>
           </div>
+          <span className="shrink-0 text-[11px] text-indigo-600 font-medium">Bax →</span>
         </div>
-      ))}
+      </button>
+
+      {/* Disabled / post-demo — klikləncək deyil */}
+      <div aria-disabled="true"
+        className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm opacity-70 cursor-not-allowed select-none">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-lg text-gray-500">🔐</div>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-700">Rol və icazələr</p>
+              <p className="text-xs text-gray-400 mt-0.5">Rol təyini və icazə tənzimləmələri</p>
+            </div>
+          </div>
+          <span className="shrink-0 text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">Tezliklə</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -480,6 +732,7 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'users', label: 'İstifadəçilər' },
   { value: 'courses', label: 'Kurslar' },
   { value: 'groups', label: 'Qruplar' },
+  { value: 'feedback', label: 'Təklif və İradlar' },
   { value: 'management', label: 'İdarəetmə hazırlığı' },
 ]
 
@@ -553,7 +806,8 @@ export default function Admin() {
         {tab === 'users' && <UsersTab role={userRole} setRole={setUserRole} onOpen={(u) => setDrawer({ type: 'user', user: u })} />}
         {tab === 'courses' && <CoursesTab status={courseStatus} setStatus={setCourseStatus} onOpen={(c) => setDrawer({ type: 'course', course: c })} />}
         {tab === 'groups' && <GroupsTab onOpen={(g) => setDrawer({ type: 'group', group: g })} />}
-        {tab === 'management' && <ManagementTab onUsers={() => openUsers('')} onCourses={() => setTab('courses')} />}
+        {tab === 'feedback' && <FeedbackTab />}
+        {tab === 'management' && <ManagementTab onUsers={() => openUsers('')} onCourses={() => setTab('courses')} onFeedback={() => setTab('feedback')} />}
       </div>
 
       <DetailDrawer state={drawer} onClose={() => setDrawer(null)} />
