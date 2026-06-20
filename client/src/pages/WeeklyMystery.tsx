@@ -16,49 +16,32 @@ import type {
   WeeklyStats,
 } from '../types'
 
-// ── Static display data (dekorativ) + neytral default ──────────────────────
+// ── Neytral default (fake data yox — backend gəlməyənə qədər sıfır) ─────────
 
 const EMPTY_STATS: WeeklyStats = { attemptCount: 0, solvedCount: 0, fastestMinutes: 0, fastestSeconds: 0 }
 
-const CITY_STATS = [
-  { city: 'Bakı',       attempts: 847 },
-  { city: 'Gəncə',      attempts: 234 },
-  { city: 'Sumqayıt',   attempts: 189 },
-  { city: 'Mingəçevir', attempts: 78  },
-  { city: 'Naxçıvan',   attempts: 65  },
-]
-
-const FINALISTS: { name: string; color: string; week: number }[] = [
-  { name: 'Aytən M.',  color: '#9333EA', week: 20 },
-  { name: 'Kənan H.',  color: '#3B82F6', week: 19 },
-  { name: 'Nigar Ə.',  color: '#06B6D4', week: 18 },
-  { name: 'Rauf T.',   color: '#F97316', week: 17 },
-  { name: 'Leyla K.',  color: '#EC4899', week: 16 },
-  { name: 'Əli S.',    color: '#58CC02', week: 15 },
-]
-
-// ── Star background ───────────────────────────────────────────────────────
+// ── Light premium backdrop (yumşaq mövzu hissi, sərt qara yox) ─────────────
 
 function StarBackground() {
-  const stars = Array.from({ length: 60 }, (_, i) => ({
+  const stars = Array.from({ length: 40 }, (_, i) => ({
     id: i, x: Math.random() * 100, y: Math.random() * 100,
     size: Math.random() * 2.5 + 0.5, dur: Math.random() * 4 + 2,
   }))
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0"
-      style={{ background: 'radial-gradient(ellipse at 50% 20%, #0d0d2e 0%, #050510 60%, #000 100%)' }}>
+      style={{ background: 'radial-gradient(ellipse at 50% 0%, #EEF2FF 0%, #F8FAFC 55%, #F1F5F9 100%)' }}>
       {stars.map(s => (
         <motion.div
           key={s.id}
-          className="absolute rounded-full bg-white"
+          className="absolute rounded-full bg-violet-400"
           style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size }}
-          animate={{ opacity: [0.15, 0.9, 0.15] }}
+          animate={{ opacity: [0.05, 0.3, 0.05] }}
           transition={{ duration: s.dur, repeat: Infinity, delay: Math.random() * 4 }}
         />
       ))}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[300px]
-                      rounded-full blur-[100px] opacity-15"
-        style={{ background: 'radial-gradient(circle, #9333EA 0%, transparent 70%)' }} />
+                      rounded-full blur-[110px] opacity-25"
+        style={{ background: 'radial-gradient(circle, #A78BFA 0%, transparent 70%)' }} />
     </div>
   )
 }
@@ -70,11 +53,10 @@ function FlipCard({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <div
-        className="relative w-16 h-16 lg:w-20 lg:h-20 rounded-xl overflow-hidden flex items-center justify-center"
-        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+        className="relative w-16 h-16 lg:w-20 lg:h-20 rounded-xl overflow-hidden flex items-center justify-center bg-white border border-gray-200 shadow-sm"
       >
         {/* center line */}
-        <div className="absolute top-1/2 left-0 right-0 h-px bg-[rgba(0,0,0,0.5)] z-10" />
+        <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-100 z-10" />
         <AnimatePresence mode="wait">
           <motion.span
             key={str}
@@ -82,14 +64,14 @@ function FlipCard({ value, label }: { value: number; label: string }) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0 }}
             transition={{ duration: 0.25, ease: 'easeOut' as const }}
-            className="font-black text-white tabular-nums z-20 relative"
+            className="font-black text-gray-900 tabular-nums z-20 relative"
             style={{ fontSize: 36 }}
           >
             {str}
           </motion.span>
         </AnimatePresence>
       </div>
-      <span className="text-[#9CA3AF] text-[10px] uppercase tracking-widest">{label}</span>
+      <span className="text-gray-400 text-[10px] uppercase tracking-widest">{label}</span>
     </div>
   )
 }
@@ -109,76 +91,79 @@ function FlipClock({ targetDate }: { targetDate: string }) {
   return (
     <div className="flex items-center gap-3 lg:gap-4">
       <FlipCard value={days} label="Gün" />
-      <span className="text-[#9333EA] font-black text-3xl mb-6">:</span>
+      <span className="text-violet-500 font-black text-3xl mb-6">:</span>
       <FlipCard value={h}    label="Saat" />
-      <span className="text-[#9333EA] font-black text-3xl mb-6">:</span>
+      <span className="text-violet-500 font-black text-3xl mb-6">:</span>
       <FlipCard value={m}    label="Dəq" />
-      <span className="text-[#9333EA] font-black text-3xl mb-6">:</span>
+      <span className="text-violet-500 font-black text-3xl mb-6">:</span>
       <FlipCard value={s}    label="San" />
     </div>
   )
 }
 
-// ── Past winners grid ─────────────────────────────────────────────────────
+// ── Past winners grid (real backend data) ──────────────────────────────────
 
 function PastWinnersSection({ winners }: { winners: WeeklyWinner[] }) {
   return (
     <div className="w-full">
-      <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
+      <h3 className="text-gray-900 font-bold text-sm mb-4 flex items-center gap-2">
         <span>🏆</span> Son qaliblər
       </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {winners.map((w, i) => (
-          <motion.div
-            key={w.userId}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07 }}
-            className="group relative rounded-2xl p-4 flex flex-col items-center gap-2 cursor-default"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg"
-              style={{ backgroundColor: w.avatarColor, boxShadow: `0 0 16px ${w.avatarColor}50` }}
+      {winners.length === 0 ? (
+        <div className="rounded-2xl bg-white border border-gray-200 shadow-sm py-8 text-center text-sm text-gray-400">
+          Hələ qalib elan olunmayıb.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {winners.map((w, i) => (
+            <motion.div
+              key={w.userId}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07 }}
+              className="group relative rounded-2xl p-4 flex flex-col items-center gap-2 cursor-default bg-white border border-gray-200 shadow-sm overflow-hidden"
             >
-              {w.name?.charAt(0) ?? '?'}
-            </div>
-            <p className="text-white font-semibold text-xs text-center truncate w-full">{w.name}</p>
-            <p className="text-[#9CA3AF] text-[10px] text-center">{w.city}</p>
-            <p className="text-[10px] font-bold" style={{ color: w.avatarColor }}>
-              {w.solvedInMinutes} dəqiqədə
-            </p>
-            {/* Tooltip */}
-            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity
-                            flex items-center justify-center"
-              style={{ background: 'rgba(0,0,0,0.8)' }}>
-              <span className="text-white text-xs font-semibold text-center px-3">Sən də edə bilərsən! 💪</span>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center font-black text-white text-lg"
+                style={{ backgroundColor: w.avatarColor }}
+              >
+                {w.name?.charAt(0) ?? '?'}
+              </div>
+              <p className="text-gray-900 font-semibold text-xs text-center truncate w-full">{w.name}</p>
+              <p className="text-gray-500 text-[10px] text-center">{w.city}</p>
+              <p className="text-[10px] font-bold" style={{ color: w.avatarColor }}>
+                {w.solvedInMinutes} dəqiqədə
+              </p>
+              {/* Tooltip */}
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity
+                              flex items-center justify-center bg-indigo-600/90">
+                <span className="text-white text-xs font-semibold text-center px-3">Sən də edə bilərsən! 💪</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-// ── Stats pills ───────────────────────────────────────────────────────────
+// ── Stats pills (real backend data) ────────────────────────────────────────
 
 function StatsSection({ stats }: { stats: WeeklyStats }) {
   return (
     <div className="flex flex-wrap justify-center gap-3 w-full">
       {[
-        { label: 'Bu həftə cəhd etdi', value: stats.attemptCount.toLocaleString(), color: '#3B82F6', emoji: '👥' },
-        { label: 'Yalnız bu qədəri tapdı', value: stats.solvedCount, color: '#22C55E', emoji: '✅' },
-        { label: 'Ən sürətli', value: `${stats.fastestMinutes}:${String(stats.fastestSeconds).padStart(2,'0')}`, color: '#F97316', emoji: '⚡' },
+        { label: 'Bu həftə cəhd etdi', value: stats.attemptCount.toLocaleString(), color: '#2563EB', emoji: '👥' },
+        { label: 'Yalnız bu qədəri tapdı', value: stats.solvedCount, color: '#16A34A', emoji: '✅' },
+        { label: 'Ən sürətli', value: `${stats.fastestMinutes}:${String(stats.fastestSeconds).padStart(2,'0')}`, color: '#EA580C', emoji: '⚡' },
       ].map(s => (
         <div
           key={s.label}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs"
-          style={{ background: `${s.color}12`, border: `1px solid ${s.color}30` }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-white border border-gray-200 shadow-sm"
         >
           <span>{s.emoji}</span>
           <span className="font-black" style={{ color: s.color }}>{s.value}</span>
-          <span className="text-[#9CA3AF]">{s.label}</span>
+          <span className="text-gray-500">{s.label}</span>
         </div>
       ))}
     </div>
@@ -230,15 +215,15 @@ function ActiveQuestionView({
     >
       {/* Elapsed timer */}
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2 text-[#9CA3AF] text-xs">
+        <div className="flex items-center gap-2 text-gray-500 text-xs">
           <motion.div
-            className="w-2 h-2 rounded-full bg-[#EF4444]"
+            className="w-2 h-2 rounded-full bg-rose-500"
             animate={{ opacity: [1, 0.3, 1] }}
             transition={{ duration: 1, repeat: Infinity }}
           />
           {elapsedMin}:{String(elapsedSec).padStart(2, '0')} düşünürsən
         </div>
-        <div className="flex items-center gap-1.5 text-[#9CA3AF] text-xs">
+        <div className="flex items-center gap-1.5 text-gray-500 text-xs">
           <span>👁</span>
           <span>{question.attemptCount.toLocaleString()} nəfər cəhd edir</span>
         </div>
@@ -246,12 +231,10 @@ function ActiveQuestionView({
 
       {/* Question card */}
       <div
-        className="rounded-3xl p-6 lg:p-8"
+        className="rounded-3xl p-6 lg:p-8 bg-white shadow-sm"
         style={{
-          background:   'rgba(17,24,39,0.8)',
-          border:       `1px solid ${avatarColor}40`,
-          boxShadow:    `0 0 60px ${avatarColor}20`,
-          backdropFilter: 'blur(20px)',
+          border:    `1px solid ${avatarColor}55`,
+          boxShadow: `0 10px 40px ${avatarColor}14`,
         }}
       >
         <div className="flex items-center gap-2 mb-4">
@@ -261,49 +244,47 @@ function ActiveQuestionView({
             Həftə #{question.weekNumber} · {question.difficulty === 'legendary' ? '🌟 Əfsanəvi' : '🔥 Çətin'}
           </span>
         </div>
-        <p className="text-white font-bold text-lg lg:text-xl leading-relaxed">
+        <p className="text-gray-900 font-bold text-lg lg:text-xl leading-relaxed">
           {question.text}
         </p>
-        <p className="text-[#9CA3AF] text-xs mt-3">Bu sualın tək düzgün cavabı var.</p>
+        <p className="text-gray-500 text-xs mt-3">Bu sualın tək düzgün cavabı var.</p>
       </div>
 
       {/* Answer form */}
       {submitResult === 'idle' && (
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-white text-sm font-semibold block mb-2">Cavabın:</label>
+            <label className="text-gray-900 text-sm font-semibold block mb-2">Cavabın:</label>
             <textarea
               value={answer}
               onChange={e => setAnswer(e.target.value)}
               placeholder="Cavabını yaz..."
               rows={2}
-              className="w-full rounded-2xl px-4 py-3 text-white text-sm resize-none outline-none transition-all"
+              className="w-full rounded-2xl px-4 py-3 text-gray-900 text-sm resize-none outline-none transition-all bg-slate-50 placeholder:text-gray-400"
               style={{
-                background:  'rgba(255,255,255,0.06)',
-                border:      `1px solid ${answer ? avatarColor + '60' : 'rgba(255,255,255,0.12)'}`,
+                border:      `1px solid ${answer ? avatarColor + '80' : '#E5E7EB'}`,
                 caretColor:  avatarColor,
               }}
             />
           </div>
 
           <div>
-            <label className="text-white text-sm font-semibold block mb-2">
+            <label className="text-gray-900 text-sm font-semibold block mb-2">
               Necə tapdın? İzah et:
-              <span className="text-[#9CA3AF] font-normal ml-2 text-xs">(min. 20 hərif)</span>
+              <span className="text-gray-400 font-normal ml-2 text-xs">(min. 20 hərif)</span>
             </label>
             <textarea
               value={explanation}
               onChange={e => setExplanation(e.target.value)}
               placeholder="Düşüncə prosesini izah et..."
               rows={3}
-              className="w-full rounded-2xl px-4 py-3 text-white text-sm resize-none outline-none transition-all"
+              className="w-full rounded-2xl px-4 py-3 text-gray-900 text-sm resize-none outline-none transition-all bg-slate-50 placeholder:text-gray-400"
               style={{
-                background:  'rgba(255,255,255,0.06)',
-                border:      `1px solid ${explanation.length >= 20 ? '#22C55E60' : 'rgba(255,255,255,0.12)'}`,
+                border:      `1px solid ${explanation.length >= 20 ? '#16A34A80' : '#E5E7EB'}`,
                 caretColor:  avatarColor,
               }}
             />
-            <p className="text-[#9CA3AF] text-xs mt-1 text-right">{explanation.length}/20+</p>
+            <p className="text-gray-400 text-xs mt-1 text-right">{explanation.length}/20+</p>
           </div>
 
           {/* AI disclaimer */}
@@ -313,12 +294,12 @@ function ActiveQuestionView({
               className="w-5 h-5 rounded-md mt-0.5 flex items-center justify-center shrink-0 transition-all border-2"
               style={{
                 backgroundColor: aiCheck ? avatarColor : 'transparent',
-                borderColor:     aiCheck ? avatarColor : 'rgba(255,255,255,0.3)',
+                borderColor:     aiCheck ? avatarColor : '#D1D5DB',
               }}
             >
               {aiCheck && <span className="text-white text-xs font-black">✓</span>}
             </div>
-            <span className="text-[#9CA3AF] text-sm leading-relaxed">
+            <span className="text-gray-600 text-sm leading-relaxed">
               Bu cavabı özüm tapdım — AI köməyi istifadə etmədim. Şərəf sözü verirəm.
             </span>
           </label>
@@ -330,8 +311,7 @@ function ActiveQuestionView({
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
-                style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)', color: '#EAB308' }}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm bg-amber-50 border border-amber-200 text-amber-700"
               >
                 ⚠️ Çox tez! Ən azı 30 saniyə düşün. Cavabını izah et.
               </motion.div>
@@ -343,10 +323,10 @@ function ActiveQuestionView({
             disabled={isSubmitting}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            className="w-full py-4 rounded-2xl font-black text-white text-base disabled:opacity-60"
+            className="w-full py-4 rounded-2xl font-black text-white text-base disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
-              background: `linear-gradient(135deg, ${avatarColor}, #9333EA)`,
-              boxShadow:  `0 4px 20px ${avatarColor}40`,
+              background: `linear-gradient(135deg, ${avatarColor}, #7C3AED)`,
+              boxShadow:  `0 6px 20px ${avatarColor}40`,
             }}
           >
             {isSubmitting ? 'Yoxlanılır...' : 'Cavabı Göndər 🔮'}
@@ -359,12 +339,11 @@ function ActiveQuestionView({
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-5 text-center"
-          style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)' }}
+          className="rounded-2xl p-5 text-center bg-rose-50 border border-rose-200"
         >
           <p className="text-3xl mb-2">🔁</p>
-          <p className="text-white font-bold">Bu cavab düzgün deyil.</p>
-          <p className="text-[#9CA3AF] text-sm mt-1">Məsləhət: daha dərindən düşün!</p>
+          <p className="text-gray-900 font-bold">Bu cavab düzgün deyil.</p>
+          <p className="text-gray-500 text-sm mt-1">Məsləhət: daha dərindən düşün!</p>
         </motion.div>
       )}
 
@@ -372,19 +351,18 @@ function ActiveQuestionView({
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="rounded-2xl p-5 text-center"
-          style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)' }}
+          className="rounded-2xl p-5 text-center bg-emerald-50 border border-emerald-200"
         >
           <p className="text-4xl mb-2">🎉</p>
-          <p className="text-white font-bold text-lg">Qəbul edildi!</p>
-          <p className="text-[#9CA3AF] text-sm mt-1">Nəticə yaxında elan olunacaq...</p>
+          <p className="text-gray-900 font-bold text-lg">Qəbul edildi!</p>
+          <p className="text-gray-500 text-sm mt-1">Nəticə yaxında elan olunacaq...</p>
         </motion.div>
       )}
     </motion.div>
   )
 }
 
-// ── Winner announcement overlay ───────────────────────────────────────────
+// ── Winner announcement overlay (real winner) ──────────────────────────────
 
 function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correctAnswer?: string; avatarColor: string }) {
   const [showConfetti, setShowConfetti] = useState(true)
@@ -424,7 +402,7 @@ function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correct
         <span className="text-5xl">👑</span>
         <div
           className="w-20 h-20 rounded-full flex items-center justify-center font-black text-white text-3xl"
-          style={{ backgroundColor: winner.avatarColor, boxShadow: `0 0 40px ${winner.avatarColor}70` }}
+          style={{ backgroundColor: winner.avatarColor, boxShadow: `0 0 40px ${winner.avatarColor}55` }}
         >
           {winner.name?.charAt(0) ?? '?'}
         </div>
@@ -436,11 +414,11 @@ function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correct
         transition={{ delay: 0.5 }}
         className="text-center"
       >
-        <h2 className="font-black text-3xl" style={{ background: 'linear-gradient(135deg,#FFD700,#F97316)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+        <h2 className="font-black text-3xl" style={{ background: 'linear-gradient(135deg,#F59E0B,#EA580C)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
           🏆 Bu həftənin sirri açıldı!
         </h2>
-        <p className="text-white font-bold text-lg mt-2">{winner.name}</p>
-        <p className="text-[#9CA3AF] text-sm">{winner.city} · {winner.solvedInMinutes} dəqiqədə tapdı</p>
+        <p className="text-gray-900 font-bold text-lg mt-2">{winner.name}</p>
+        <p className="text-gray-500 text-sm">{winner.city} · {winner.solvedInMinutes} dəqiqədə tapdı</p>
       </motion.div>
 
       {correctAnswer && (
@@ -448,11 +426,10 @@ function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correct
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
-          className="w-full max-w-md rounded-2xl p-4 text-center"
-          style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)' }}
+          className="w-full max-w-md rounded-2xl p-4 text-center bg-amber-50 border border-amber-200"
         >
-          <p className="text-[#9CA3AF] text-xs mb-1">Düzgün cavab</p>
-          <p className="text-white font-bold">{correctAnswer}</p>
+          <p className="text-gray-500 text-xs mb-1">Düzgün cavab</p>
+          <p className="text-gray-900 font-bold">{correctAnswer}</p>
         </motion.div>
       )}
 
@@ -463,52 +440,37 @@ function WinnerReveal({ winner, correctAnswer }: { winner: WeeklyWinner; correct
   )
 }
 
-// ── Live stats panel ──────────────────────────────────────────────────────
+// ── Live stats panel (yalnız real backend statistikası) ────────────────────
 
 function LivePanel({ stats }: { stats: WeeklyStats }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="rounded-2xl p-5 flex flex-col gap-4 w-full lg:w-72 shrink-0"
-      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+      className="rounded-2xl p-5 flex flex-col gap-4 w-full lg:w-72 shrink-0 bg-white border border-gray-200 shadow-sm"
     >
       <div className="flex items-center justify-between">
-        <span className="text-white font-bold text-sm">🌍 Canlı Statistika</span>
-        <motion.div className="w-2 h-2 rounded-full bg-[#22C55E]"
+        <span className="text-gray-900 font-bold text-sm">🌍 Canlı Statistika</span>
+        <motion.div className="w-2 h-2 rounded-full bg-emerald-500"
           animate={{ opacity:[1,0.3,1] }} transition={{ duration:1.5, repeat:Infinity }} />
       </div>
 
-      <div className="space-y-2">
-        <p className="text-[#9CA3AF] text-xs">Şəhər əsasında</p>
-        {CITY_STATS.map((c, i) => (
-          <div key={c.city} className="flex items-center justify-between">
-            <span className="text-white text-xs">{i+1}. {c.city}</span>
-            <div className="flex items-center gap-2">
-              <div className="w-16 h-1.5 bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-[#3B82F6]"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(c.attempts / 847) * 100}%` }}
-                  transition={{ delay: i * 0.1, duration: 0.7 }}
-                />
-              </div>
-              <span className="text-[#9CA3AF] text-[10px] w-8 text-right">{c.attempts}</span>
-            </div>
-          </div>
-        ))}
+      <div className="space-y-3">
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-500">Cəmi cəhd</span>
+          <span className="text-gray-900 font-bold">{stats.attemptCount.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-500">Həll etdi</span>
+          <span className="text-emerald-600 font-bold">{stats.solvedCount}</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-500">Ən sürətli</span>
+          <span className="text-amber-600 font-bold">{stats.fastestMinutes}:{String(stats.fastestSeconds).padStart(2, '0')}</span>
+        </div>
       </div>
 
-      <div className="border-t border-[rgba(255,255,255,0.07)] pt-3 space-y-2">
-        <div className="flex justify-between text-xs">
-          <span className="text-[#9CA3AF]">Cəmi cəhd</span>
-          <span className="text-white font-bold">{stats.attemptCount.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-[#9CA3AF]">Həll etdi</span>
-          <span className="text-[#22C55E] font-bold">{stats.solvedCount}</span>
-        </div>
-      </div>
+      <p className="text-[11px] text-gray-400 pt-3 border-t border-gray-100">Rəqəmlər real vaxtda yenilənir.</p>
     </motion.div>
   )
 }
@@ -524,10 +486,9 @@ function ReactionsBar({ onReact }: { onReact: (e: string) => void }) {
         <motion.button
           key={e}
           onClick={() => onReact(e)}
-          whileHover={{ scale: 1.3 }}
+          whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.85 }}
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-white border border-gray-200 shadow-sm hover:border-indigo-300 transition-colors"
         >
           {e}
         </motion.button>
@@ -536,75 +497,35 @@ function ReactionsBar({ onReact }: { onReact: (e: string) => void }) {
   )
 }
 
-// ── Final section ─────────────────────────────────────────────────────────
+// ── Final section (gələcək funksiya — dürüst "Tezliklə") ───────────────────
 
 function FinalSection({ avatarColor }: { avatarColor: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full rounded-3xl p-6 lg:p-8 flex flex-col gap-6"
-      style={{
-        background: 'linear-gradient(135deg, rgba(147,51,234,0.1) 0%, rgba(59,130,246,0.08) 100%)',
-        border:     '1px solid rgba(147,51,234,0.3)',
-      }}
+      className="w-full rounded-3xl p-6 lg:p-8 flex flex-col gap-4 bg-white border border-indigo-200 shadow-sm"
     >
-      <div className="text-center">
-        <h3 className="text-white font-black text-xl">⚔️ Sirrlərin Döyüşü — Final</h3>
-        <p className="text-[#9CA3AF] text-sm mt-1">26 həftəlik qaliblər böyük finala çıxır</p>
+      <div className="h-1 w-12 rounded-full" style={{ background: avatarColor }} />
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-gray-900 font-bold text-lg">⚔️ Sirrlərin Döyüşü — Final</h3>
+        <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">Tezliklə</span>
       </div>
-
-      {/* Finalists grid */}
-      <div className="flex flex-wrap justify-center gap-3">
-        {FINALISTS.map((f, i) => (
-          <motion.div
-            key={f.name}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: i * 0.08 }}
-            className="flex flex-col items-center gap-1.5"
-          >
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-base"
-              style={{ backgroundColor: f.color, boxShadow: `0 0 12px ${f.color}50` }}
-            >
-              {f.name?.charAt(0) ?? '?'}
-            </div>
-            <span className="text-[#9CA3AF] text-[9px] text-center">{f.name}</span>
-            <span className="text-[9px]" style={{ color: f.color }}>#{f.week}</span>
-          </motion.div>
-        ))}
-        {/* Empty finalist slots */}
-        {Array.from({ length: Math.max(0, 26 - FINALISTS.length) }).map((_, i) => (
-          <motion.div
-            key={`empty-${i}`}
-            className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ border: '2px dashed rgba(255,255,255,0.12)' }}
-            animate={{ opacity: [0.3, 0.7, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity, delay: i * 0.1 }}
-          >
-            <span className="text-[#9CA3AF] text-xs">?</span>
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center gap-4 justify-between">
-        <div className="text-center sm:text-left">
-          <p className="text-white font-bold text-sm">📺 TikTok + YouTube-da canlı yayım</p>
-          <p className="text-[#9CA3AF] text-xs mt-0.5">Tarix açıqlanacaq</p>
+      <p className="text-gray-500 text-sm">
+        Hər həftənin qalibləri mövsüm sonunda böyük finala çıxacaq. Bu bölmə hazırlanır — açıldıqda qaliblər burada görünəcək.
+      </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between pt-2 border-t border-gray-100">
+        <div>
+          <p className="text-gray-900 font-semibold text-sm">📺 TikTok + YouTube-da canlı yayım</p>
+          <p className="text-gray-400 text-xs mt-0.5">Tarix açıqlanacaq</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => toast('Bu funksiya hazır olduqda bildiriş ayarlarından idarə ediləcək.', { icon: '🔔' })}
-          className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0"
-          style={{
-            background: `linear-gradient(135deg, ${avatarColor}, #9333EA)`,
-            boxShadow:  `0 4px 14px ${avatarColor}40`,
-          }}
+        <button
+          disabled
+          aria-disabled="true"
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-400 bg-gray-50 border border-gray-200 cursor-not-allowed shrink-0"
         >
-          🔔 Xatırlat
-        </motion.button>
+          🔔 Xatırlat (Tezliklə)
+        </button>
       </div>
     </motion.div>
   )
@@ -675,7 +596,7 @@ export default function WeeklyMystery() {
 
   if (loadingCurrent) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' as const }}
           className="w-12 h-12 rounded-full border-4 border-t-transparent"
           style={{ borderColor: `${avatarColor} ${avatarColor}30 ${avatarColor}30 ${avatarColor}30` }}
@@ -687,18 +608,18 @@ export default function WeeklyMystery() {
   // Backend xətası: fake sirr göstərmirik — real error state.
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
+      <div className="min-h-screen bg-slate-50 text-gray-900 flex items-center justify-center px-4">
+        <div className="text-center max-w-sm bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold mb-2">Həftənin sirri yüklənmədi</h1>
-          <p className="text-white/50 text-sm mb-6">Zəhmət olmasa yenidən cəhd edin.</p>
+          <h1 className="text-2xl font-bold mb-2 text-gray-900">Həftənin sirri yüklənmədi</h1>
+          <p className="text-gray-500 text-sm mb-6">Zəhmət olmasa yenidən cəhd edin.</p>
           <div className="flex items-center justify-center gap-3">
             <Link to={APP_ROUTES.DASHBOARD.STUDENT}
-              className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition-colors">
+              className="px-5 py-2.5 rounded-xl bg-white border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
               Dashboard-a qayıt
             </Link>
             <button onClick={() => refetch()}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all">
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors">
               Yenidən yoxla
             </button>
           </div>
@@ -710,13 +631,13 @@ export default function WeeklyMystery() {
   // Backend 200 amma sirr yoxdursa — empty state (fake sirr yox).
   if (!current) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
+      <div className="min-h-screen bg-slate-50 text-gray-900 flex items-center justify-center px-4">
+        <div className="text-center max-w-sm bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           <div className="text-7xl mb-4">🔮</div>
-          <h1 className="text-2xl font-bold mb-2">Bu həftə üçün sirr hələ əlavə edilməyib</h1>
-          <p className="text-white/50 text-sm mb-6">Yeni sirr əlavə olunduqda burada görünəcək.</p>
+          <h1 className="text-2xl font-bold mb-2 text-gray-900">Bu həftə üçün sirr hələ əlavə edilməyib</h1>
+          <p className="text-gray-500 text-sm mb-6">Yeni sirr əlavə olunduqda burada görünəcək.</p>
           <Link to={APP_ROUTES.DASHBOARD.STUDENT}
-            className="inline-block px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold transition-all">
+            className="inline-block px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors">
             Dashboard-a qayıt
           </Link>
         </div>
@@ -730,7 +651,7 @@ export default function WeeklyMystery() {
   const liveStats = stats ?? EMPTY_STATS
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden bg-slate-50 text-gray-900">
       <StarBackground />
 
       {/* Floating reactions */}
@@ -758,14 +679,15 @@ export default function WeeklyMystery() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className="font-black text-3xl lg:text-4xl text-white">🔮 Həftənin Sirri</h1>
-          <p className="text-[#9CA3AF] text-sm mt-1">Hər bazar ertəsi 09:00-da yeni sir açılır</p>
+          <h1 className="font-extrabold tracking-tight text-3xl lg:text-4xl text-gray-900">🔮 Həftənin Sirri</h1>
+          <p className="text-gray-600 text-sm mt-2 max-w-md mx-auto">Hər həftə yeni tapmaca, düşünmə və öyrənmə çağırışı.</p>
+          <p className="text-gray-400 text-xs mt-1">Hər bazar ertəsi 09:00-da yeni sirr açılır</p>
         </motion.div>
 
         {/* ── WAITING state ── */}
         {status === 'waiting' && (
           <>
-            {/* Mascots */}
+            {/* Decorative cue */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -774,11 +696,11 @@ export default function WeeklyMystery() {
             >
               <div className="flex flex-col items-center gap-2 text-center">
                 <motion.span className="text-5xl" animate={{ rotate:[-5,5,-5] }} transition={{ duration:3, repeat:Infinity }}>🔮</motion.span>
-                <p className="text-[#9CA3AF] text-xs max-w-[120px]">Bu həftə yeni sirr hazırlanır...</p>
+                <p className="text-gray-500 text-xs max-w-[120px]">Bu həftə yeni sirr hazırlanır...</p>
               </div>
               <div className="flex flex-col items-center gap-2 text-center">
                 <motion.span className="text-5xl" animate={{ rotate:[5,-5,5] }} transition={{ duration:3, repeat:Infinity, delay:0.5 }}>🧩</motion.span>
-                <p className="text-[#9CA3AF] text-xs max-w-[120px]">Yalnız ən güclülər tapa bilər!</p>
+                <p className="text-gray-500 text-xs max-w-[120px]">Yalnız ən güclülər tapa bilər!</p>
               </div>
             </motion.div>
 
@@ -790,7 +712,7 @@ export default function WeeklyMystery() {
                 transition={{ delay: 0.3 }}
                 className="flex flex-col items-center gap-4"
               >
-                <p className="text-[#9CA3AF] text-sm">Növbəti sirə qədər:</p>
+                <p className="text-gray-500 text-sm">Növbəti sirə qədər:</p>
                 <FlipClock targetDate={current.nextRevealAt} />
               </motion.div>
             )}
@@ -801,7 +723,7 @@ export default function WeeklyMystery() {
 
             {/* Spectator reactions */}
             <div className="flex flex-col items-center gap-3">
-              <p className="text-[#9CA3AF] text-xs">Reaksiya göndər</p>
+              <p className="text-gray-500 text-xs">Reaksiya göndər</p>
               <ReactionsBar onReact={sendReaction} />
             </div>
           </>
@@ -820,7 +742,7 @@ export default function WeeklyMystery() {
                 <motion.h2
                   className="font-black text-2xl lg:text-3xl"
                   style={{
-                    background: 'linear-gradient(135deg, #FFD700, #F97316, #FFD700)',
+                    background: 'linear-gradient(135deg, #F59E0B, #EA580C, #F59E0B)',
                     backgroundSize: '200%',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -837,7 +759,7 @@ export default function WeeklyMystery() {
 
             {/* Main layout: question left, live panel right */}
             <div className="flex flex-col lg:flex-row gap-6 w-full items-start">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <ActiveQuestionView
                   question={question}
                   avatarColor={avatarColor}
