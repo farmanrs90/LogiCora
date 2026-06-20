@@ -147,6 +147,14 @@ function SectionEmpty({ text }: { text: string }) {
   return <p className="py-4 text-center text-sm text-gray-400">{text}</p>
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
 // ── Meta tags (OG) ────────────────────────────────────────────────────────────
 
 function setMetaTags(portfolio: PublicPortfolioData) {
@@ -160,6 +168,34 @@ function setMetaTags(portfolio: PublicPortfolioData) {
   setMeta('og:description', `Səviyyə ${portfolio.user.level} · ${portfolio.user.league} liqa · ${portfolio.stats.totalXP.toLocaleString()} XP`)
   setMeta('og:url', `https://${portfolio.shareLink}`)
   setMeta('og:type', 'profile')
+}
+
+function getErrorStatus(error: unknown): number | null {
+  if (!isRecord(error)) return null
+  const response = error.response
+  if (!isRecord(response)) return null
+  return typeof response.status === 'number' ? response.status : null
+}
+
+function getErrorMessage(error: unknown): string {
+  if (!isRecord(error)) return ''
+
+  const response = error.response
+  const data = isRecord(response) ? response.data : undefined
+
+  if (isRecord(data)) {
+    return [asString(data.message), asString(data.error)].filter(Boolean).join(' ')
+  }
+
+  if (typeof data === 'string') return data
+  return asString(error.message)
+}
+
+function isPrivateAccessError(error: unknown): boolean {
+  if (getErrorStatus(error) === 403) return true
+
+  const message = getErrorMessage(error).toLowerCase()
+  return message.includes('gizli') || message.includes('private') || message.includes('forbidden')
 }
 
 // ── Action Buttons (Contact / Connect) ───────────────────────────────────────
@@ -547,7 +583,7 @@ function AdultPublicView({ portfolio }: { portfolio: PublicPortfolioData }) {
 export default function PublicPortfolio() {
   const { link } = useParams<{ link: string }>()
 
-  const { data: portfolio, isLoading } = useQuery({
+  const { data: portfolio, isLoading, isError, error } = useQuery<PublicPortfolioData | null, unknown>({
     queryKey: ['public-portfolio', link],
     queryFn: () =>
       api.get(API_ROUTES.PORTFOLIO.BY_LINK(link!))
@@ -571,13 +607,13 @@ export default function PublicPortfolio() {
     )
   }
 
-  if (!portfolio) {
+  if (isError && isPrivateAccessError(error)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-center px-4">
-        <div className="space-y-4">
-          <div className="text-7xl">🔍</div>
-          <h1 className="text-2xl font-bold text-gray-900">Portfolio mövcud deyil</h1>
-          <p className="text-gray-500">Bu portfolio mövcud deyil və ya paylaşım aktiv deyil.</p>
+        <div className="space-y-4 max-w-sm">
+          <div className="text-7xl">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-900">Bu portfolio gizlidir</h1>
+          <p className="text-gray-500">Bu profili yalnız sahibi, valideyni, əlaqəli müəllimi və ya admin görə bilər.</p>
           <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors">
             Ana səhifəyə qayıt
           </Link>
@@ -586,13 +622,13 @@ export default function PublicPortfolio() {
     )
   }
 
-  if (!portfolio.isPublic) {
+  if (!portfolio) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-center px-4">
-        <div className="space-y-4 max-w-sm">
-          <div className="text-7xl">🔒</div>
-          <h1 className="text-2xl font-bold text-gray-900">Bu portfolio gizlidir</h1>
-          <p className="text-gray-500">Sahibi portfoliosunu ictimai etməyib.</p>
+        <div className="space-y-4">
+          <div className="text-7xl">🔍</div>
+          <h1 className="text-2xl font-bold text-gray-900">Portfolio mövcud deyil</h1>
+          <p className="text-gray-500">Bu portfolio mövcud deyil və ya paylaşım aktiv deyil.</p>
           <Link to="/" className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors">
             Ana səhifəyə qayıt
           </Link>
