@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 // Oyun mühərriki + competition modeli ("start" icazəsini yoxlamaq üçün)
 const competitionEngine = require('./modules/competition/competition.engine');
 const Competition        = require('./modules/competition/competition.model');
+const Conversation       = require('./modules/chat/conversation.model');
 
 let io;
 
@@ -28,6 +29,20 @@ const rooms = {
   clan:        (id) => `clan:${id}`,
   chat:        (id) => `chat:${id}`,
   user:        (id) => `user:${id}`,
+};
+
+const isChatParticipant = async (conversationId, userId) => {
+  if (!conversationId) return false;
+  return Boolean(
+    await Conversation.exists({
+      _id: conversationId,
+      participants: userId,
+    })
+  );
+};
+
+const emitChatError = (socket, message) => {
+  socket.emit('chat:error', { message });
 };
 
 // ─── Init ──────────────────────────────────────────────────────────
@@ -143,30 +158,54 @@ const initSocket = (httpServer) => {
     // ── CHAT EVENTS ───────────────────────────────────────────────
 
     // Söhbət room-una qoşul
-    socket.on('chat:join', ({ conversationId }) => {
+    socket.on('chat:join', async ({ conversationId }) => {
       if (!conversationId) return;
-      socket.join(rooms.chat(conversationId));
+      try {
+        if (!(await isChatParticipant(conversationId, userId))) {
+          emitChatError(socket, 'Bu söhbətə qoşulmaq icazəniz yoxdur.');
+          return;
+        }
+        socket.join(rooms.chat(conversationId));
+      } catch {
+        emitChatError(socket, 'Söhbətə qoşulmaq mümkün olmadı.');
+      }
     });
 
     // Mesaj göndər — room-dakı digər istifadəçiyə çatır
-    socket.on('message:send', ({ conversationId, content }) => {
+    socket.on('message:send', async ({ conversationId, content }) => {
       if (!conversationId || !content?.trim()) return;
-      socket.to(rooms.chat(conversationId)).emit('message:receive', {
-        conversationId,
-        senderId: userId,
-        content: content.trim(),
-        sentAt: new Date(),
-      });
+      try {
+        if (!(await isChatParticipant(conversationId, userId))) {
+          emitChatError(socket, 'Bu söhbətə mesaj göndərmək icazəniz yoxdur.');
+          return;
+        }
+        socket.to(rooms.chat(conversationId)).emit('message:receive', {
+          conversationId,
+          senderId: userId,
+          content: content.trim(),
+          sentAt: new Date(),
+        });
+      } catch {
+        emitChatError(socket, 'Mesaj göndərmək mümkün olmadı.');
+      }
     });
 
     // Mesaj oxundu — göndərənə bildiriş
-    socket.on('message:read', ({ conversationId }) => {
+    socket.on('message:read', async ({ conversationId }) => {
       if (!conversationId) return;
-      socket.to(rooms.chat(conversationId)).emit('message:read', {
-        conversationId,
-        readBy: userId,
-        readAt: new Date(),
-      });
+      try {
+        if (!(await isChatParticipant(conversationId, userId))) {
+          emitChatError(socket, 'Bu söhbəti oxumaq icazəniz yoxdur.');
+          return;
+        }
+        socket.to(rooms.chat(conversationId)).emit('message:read', {
+          conversationId,
+          readBy: userId,
+          readAt: new Date(),
+        });
+      } catch {
+        emitChatError(socket, 'Oxundu bildirişini göndərmək mümkün olmadı.');
+      }
     });
 
     // ── DISCONNECT ────────────────────────────────────────────────
