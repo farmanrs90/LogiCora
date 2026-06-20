@@ -37,7 +37,7 @@ const FONT_SIZES = [
 
 const TOGGLES: { key: keyof AccessibilityConfig; label: string; desc: string; emoji: string }[] = [
   { key: 'highContrast', label: 'Yüksək kontrast', desc: 'Rəngləri daha sezilən et', emoji: '🌗' },
-  { key: 'audioQuestions', label: 'Sual səsi', desc: 'Sualları səslə dinlə', emoji: '🔊' },
+  { key: 'audioQuestions', label: 'Sual səsi', desc: 'Günlük Quizdə “Sualı səsləndir” düyməsi görünür', emoji: '🔊' },
   { key: 'simplifiedUI', label: 'Sadə interfeys', desc: 'Bəzəkləri azalt', emoji: '✨' },
   { key: 'noAnimations', label: 'Animasiyasız', desc: 'Bütün animasiyaları söndür', emoji: '🚫' },
   { key: 'largeClickTargets', label: 'Böyük düymələr', desc: 'Daha böyük klik sahəsi', emoji: '👆' },
@@ -278,6 +278,7 @@ interface ParentChildLite {
 }
 
 function ParentChildSupport() {
+  const qc = useQueryClient()
   const { data: children, isLoading, isError } = useQuery<ParentChildLite[]>({
     queryKey: ['children'],
     queryFn: () => api.get<ParentChildLite[]>('/parent/children').then(r => r.data),
@@ -294,14 +295,26 @@ function ParentChildSupport() {
     if (children && children.length > 0 && !selectedId) setSelectedId(children[0].id)
   }, [children, selectedId])
 
-  // Uşaq dəyişdikdə kontrolu sıfırla — hasSpecialNeeds backend config-də qaytarılmır,
-  // ona görə cari vəziyyəti uydurmuruq (Valideyn paneli ilə eyni davranış).
+  // Seçilmiş uşağın real saxlanmış xüsusi dəstək seçimi — yenidən açanda prefill.
+  const { data: childCfg } = useQuery<{ hasSpecialNeeds?: boolean; specialNeedsTypes?: string[] }>({
+    queryKey: ['child-accessibility', selectedId],
+    queryFn: () =>
+      api.get<{ data: { hasSpecialNeeds?: boolean; specialNeedsTypes?: string[] } }>(`/accessibility/child/${selectedId}`).then(r => r.data.data),
+    enabled: !!selectedId,
+  })
+
+  // Uşaq dəyişəndə və ya config gələndə real backend dəyərindən prefill (fake state yox).
   useEffect(() => {
-    setAnswer(null)
-    setTypes([])
     setError('')
     setSaved(false)
-  }, [selectedId])
+    if (childCfg?.hasSpecialNeeds) {
+      setAnswer('yes')
+      setTypes(Array.isArray(childCfg.specialNeedsTypes) ? childCfg.specialNeedsTypes : [])
+    } else {
+      setAnswer(null)
+      setTypes([])
+    }
+  }, [selectedId, childCfg])
 
   const save = async () => {
     if (!selectedId || !answer || answer === 'prefer_not') return
@@ -312,6 +325,7 @@ function ParentChildSupport() {
         hasSpecialNeeds: answer === 'yes',
         types: answer === 'yes' ? types : [],
       })
+      qc.invalidateQueries({ queryKey: ['child-accessibility', selectedId] })
       setSaved(true)
       toast.success('Saxlanıldı')
       setTimeout(() => setSaved(false), 2500)
@@ -534,6 +548,7 @@ export default function Settings() {
                 Bu məlumat könüllüdür və tibbi diaqnoz deyil. Məqsəd platformanın görünüşünü və sual təcrübəsini istifadəçiyə daha rahat etməkdir.
               </p>
               <p className="mt-1 text-[11px] text-gray-400">Hər dəyişiklik dərhal saxlanılır.</p>
+              <p className="mt-1 text-[11px] text-gray-400">Seçimlər saxlanıldıqdan sonra platformanın görünüşü və istifadə rahatlığı buna uyğun dəyişir.</p>
             </div>
           </div>
           <div className="mt-4 divide-y divide-gray-100 border-t border-gray-100">

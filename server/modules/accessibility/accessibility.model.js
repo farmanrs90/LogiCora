@@ -37,6 +37,12 @@ const accessibilitySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Valideynin uşaq üçün seçdiyi xüsusi dəstək növləri (AZ etiketlər) — real multi-select saxlanır.
+    // Additiv sahə: köhnə sənədlər üçün default [] (geri-uyğun).
+    specialNeedsTypes: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true, versionKey: false }
 );

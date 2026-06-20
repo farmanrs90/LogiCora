@@ -97,23 +97,37 @@ const resolveOwnedChildUserId = async (parentUserId, childId) => {
   return childUserId;
 };
 
+// Uşaq konfiqurasiyasını + saxlanmış xüsusi dəstək seçimini birlikdə qaytarır
+// (frontend yenidən açanda real prefill üçün — fake state yox).
+const shapeChildConfig = (config, hasSpecialNeeds) => ({
+  ...config.toObject(),
+  hasSpecialNeeds: !!hasSpecialNeeds,
+  specialNeedsTypes: Array.isArray(config.specialNeedsTypes) ? config.specialNeedsTypes : [],
+});
+
 const getChildConfig = async (parentUserId, childId) => {
   const childUserId = await resolveOwnedChildUserId(parentUserId, childId);
-  return getOrCreateConfig(childUserId);
+  const config = await getOrCreateConfig(childUserId);
+  const child = await User.findById(childUserId).select('isSpecialNeeds');
+  return shapeChildConfig(config, child?.isSpecialNeeds);
 };
 
 const updateChildSpecialNeeds = async (parentUserId, childId, data) => {
   const childUserId = await resolveOwnedChildUserId(parentUserId, childId);
 
   const hasSpecialNeeds = !!data.hasSpecialNeeds;
-  const specialNeedsType = hasSpecialNeeds ? mapSpecialNeedsType(data.types) : '';
+  const types = hasSpecialNeeds && Array.isArray(data.types) ? data.types : [];
+  const specialNeedsType = hasSpecialNeeds ? mapSpecialNeedsType(types) : '';
 
-  // Uşağın User sənədinə real yazılır (mövcud sahələr — schema dəyişmir).
+  // Uşağın User sənədinə real yazılır (mövcud tək-enum sahə — geri-uyğunluq üçün saxlanır).
   await User.findByIdAndUpdate(childUserId, { isSpecialNeeds: hasSpecialNeeds, specialNeedsType });
 
-  // A11y konfiqurasiyasını təmin et (yoxdursa default yaradılır).
+  // A11y konfiqurasiyasını təmin et + tam multi-select seçimini real saxla.
   const config = await getOrCreateConfig(childUserId);
-  return config;
+  config.specialNeedsTypes = types;
+  await config.save();
+
+  return shapeChildConfig(config, hasSpecialNeeds);
 };
 
 module.exports = {

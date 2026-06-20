@@ -23,6 +23,18 @@ import FormatE from '../../features/quiz/formats/FormatE'
 
 type Phase = 'question' | 'feedback' | 'result' | 'no_hearts' | 'completed'
 
+// Sual səsi (audioQuestions) — real brauzer SpeechSynthesis. Backend-ə heç nə getmir, auto-play yoxdur.
+const SPEECH_SUPPORTED = typeof window !== 'undefined' && 'speechSynthesis' in window
+function speakQuestion(text: string) {
+  if (!SPEECH_SUPPORTED || !text) return
+  const synth = window.speechSynthesis
+  synth.cancel()
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'az-AZ'
+  utterance.rate = 0.95
+  synth.speak(utterance)
+}
+
 // Aktiv sual səhnəsi premium soft-navy qalır (Format komponentləri ağ mətnlidir,
 // yəni light fonda görünməz olardı). Tamamlanma/limit/ürək/yükləmə ekranları light.
 const QUIZ_STAGE_BG = 'linear-gradient(180deg, #0E1525 0%, #0B111E 100%)'
@@ -457,6 +469,15 @@ export default function DailyQuiz() {
     refetchOnReconnect: false,
   })
 
+  // Sual səsi ayarı — real saxlanmış accessibility config-dən (App.tsx ilə eyni cache).
+  const { data: a11yConfig } = useQuery<{ audioQuestions?: boolean }>({
+    queryKey: ['accessibility', 'me'],
+    queryFn: () => api.get<{ data: { audioQuestions?: boolean } }>(API_ROUTES.ACCESSIBILITY.ME).then((r) => r.data.data),
+    enabled: !!user,
+    staleTime: 1000 * 60,
+  })
+  const audioOn = a11yConfig?.audioQuestions === true
+
   // Answer mutation
   const mutation = useMutation({
     mutationFn: ({ questionId, answer, responseTime }: { questionId: string; answer: string; responseTime: number }) =>
@@ -792,7 +813,23 @@ export default function DailyQuiz() {
       </div>
 
       {/* ── Question area ── */}
-      <div className="flex-1 flex items-center justify-center py-6 px-2 overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center py-6 px-2 overflow-hidden">
+        {/* Sual səsi — yalnız ayar aktiv olanda; dəstək yoxdursa dürüst mesaj */}
+        {audioOn && current && (
+          <div className="mb-3 shrink-0">
+            {SPEECH_SUPPORTED ? (
+              <button
+                type="button"
+                onClick={() => speakQuestion(current.text)}
+                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              >
+                🔊 Sualı səsləndir
+              </button>
+            ) : (
+              <p className="text-[11px] text-slate-400">Bu brauzer səsləndirməni dəstəkləmir.</p>
+            )}
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={`${currentIndex}-${format}`}

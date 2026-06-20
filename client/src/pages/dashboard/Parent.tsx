@@ -410,6 +410,7 @@ function TimeCapsulePanel({ childId }: { childId: string }) {
 // ── Special Needs Panel ───────────────────────────────────────────────────────
 
 function SpecialNeedsPanel({ childId }: { childId: string }) {
+  const qc = useQueryClient()
   const [answer, setAnswer] = useState<'yes' | 'no' | 'prefer_not' | null>(null)
   const [types, setTypes] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
@@ -417,11 +418,31 @@ function SpecialNeedsPanel({ childId }: { childId: string }) {
 
   const TYPES = ['Görmə', 'Eşitmə', 'İdrak', 'Motor', 'Digər']
 
+  // Real backend-dən saxlanmış seçim — yenidən açanda prefill (fake state yox).
+  const { data: childCfg } = useQuery<{ hasSpecialNeeds?: boolean; specialNeedsTypes?: string[] }>({
+    queryKey: ['child-accessibility', childId],
+    queryFn: () =>
+      api.get<{ data: { hasSpecialNeeds?: boolean; specialNeedsTypes?: string[] } }>(`/accessibility/child/${childId}`).then(r => r.data.data),
+    enabled: !!childId,
+  })
+  useEffect(() => {
+    if (!childCfg) return
+    // Yalnız real təsdiqlənmiş "bəli" seçimini prefill edirik (default false-u "Xeyr" kimi göstərmirik).
+    if (childCfg.hasSpecialNeeds) {
+      setAnswer('yes')
+      setTypes(Array.isArray(childCfg.specialNeedsTypes) ? childCfg.specialNeedsTypes : [])
+    } else {
+      setAnswer(null)
+      setTypes([])
+    }
+  }, [childCfg])
+
   // Real save: uğur YALNIZ backend 200-dən sonra; xəta udulmur, fake success yox.
   const handleSave = async () => {
     setSaveError('')
     try {
       await api.put(`/accessibility/child/${childId}`, { hasSpecialNeeds: answer === 'yes', types: answer === 'yes' ? types : [] })
+      qc.invalidateQueries({ queryKey: ['child-accessibility', childId] })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch {

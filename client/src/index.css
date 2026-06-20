@@ -131,3 +131,67 @@ body {
            bg-[rgba(255,215,0,0.15)] text-[#ffd700] border border-[rgba(255,215,0,0.3)];
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Adaptiv əlçatımlılıq effektləri — <html>-də data-atributlar (App.tsx)
+   Settings-dəki real ayarlardan tətbiq olunur. Qatsız (unlayered) yazılıb ki,
+   Tailwind utility-lərini üstələsin; yalnız atribut aktiv olanda işləyir.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* 1) Yüksək kontrast — güclü mətn/kənar/fokus (tam invert yox) */
+[data-high-contrast='true'] .text-gray-400,
+[data-high-contrast='true'] .text-gray-500 { color: #1f2937 !important; }
+[data-high-contrast='true'] .border-gray-100,
+[data-high-contrast='true'] .border-gray-200 { border-color: #4b5563 !important; }
+[data-high-contrast='true'] .text-indigo-600 { color: #3730a3 !important; }
+[data-high-contrast='true'] :focus-visible {
+  outline: 3px solid #1d4ed8 !important;
+  outline-offset: 2px !important;
+}
+
+/* 2) Böyük düymələr / klik sahələri */
+[data-large-buttons='true'] button,
+[data-large-buttons='true'] [role='button'],
+[data-large-buttons='true'] select,
+[data-large-buttons='true'] input:not([type='checkbox']):not([type='radio']),
+[data-large-buttons='true'] textarea {
+  min-height: 48px !important;
+}
+[data-large-buttons='true'] button,
+[data-large-buttons='true'] [role='button'] {
+  padding-top: 0.625rem !important;
+  padding-bottom: 0.625rem !important;
+}
+
+/* 3) Sadə interfeys — dekorativ effektləri azalt (məzmun/route toxunulmur) */
+[data-simplified-ui='true'] [class*='backdrop-blur'] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+[data-simplified-ui='true'] [class*='blur-'] { filter: none !important; }
+[data-simplified-ui='true'] .shadow-lg,
+[data-simplified-ui='true'] .shadow-xl,
+[data-simplified-ui='true'] [class*='shadow-['] { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important; }
+[data-simplified-ui='true'] .animate-pulse { animation: none !important; }
+
+/* 4) Animasiyasız — CSS animation/transition azaldılır (framer-motion sınmır) */
+[data-reduced-motion='true'] *,
+[data-reduced-motion='true'] *::before,
+[data-reduced-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+[data-reduced-motion='true'] { scroll-behavior: auto !important; }
+
+/* OS səviyyəsində reduced-motion da nəzərə alınır */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* 5) Yalnız klaviatura — aydın fokus halqası (siçan söndürülmür) */
+[data-keyboard-mode='true'] :focus-visible {
+  outline: 3px solid #4f46e5 !important;
+  outline-offset: 2px !important;
+}
