@@ -427,7 +427,6 @@ function EnrollmentCard({
   onEnroll,
   isEnrolling,
   onContinue,
-  onCertificate,
   isOwner,
   onEdit,
 }: {
@@ -435,7 +434,6 @@ function EnrollmentCard({
   onEnroll: () => void
   isEnrolling: boolean
   onContinue: () => void
-  onCertificate: () => void
   isOwner: boolean
   onEdit: () => void
 }) {
@@ -517,13 +515,15 @@ function EnrollmentCard({
             </button>
             {course.enrollmentProgress === 100 && (
               <button
-                onClick={onCertificate}
-                className="w-full py-2.5 rounded-xl border border-amber-300 text-amber-600 font-semibold hover:bg-amber-50 transition-colors flex items-center justify-center gap-2"
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="w-full cursor-not-allowed rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-700 flex items-center justify-center gap-2"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 15l-2 5-1-1-5 1 1-5-1-1 5-2 3 3zM18 8a5 5 0 00-8-4 4 4 0 105 5 5 5 0 003-1z" />
                 </svg>
-                Sertifikat al
+                Sertifikat sistemi post-demo mərhələsində aktivləşdiriləcək.
               </button>
             )}
           </div>
@@ -674,10 +674,6 @@ export default function CourseDetail() {
     openLessonsFlow(course)
   }
 
-  const handleCertificate = () => {
-    toast.error('Sertifikat funksiyası demo üçün deaktivdir. Rəsmi sertifikat doğrulaması post-demo mərhələsində əlavə ediləcək.')
-  }
-
   // ── Loading skeleton ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -797,7 +793,6 @@ export default function CourseDetail() {
                   onEnroll={() => enrollMutation.mutate()}
                   isEnrolling={enrollMutation.isPending}
                   onContinue={handleContinue}
-                  onCertificate={handleCertificate}
                   isOwner={isOwner}
                   onEdit={handleEdit}
                 />
@@ -819,7 +814,6 @@ export default function CourseDetail() {
                 onEnroll={() => enrollMutation.mutate()}
                 isEnrolling={enrollMutation.isPending}
                 onContinue={handleContinue}
-                onCertificate={handleCertificate}
                 isOwner={isOwner}
                 onEdit={handleEdit}
               />
@@ -1067,7 +1061,6 @@ export default function CourseDetail() {
                 onEnroll={() => enrollMutation.mutate()}
                 isEnrolling={enrollMutation.isPending}
                 onContinue={handleContinue}
-                onCertificate={handleCertificate}
                 isOwner={isOwner}
                 onEdit={handleEdit}
               />

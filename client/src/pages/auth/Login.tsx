@@ -198,10 +198,10 @@ export default function Login() {
             <div className="flex justify-end -mt-2">
               <button
                 type="button"
-                onClick={() => toast('Şifrə bərpası tezliklə əlavə olunacaq 🔑', { icon: '🔜' })}
-                className="rounded text-xs font-medium text-gray-500 transition-colors hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                disabled
+                className="rounded text-xs font-medium text-gray-400 cursor-not-allowed"
               >
-                Şifrəni unutdum?
+                Şifrə bərpası tezliklə
               </button>
             </div>
 
@@ -233,11 +233,12 @@ export default function Login() {
 
           <button
             type="button"
-            onClick={() => toast('Google giriş tezliklə əlavə olunacaq 🔜', { icon: '🌐' })}
-            className="relative flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            disabled
+            aria-disabled="true"
+            className="relative flex w-full cursor-not-allowed items-center justify-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-6 py-3 text-sm font-medium text-gray-400"
           >
             <span className="text-lg" role="img" aria-label="Google">🌐</span>
-            Google ilə daxil ol
+            Google ilə giriş post-demo
             <span className="absolute right-3 rounded-full border border-gray-300 px-2 py-0.5 text-[10px] text-gray-400">tezliklə</span>
           </button>
 

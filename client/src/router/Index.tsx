@@ -59,7 +59,7 @@ const roleDashboard: Record<Role, string> = {
   teacher: APP_ROUTES.DASHBOARD.TEACHER,
   parent: APP_ROUTES.DASHBOARD.PARENT,
   admin: APP_ROUTES.ADMIN,
-  manager: APP_ROUTES.DASHBOARD.ROOT,
+  manager: APP_ROUTES.SETTINGS,
 }
 
 function GuestRoute({ children }: { children: React.ReactNode }) {

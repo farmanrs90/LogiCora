@@ -62,11 +62,17 @@ const adminNav: NavItem[] = [
   { label: 'Tənzimləmələr', path: APP_ROUTES.SETTINGS },
 ]
 
-const navByRole: Record<string, NavItem[]> = {
+const managerNav: NavItem[] = [
+  { label: 'Tənzimləmələr', path: APP_ROUTES.SETTINGS },
+  { label: 'Mesajlar', path: APP_ROUTES.CHAT },
+]
+
+const navByRole: Record<Role, NavItem[]> = {
   student: studentNav,
   teacher: teacherNav,
   parent: parentNav,
   admin: adminNav,
+  manager: managerNav,
 }
 
 const roleLabelMap: Record<Role, string> = {
@@ -290,10 +296,11 @@ export default function Navbar() {
   }
 
   // Rol + yaş məntiqinə görə nav items (Sidebar ilə eyni qayda)
-  let navItems = navByRole[user?.role ?? 'student'] ?? studentNav
+  let navItems = user ? navByRole[user.role] : []
   if (user?.role === 'student' && !KID_AGES.includes(user.ageGroup)) {
     navItems = navItems.filter((i) => i.path !== APP_ROUTES.KIDS_HUB)
   }
+  const isManager = user?.role === 'manager'
 
   const isActive = (path: string) =>
     location.pathname === path ||
@@ -511,14 +518,16 @@ export default function Navbar() {
                   )}
 
                   <div className="p-2 space-y-0.5">
-                    <button
-                      onClick={() => { goTo(`${APP_ROUTES.SETTINGS}#account`) }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                                 text-gray-700 hover:text-gray-900 hover:bg-gray-100
-                                 transition-colors text-sm"
-                    >
-                      <UserRound size={15} /> Profilim
-                    </button>
+                    {!isManager && (
+                      <button
+                        onClick={() => { goTo(`${APP_ROUTES.SETTINGS}#account`) }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                   text-gray-700 hover:text-gray-900 hover:bg-gray-100
+                                   transition-colors text-sm"
+                      >
+                        <UserRound size={15} /> Profilim
+                      </button>
+                    )}
 
                     <button
                       onClick={() => { goTo(`${APP_ROUTES.SETTINGS}#adaptive`) }}
@@ -529,23 +538,27 @@ export default function Navbar() {
                       <SlidersHorizontal size={15} /> Tənzimləmələr
                     </button>
 
-                    <button
-                      onClick={() => { goTo(APP_ROUTES.RESULTS) }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                                 text-gray-700 hover:text-gray-900 hover:bg-gray-100
-                                 transition-colors text-sm"
-                    >
-                      <BarChart3 size={15} /> Nəticələr
-                    </button>
+                    {!isManager && (
+                      <button
+                        onClick={() => { goTo(APP_ROUTES.RESULTS) }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                   text-gray-700 hover:text-gray-900 hover:bg-gray-100
+                                   transition-colors text-sm"
+                      >
+                        <BarChart3 size={15} /> Nəticələr
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => { goTo(APP_ROUTES.FEEDBACK) }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                                 text-gray-700 hover:text-gray-900 hover:bg-gray-100
-                                 transition-colors text-sm"
-                    >
-                      <MessageSquarePlus size={15} /> Təklif və İradlar
-                    </button>
+                    {!isManager && (
+                      <button
+                        onClick={() => { goTo(APP_ROUTES.FEEDBACK) }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                   text-gray-700 hover:text-gray-900 hover:bg-gray-100
+                                   transition-colors text-sm"
+                      >
+                        <MessageSquarePlus size={15} /> Təklif və İradlar
+                      </button>
+                    )}
 
                     <button
                       onClick={() => { handleLogout(); setAvatarOpen(false) }}
@@ -643,13 +656,15 @@ export default function Navbar() {
 
               {/* Settings + logout */}
               <div className="px-3 py-4 border-t border-gray-100 space-y-0.5">
-                <button
-                  type="button"
-                  onClick={() => goTo(`${APP_ROUTES.SETTINGS}#account`)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                >
-                  <UserRound size={16} /> Profilim
-                </button>
+                {!isManager && (
+                  <button
+                    type="button"
+                    onClick={() => goTo(`${APP_ROUTES.SETTINGS}#account`)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                  >
+                    <UserRound size={16} /> Profilim
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => goTo(`${APP_ROUTES.SETTINGS}#adaptive`)}
@@ -657,20 +672,24 @@ export default function Navbar() {
                 >
                   <Settings size={16} /> Tənzimləmələr
                 </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(APP_ROUTES.RESULTS)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                >
-                  <BarChart3 size={16} /> Nəticələr
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(APP_ROUTES.FEEDBACK)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                >
-                  <MessageSquarePlus size={16} /> Təklif və İradlar
-                </button>
+                {!isManager && (
+                  <button
+                    type="button"
+                    onClick={() => goTo(APP_ROUTES.RESULTS)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                  >
+                    <BarChart3 size={16} /> Nəticələr
+                  </button>
+                )}
+                {!isManager && (
+                  <button
+                    type="button"
+                    onClick={() => goTo(APP_ROUTES.FEEDBACK)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                  >
+                    <MessageSquarePlus size={16} /> Təklif və İradlar
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleLogout}
