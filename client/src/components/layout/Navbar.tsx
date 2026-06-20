@@ -38,7 +38,7 @@ const studentNav: NavItem[] = [
 const teacherNav: NavItem[] = [
   { label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.TEACHER },
   { label: 'Qruplarım', path: '/groups' },
-  { label: 'Davamiyyət', path: '/attendance' },
+  { label: 'Dərs iştirakı', path: '/attendance' },
   { label: 'Yarış yarat', path: '/competition/create' },
   { label: 'Kurslarım', path: '/courses' },
   { label: 'Analitika', path: '/analytics' },
@@ -50,7 +50,7 @@ const parentNav: NavItem[] = [
   { label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.PARENT },
   { label: 'Övladım', path: `${APP_ROUTES.DASHBOARD.PARENT}#child-section` },
   { label: 'İrəliləyiş', path: `${APP_ROUTES.DASHBOARD.PARENT}#progress-section` },
-  { label: 'Davamiyyət', path: `${APP_ROUTES.DASHBOARD.PARENT}#attendance-section` },
+  { label: 'Platforma aktivliyi', path: `${APP_ROUTES.DASHBOARD.PARENT}#attendance-section` },
   { label: 'Müəllimlə', path: APP_ROUTES.CHAT },
   { label: 'Ödənişlər', path: `${APP_ROUTES.DASHBOARD.PARENT}#payments-section` },
 ]
