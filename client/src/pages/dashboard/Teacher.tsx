@@ -377,6 +377,12 @@ export default function TeacherDashboard() {
     queryFn: () => api.get('/teachers/me/courses/performance').then(r => r.data.data as CoursePerf[]),
   })
 
+  // Təhsil mərkəzi vəziyyəti (bağlı / müstəqil) — real /centers/me
+  const { data: centerInfo } = useQuery({
+    queryKey: ['centers', 'me'],
+    queryFn: () => api.get('/centers/me').then(r => r.data.data as { center: { name: string; city?: string } | null; status: string }),
+  })
+
   useEffect(() => {
     if (statsError) toast.error('Statistika yüklənmədi')
   }, [statsError])
@@ -393,6 +399,14 @@ export default function TeacherDashboard() {
             <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">Müəllim paneli</h1>
             <p className="mt-1 text-sm text-gray-600">Qruplar, dərslər və tələbə irəliləyişini bir yerdə idarə et.</p>
             <p className="mt-1 text-xs text-gray-400 capitalize">Salam, {user?.name?.split(' ')[0] ?? 'Müəllim'} · {todayStr()}</p>
+            {centerInfo && (
+              <div className="mt-2">
+                <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${centerInfo.center ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-gray-600 border-gray-200'}`}>
+                  🏫 {centerInfo.center ? `Təhsil mərkəzi: ${centerInfo.center.name}` : 'Müstəqil müəllim'}
+                </span>
+                <p className="mt-1 text-[11px] text-gray-400">Bu müəllim profili fərdi və ya mərkəzə bağlı şəkildə işləyə bilər.</p>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {isVerified && (

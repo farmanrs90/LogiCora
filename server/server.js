@@ -33,6 +33,7 @@ const classroomRoutes = require('./modules/classroom/classroom.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
 const feedbackRoutes = require('./modules/feedback/feedback.routes');
 const resultsRoutes = require('./modules/results/results.routes');
+const centerRoutes = require('./modules/center/center.routes');
 const helmet = require('helmet');
 const http = require('http');
 const { initSocket } = require('./socket');
@@ -82,6 +83,7 @@ app.use('/api/classroom', classroomRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/results', resultsRoutes);
+app.use('/api/centers', centerRoutes);
 
 // Heç bir route uyğun gəlməyəndə (ilişməsin, aydın 404 versin)
 app.use((req, res) => {

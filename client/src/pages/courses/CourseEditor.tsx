@@ -93,6 +93,12 @@ export default function CourseEditor() {
     retry: false,
   })
 
+  // Müəllimin təhsil mərkəzi — kursun hara bağlanacağını dürüst göstərmək üçün.
+  const { data: centerInfo } = useQuery({
+    queryKey: ['centers', 'me'],
+    queryFn: () => api.get<{ data: { center: { name: string } | null } }>(API_ROUTES.CENTERS.ME).then(r => r.data.data),
+  })
+
   const existingCourse = existing?.course
   const isPublished = Boolean(existingCourse?.isPublished)
   const ownerUserId = ownerUserIdOf(existingCourse)
@@ -250,6 +256,15 @@ export default function CourseEditor() {
             </span>
           )}
         </div>
+
+        {/* Təhsil mərkəzi əlaqəsi — dürüst məlumat (fake davranış yox) */}
+        {centerInfo && (
+          <p className="text-xs text-gray-500">
+            {centerInfo.center
+              ? `Bu kurs ${centerInfo.center.name} mərkəzinə bağlı yaradılacaq.`
+              : 'Bu kurs müstəqil müəllim profili altında yaradılacaq.'}
+          </p>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">

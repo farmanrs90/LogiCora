@@ -19,7 +19,12 @@ const createCourse = async (userId, data) => {
     throw error;
   }
 
-  const course = await Course.create({ ...data, teacherId: teacher._id });
+  // Müəllimin mərkəzi varsa kurs ona bağlanır (sahiblik yenə teacherId-dədir).
+  const course = await Course.create({
+    ...data,
+    teacherId: teacher._id,
+    educationCenterId: teacher.educationCenterId || null,
+  });
   return course;
 };
 

@@ -225,6 +225,8 @@ export default function Register() {
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [termsError, setTermsError] = useState('')
   const [showTerms, setShowTerms] = useState(false)
+  // Müəllim üçün opsional təhsil mərkəzi kodu (RHF/zod sxemindən kənar, lokal state)
+  const [centerJoinCode, setCenterJoinCode] = useState('')
 
   const {
     register, handleSubmit, watch, setValue, trigger,
@@ -285,6 +287,10 @@ export default function Register() {
         ageGroup,
         termsAccepted: true,
         termsVersion: TERMS_VERSION,
+        // Mərkəz kodu yalnız müəllim üçün və boş deyilsə göndərilir (backend digər rolları iqnor edir).
+        ...(data.role === 'teacher' && centerJoinCode.trim()
+          ? { centerJoinCode: centerJoinCode.trim() }
+          : {}),
       })
       dispatch(setCredentials({ user: authData.user, token: authData.accessToken }))
       toast.success(`Xoş gəldin, ${authData.user.name}! 🎉`)
@@ -450,6 +456,23 @@ export default function Register() {
                         <div className="grid grid-cols-2 gap-4">
                           <Field id="specialty" label="İxtisas" placeholder="Riyaziyyat..." error={errors.specialty?.message} registration={register('specialty')} />
                           <Field id="experience" label="Təcrübə (il)" type="number" placeholder="5" registration={register('experience')} />
+                        </div>
+                      )}
+
+                      {/* Opsional təhsil mərkəzi kodu — yalnız müəllim. Boş saxlanarsa müstəqil müəllim. */}
+                      {role === 'teacher' && (
+                        <div>
+                          <label htmlFor="centerJoinCode" className={labelCls}>Təhsil mərkəzi kodu</label>
+                          <input
+                            id="centerJoinCode"
+                            value={centerJoinCode}
+                            onChange={(e) => setCenterJoinCode(e.target.value)}
+                            placeholder="Məsələn: DEMO-CENTER"
+                            className={inputCls(false)}
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Əgər mərkəzə bağlı işləyirsinizsə, sizə verilən kodu daxil edin. Yoxdursa boş saxlayın.
+                          </p>
                         </div>
                       )}
 

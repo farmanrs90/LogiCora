@@ -18,6 +18,7 @@ const Attendance = require('./modules/attendance/attendance.model');
 const Enrollment = require('./modules/course/enrollment.model');
 const Competition = require('./modules/competition/competition.model');
 const Classroom = require('./modules/classroom/classroom.model');
+const EducationCenter = require('./modules/center/center.model');
 
 
 // --- Sual qurma köməkçisi ---
@@ -117,6 +118,7 @@ const seed = async () => {
     Enrollment.deleteMany({}),
     Competition.deleteMany({}),
     Classroom.deleteMany({}),
+    EducationCenter.deleteMany({}),
   ]);
 
   const adminPass = await hashPassword('Admin123!');
@@ -141,15 +143,27 @@ const seed = async () => {
     isPhoneVerified: true, profileCompleted: true,
   });
 
+  // --- Demo Təhsil Mərkəzi (müəllimləri bağlamaq üçün) ---
+  const demoCenter = await EducationCenter.create({
+    name: 'LogiCora Demo Təhsil Mərkəzi',
+    slug: 'logicora-demo-merkez',
+    city: 'Bakı',
+    joinCode: 'DEMO-CENTER',
+    ownerUserId: tUser1._id,
+    isActive: true,
+  });
+
   const teacher1 = await Teacher.create({
     userId: tUser1._id, specialization: 'mathematics', isVerified: true, canPublish: true,
     displayName: 'Murad müəllim', slug: 'murad-eliyev', experience: 8,
     rating: 4.8, totalStudents: 120, impactScore: 350, bio: 'Riyaziyyat müəllimi, 8 illik təcrübə.',
+    educationCenterId: demoCenter._id, centerJoinStatus: 'active',
   });
   const teacher2 = await Teacher.create({
     userId: tUser2._id, specialization: 'science', isVerified: true, canPublish: true,
     displayName: 'Leyla müəllim', slug: 'leyla-hesenova', experience: 6,
     rating: 4.6, totalStudents: 90, impactScore: 280, bio: 'Fizika və elm müəllimi.',
+    educationCenterId: demoCenter._id, centerJoinStatus: 'active',
   });
 
   // --- Tələbələr (müxtəlif yaş) + Gamification (real demo dəyərləri) ---

@@ -8,6 +8,18 @@ const teacherSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    // Təhsil Mərkəzi əlaqəsi (opsional). Yoxdursa müəllim müstəqildir.
+    // Additiv sahələr — mövcud müəllimlər üçün default null/independent (geri-uyğun).
+    educationCenterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'EducationCenter',
+      default: null,
+    },
+    centerJoinStatus: {
+      type: String,
+      enum: ['independent', 'active'],
+      default: 'independent',
+    },
     specialization: {
       type: String,
       enum: ['mathematics', 'language', 'science', 'history', 'physical_education', 'art', 'music', 'other'],

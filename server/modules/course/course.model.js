@@ -21,6 +21,12 @@ const courseSchema = new mongoose.Schema(
       ref: 'Teacher',
       default: null,
     },
+    // Təhsil Mərkəzi əlaqəsi (opsional) — müəllimin mərkəzindən miras alınır. Additiv, geri-uyğun.
+    educationCenterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'EducationCenter',
+      default: null,
+    },
     price: {
       type: Number,
       default: 0,

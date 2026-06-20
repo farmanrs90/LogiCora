@@ -177,6 +177,13 @@ export const API_ROUTES = {
     ADMIN_STATUS: (id: string) => `/feedback/admin/${id}/status`,
   },
 
+  // Education Centers (Təhsil Mərkəzləri)
+  CENTERS: {
+    PUBLIC: '/centers/public',
+    ME: '/centers/me',
+    ADMIN: '/centers/admin',
+  },
+
   // Results (Nəticələr Mərkəzi)
   RESULTS: {
     ME: '/results/me',

@@ -135,6 +135,8 @@ const createGroup = async (user, body) => {
   const payload = {
     name: String(body.name).trim(),
     teacherId,
+    // Müəllimin mərkəzi varsa qrup ona bağlanır (sahiblik yenə teacherId-dədir).
+    educationCenterId: teacherExists.educationCenterId || null,
     description: body.subject || body.description || '',
     ...(schedule ? { schedule } : {}),
   };

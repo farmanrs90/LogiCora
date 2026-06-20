@@ -23,6 +23,8 @@ const registerValidation = Joi.object({
       'boolean.base': 'Qeydiyyat üçün istifadə şərtləri qəbul edilməlidir.',
     }),
   termsVersion: Joi.string().max(20).optional(),
+  // Müəllim üçün opsional təhsil mərkəzi kodu (boş ola bilər). Digər rollar üçün nəzərə alınmır.
+  centerJoinCode: Joi.string().trim().max(40).allow('').optional(),
 });
 const completeOnboardingValidation = Joi.object({
   name: Joi.string().min(2).max(50).required(),

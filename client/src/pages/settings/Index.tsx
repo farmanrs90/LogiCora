@@ -744,6 +744,26 @@ function ParentChildSupport() {
 
 // ── Main ──────────────────────────────────────────────────────────────────
 
+// ── Müəllim: təhsil mərkəzi (read-only) ────────────────────────────────────
+function TeacherCenterCard() {
+  const { data } = useQuery<{ center: { name: string; city?: string } | null; status: string }>({
+    queryKey: ['centers', 'me'],
+    queryFn: () => api.get<{ data: { center: { name: string; city?: string } | null; status: string } }>(API_ROUTES.CENTERS.ME).then(r => r.data.data),
+  })
+  const center = data?.center ?? null
+  return (
+    <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-2">
+      <h2 className="font-bold text-gray-900">Təhsil mərkəzi</h2>
+      {center ? (
+        <p className="text-sm text-gray-700"><span className="font-medium">{center.name}</span>{center.city ? ` · ${center.city}` : ''}</p>
+      ) : (
+        <p className="text-sm text-gray-700">Müstəqil müəllim</p>
+      )}
+      <p className="text-[11px] text-gray-400">Mərkəz əlaqəsi qeydiyyatda verilən kodla təyin olunur. Dəyişdirmə post-demo mərhələsində əlavə ediləcək.</p>
+    </section>
+  )
+}
+
 export default function Settings() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -888,6 +908,9 @@ export default function Settings() {
             ))}
           </div>
         </section>
+
+        {/* Teacher → təhsil mərkəzi (read-only) */}
+        {user?.role === 'teacher' && <TeacherCenterCard />}
 
         {/* Parent → child special support */}
         {user?.role === 'parent' && <ParentChildSupport />}

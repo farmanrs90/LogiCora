@@ -16,6 +16,7 @@ export interface RegisterInput {
   ageGroup: AgeGroup
   termsAccepted: boolean
   termsVersion?: string
+  centerJoinCode?: string // yalnız müəllim üçün opsional təhsil mərkəzi kodu
 }
 
 export interface AuthResponse {

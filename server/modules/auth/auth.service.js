@@ -6,16 +6,23 @@ const Gamification = require('../gamification/gamification.model');
 const { hashPassword, comparePassword } = require('../../utils/hashPassword');
 const { generateAccessToken, generateRefreshToken } = require('../../utils/generateToken');
 const { createDefaultForNewUser } = require('../accessibility/accessibility.service');
+const centerService = require('../center/center.service');
 
 // Creates the role-specific profile right after the User is created.
 // Without it, a student has no Student/Gamification doc, so quiz & XP endpoints 404.
-const createRoleProfile = async (user) => {
+// `center` (opsional) yalnız müəllim üçün — valid joinCode ilə tapılmış EducationCenter.
+const createRoleProfile = async (user, center = null) => {
   if (user.role === 'student') {
     const student = await Student.create({ userId: user._id, grade: 1 });
     await Gamification.create({ studentId: student._id });
   } else if (user.role === 'teacher') {
     // `specialization` is a required enum on the Teacher model — default to 'other'.
-    await Teacher.create({ userId: user._id, specialization: 'other' });
+    await Teacher.create({
+      userId: user._id,
+      specialization: 'other',
+      educationCenterId: center ? center._id : null,
+      centerJoinStatus: center ? 'active' : 'independent',
+    });
   } else if (user.role === 'parent') {
     await Parent.create({ userId: user._id });
   }
@@ -26,7 +33,7 @@ const createRoleProfile = async (user) => {
 const TERMS_VERSION = '2026.06-mvp';
 
 const registerUser = async (payload) => {
-  const { name, surname, email, phone, password, role, ageGroup, termsVersion } = payload;
+  const { name, surname, email, phone, password, role, ageGroup, termsVersion, centerJoinCode } = payload;
 
   const existingByEmail = await User.findOne({ email });
   if (existingByEmail) {
@@ -40,6 +47,18 @@ const registerUser = async (payload) => {
     const error = new Error('Phone already in use');
     error.statusCode = 409;
     throw error;
+  }
+
+  // Müəllim + mərkəz kodu: USER yaratmazdan ƏVVƏL kodu yoxla ki, yanlış kodda orphan user qalmasın.
+  // Kod yalnız müəllim üçün nəzərə alınır; digər rollar üçün tamamilə iqnor edilir.
+  let center = null;
+  if (role === 'teacher' && centerJoinCode && String(centerJoinCode).trim()) {
+    center = await centerService.findActiveByJoinCode(centerJoinCode);
+    if (!center) {
+      const error = new Error('Təhsil mərkəzi kodu düzgün deyil.');
+      error.statusCode = 400;
+      throw error;
+    }
   }
 
   const hashed = await hashPassword(password);
@@ -58,7 +77,8 @@ const registerUser = async (payload) => {
   });
 
   // Create the matching role profile (Student+Gamification / Teacher / Parent)
-  await createRoleProfile(created);
+  // Müəllim üçün tapılmış mərkəz (varsa) profilə bağlanır.
+  await createRoleProfile(created, center);
 
   const tokenPayload = { id: created._id, role: created.role };
   const accessToken = generateAccessToken(tokenPayload);
