@@ -509,12 +509,13 @@ export default function ClanPage() {
 
   const isMeRoute = slug === 'me'
 
-  const { data: clan, isLoading: clanLoading, isError: clanError, refetch: refetchClan } = useQuery<ClanData | null>({
+  const { data: clan, isLoading: clanLoading, isError: clanError, isFetching: clanFetching, refetch: refetchClan } = useQuery<ClanData | null>({
     queryKey: ['clan', slug],
     queryFn:  () => api.get<{ data: ClanData | null }>(API_ROUTES.CLANS.BY_SLUG(slug!))
                       .then(r => r.data.data),
     enabled:  !!slug,
-    staleTime: 1000 * 60 * 2,
+    // /clan/me HƏMİŞƏ təzə olmalıdır — köhnə cache köhnə/silinmiş klan slug-una yönləndirməni önləyir.
+    staleTime: isMeRoute ? 0 : 1000 * 60 * 2,
   })
 
   // İstifadəçinin öz klanı (varsa). Başqa klana baxarkən "artıq klandasan" vəziyyətini
@@ -526,12 +527,13 @@ export default function ClanPage() {
     staleTime: 1000 * 60 * 2,
   })
 
-  // /clan/me → backend /clans/me real klanı qaytarır; varsa real slug-a yönləndir.
+  // /clan/me → backend /clans/me real klanı qaytarır; YALNIZ təzə cavabdan sonra real slug-a yönləndir.
+  // `!clanFetching` şərti köhnə cache slug-una (silinmiş klana) yönləndirməni önləyir.
   useEffect(() => {
-    if (isMeRoute && clan && clan.slug && clan.slug !== 'me') {
+    if (isMeRoute && !clanFetching && clan && clan.slug && clan.slug !== 'me') {
       navigate(APP_ROUTES.CLAN(clan.slug), { replace: true })
     }
-  }, [isMeRoute, clan, navigate])
+  }, [isMeRoute, clanFetching, clan, navigate])
 
   const { data: members, isLoading: membersLoading, refetch: refetchMembers } = useQuery<ClanMemberFull[]>({
     queryKey: ['clan', slug, 'members'],
@@ -588,7 +590,12 @@ export default function ClanPage() {
 
   const joinMutation = useMutation({
     mutationFn: (id: string) => api.post(API_ROUTES.CLANS.JOIN(id)),
-    onSuccess: () => { toast.success('Klana uğurla qoşuldun! 🎉'); queryClient.invalidateQueries({ queryKey: ['clan', slug] }); queryClient.invalidateQueries({ queryKey: ['clans', 'me'] }) },
+    onSuccess: () => {
+      toast.success('Klana uğurla qoşuldun! 🎉')
+      queryClient.invalidateQueries({ queryKey: ['clan', slug] })
+      queryClient.invalidateQueries({ queryKey: ['clan', 'me'] })   // /clan/me marşrutu təzələnsin
+      queryClient.invalidateQueries({ queryKey: ['clans', 'me'] })
+    },
     // Backend xətasını honest göstər (məs. "Artıq bir klana üzvsünüz.") — success kimi göstərmirik.
     onError:   (err: unknown) => toast.error((err as { message?: string })?.message || 'Klana qoşulmaq alınmadı.'),
   })
@@ -599,6 +606,7 @@ export default function ClanPage() {
     onSuccess:  () => {
       toast.success('Klandan ayrıldın.')
       queryClient.invalidateQueries({ queryKey: ['clans', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['clan', 'me'] })   // marşrut təzə "klansız" vəziyyəti göstərsin
       queryClient.invalidateQueries({ queryKey: ['clan', slug] })
       navigate(APP_ROUTES.CLAN('me'))
     },
@@ -612,6 +620,7 @@ export default function ClanPage() {
     onSuccess:  () => {
       toast.success('Klan silindi.')
       queryClient.invalidateQueries({ queryKey: ['clans', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['clan', 'me'] })
       queryClient.invalidateQueries({ queryKey: ['clan', slug] })
       queryClient.invalidateQueries({ queryKey: ['clan-leaderboard'] })
       navigate(APP_ROUTES.CLAN('me'), { replace: true })
@@ -625,6 +634,8 @@ export default function ClanPage() {
     onSuccess: (newClan: ClanData | null) => {
       toast.success('Klan yaradıldı! 🛡️')
       setShowCreate(false)
+      queryClient.invalidateQueries({ queryKey: ['clan', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['clans', 'me'] })
       navigate(newClan?.slug ? APP_ROUTES.CLAN(newClan.slug) : APP_ROUTES.CLAN('me'))
     },
     onError: (err: unknown) => toast.error(getClanCreateErrorMessage(err)),
