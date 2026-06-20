@@ -30,6 +30,7 @@ const streakFreezeRoutes = require('./modules/streakFreeze/streakFreeze.routes')
 const weeklyMysteryRoutes = require('./modules/weeklyMystery/weeklyMystery.routes');
 const kidsRoutes = require('./modules/kids/kids.routes');
 const classroomRoutes = require('./modules/classroom/classroom.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
 const helmet = require('helmet');
 const http = require('http');
 const { initSocket } = require('./socket');
@@ -76,6 +77,7 @@ app.use('/api/streak-freeze', streakFreezeRoutes);
 app.use('/api/weekly-mystery', weeklyMysteryRoutes);
 app.use('/api/kids', kidsRoutes);
 app.use('/api/classroom', classroomRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Heç bir route uyğun gəlməyəndə (ilişməsin, aydın 404 versin)
 app.use((req, res) => {

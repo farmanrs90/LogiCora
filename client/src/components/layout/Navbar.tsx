@@ -48,10 +48,18 @@ const parentNav: NavItem[] = [
   { label: 'Ödənişlər', path: `${APP_ROUTES.DASHBOARD.PARENT}#payments-section` },
 ]
 
+// Admin: yalnız mövcud route-lar (/admin, /chat, /settings) — student nav-a düşmə düzəlişi
+const adminNav: NavItem[] = [
+  { label: 'Admin panel', path: APP_ROUTES.ADMIN },
+  { label: 'Mesajlar', path: APP_ROUTES.CHAT },
+  { label: 'Tənzimləmələr', path: APP_ROUTES.SETTINGS },
+]
+
 const navByRole: Record<string, NavItem[]> = {
   student: studentNav,
   teacher: teacherNav,
   parent: parentNav,
+  admin: adminNav,
 }
 
 const roleLabelMap: Record<Role, string> = {
