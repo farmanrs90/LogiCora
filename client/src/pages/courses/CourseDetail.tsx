@@ -69,6 +69,8 @@ interface CourseDetailData {
   isEnrolled: boolean
   enrollmentProgress: number // 0-100
   ownerUserId: string // kursun sahib müəlliminin User._id-si (sahiblik yoxlaması üçün)
+  lessonsLocked: boolean
+  lockReason?: 'payment_required' | 'enrollment_required'
   certificate?: { url: string; issuedAt: string }
 }
 
@@ -125,6 +127,18 @@ function normalizeLevel(value: unknown): CourseDetailData['level'] {
   if (level === 'intermediate' || level === 'orta') return 'orta'
   if (level === 'advanced' || level === 'irəliləmiş') return 'irəliləmiş'
   return 'başlanğıc'
+}
+
+function normalizeLockReason(value: unknown): CourseDetailData['lockReason'] {
+  if (value === 'payment_required' || value === 'enrollment_required') return value
+  return undefined
+}
+
+function getLockedLessonsText(reason?: CourseDetailData['lockReason']): string {
+  if (reason === 'payment_required') {
+    return 'Bu kurs pulludur. Dərslərə giriş üçün ödəniş/təsdiq tamamlanmalıdır.'
+  }
+  return 'Dərslərə baxmaq üçün əvvəlcə kursa qoşulmalısan.'
 }
 
 function normalizeLesson(raw: unknown, index: number): Lesson | null {
@@ -236,6 +250,7 @@ function normalizeCourseDetailResponse(payload: unknown): CourseDetailData | nul
 
   const price = Math.max(0, asNumber(source.price))
   const discountedPrice = asOptionalNumber(source.discountedPrice ?? source.discountPrice)
+  const lessonsLocked = asBoolean(unwrapped.lessonsLocked ?? source.lessonsLocked)
   const flatLessons = normalizeLessons(isRecord(unwrapped.course) ? unwrapped.lessons : source.lessons)
   const sections = normalizeSections(source.sections)
   const normalizedSections = sections.length > 0
@@ -280,6 +295,8 @@ function normalizeCourseDetailResponse(payload: unknown): CourseDetailData | nul
     isEnrolled: asBoolean(source.isEnrolled),
     enrollmentProgress: Math.min(100, Math.max(0, asNumber(source.enrollmentProgress))),
     ownerUserId: isRecord(source.teacherId) ? asString((source.teacherId as RawRecord).userId) : '',
+    lessonsLocked,
+    lockReason: normalizeLockReason(unwrapped.lockReason ?? source.lockReason),
     certificate,
   }
 }
@@ -600,7 +617,11 @@ export default function CourseDetail() {
     if (!nextLesson) {
       setFocusedLessonId(null)
       setActiveTab('Dərslər')
-      toast.error('Bu kurs üçün dərslər hələ əlavə edilməyib.')
+      toast.error(
+        targetCourse.lessonsLocked
+          ? getLockedLessonsText(targetCourse.lockReason)
+          : 'Bu kurs üçün dərslər hələ əlavə edilməyib.'
+      )
       requestAnimationFrame(() => {
         tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       })
@@ -706,6 +727,7 @@ export default function CourseDetail() {
 
   const visibleLearn = showAllLearn ? course.whatYoullLearn : course.whatYoullLearn.slice(0, 6)
   const totalLessons = course.sections.reduce((s, sec) => s + sec.lessons.length, 0)
+  const lessonCountLabel = course.lessonsLocked ? 'Kilidli' : `${totalLessons} dərs`
   const displayedSections = showAllSections ? course.sections : course.sections.slice(0, 3)
 
   // Sahiblik: yalnız kursun sahib müəllimi idarəetmə (Redaktə) görür.
@@ -883,7 +905,7 @@ export default function CourseDetail() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {[
                         { label: 'Ümumi müddət', value: fmtDuration(course.duration) },
-                        { label: 'Dərslər', value: `${totalLessons} dərs` },
+                        { label: 'Dərslər', value: lessonCountLabel },
                         { label: 'Yeniləndi', value: fmtDate(course.updatedAt) },
                         { label: 'Səviyyə', value: course.level },
                       ].map(({ label, value }) => (
@@ -901,14 +923,23 @@ export default function CourseDetail() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 text-sm">
-                        {course.sections.length} bölmə · {totalLessons} dərs · {fmtDuration(course.duration)}
+                        {course.lessonsLocked
+                          ? 'Dərslər kilidlidir'
+                          : `${course.sections.length} bölmə · ${totalLessons} dərs · ${fmtDuration(course.duration)}`}
                       </p>
-                      {!course.isEnrolled && (
+                      {course.lessonsLocked ? (
+                        <span className="text-xs text-amber-600">Giriş kilidlidir</span>
+                      ) : !course.isEnrolled && (
                         <span className="text-xs text-gray-400">Pulsuz dərslər açıqdır</span>
                       )}
                     </div>
                     <div className="space-y-2">
-                      {totalLessons > 0 ? (
+                      {course.lessonsLocked ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+                          <p className="font-semibold">Dərslər kilidlidir</p>
+                          <p className="mt-1 text-amber-800">{getLockedLessonsText(course.lockReason)}</p>
+                        </div>
+                      ) : totalLessons > 0 ? (
                         displayedSections.map(section => (
                           <SectionAccordion
                             key={section.id}
