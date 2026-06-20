@@ -13,6 +13,16 @@ const registerValidation = Joi.object({
     }),
   password: Joi.string().min(6).max(128).required(),
   ageGroup: Joi.string().valid('3-5', '6-8', '9-11', '12-14', '15-17', '18-22', '23+').required(),
+  // Public qeydiyyatda istifadə şərtləri mütləq qəbul edilməlidir (true olmalıdır).
+  termsAccepted: Joi.boolean()
+    .valid(true)
+    .required()
+    .messages({
+      'any.only': 'Qeydiyyat üçün istifadə şərtləri qəbul edilməlidir.',
+      'any.required': 'Qeydiyyat üçün istifadə şərtləri qəbul edilməlidir.',
+      'boolean.base': 'Qeydiyyat üçün istifadə şərtləri qəbul edilməlidir.',
+    }),
+  termsVersion: Joi.string().max(20).optional(),
 });
 const completeOnboardingValidation = Joi.object({
   name: Joi.string().min(2).max(50).required(),

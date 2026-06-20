@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
-import { Eye, EyeOff, ChevronLeft, Check } from 'lucide-react'
+import { Eye, EyeOff, ChevronLeft, Check, X } from 'lucide-react'
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useDispatch } from 'react-redux'
@@ -58,6 +58,67 @@ const ROLE_CARDS: { role: RegisterRole; icon: string; title: string; desc: strin
   { role: 'parent', icon: '👪', title: 'Valideyn', desc: 'İzlə, dəstəklə', gradient: 'from-amber-500 to-orange-500', glow: 'rgba(249,115,22,0.22)' },
 ]
 const ROLE_LABELS: Record<RegisterRole, string> = { student: 'Tələbə', teacher: 'Müəllim', parent: 'Valideyn' }
+
+// İstifadə şərtləri — MVP icmalı (LogiCora üçün yazılıb, xarici mətn kopyalanmayıb)
+const TERMS_VERSION = '2026.06-mvp'
+const TERMS_POINTS = [
+  'LogiCora təhsil platformasıdır — şagird, müəllim və valideyn üçün öyrənmə, portfolio, gündəlik quiz, kurslar və yarışları bir yerdə təqdim edir.',
+  'Qeydiyyat zamanı doğru və dəqiq məlumat verməyə razısan.',
+  'Valideyn kimi, övladının xüsusi dəstək / adaptiv öyrənmə ayarlarını idarə edə bilərsən.',
+  'Education Passport və ictimai portfolio görünüşü sənin öz tənzimləmələrinlə idarə olunur.',
+  'Xüsusi dəstək / adaptiv öyrənmə məlumatı könüllüdür və tibbi diaqnoz deyil.',
+  'Mesajlaşma hörmətli olmalıdır; rol və əlaqəyə görə məhdudlaşdırıla bilər.',
+  'Sui-istifadə, spam və ya saxta hesablar məhdudlaşdırıla bilər.',
+  'Məlumatlardan öyrənmə irəliləyişi, portfolio, quiz, kurslar və valideyn/müəllim görünüşü üçün istifadə olunur.',
+  'Tam hüquqi siyasət demo-dan sonra genişləndiriləcək.',
+]
+
+// ── Terms modal (premium light) ─────────────────────────────────────────────
+function TermsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog" aria-modal="true" aria-labelledby="terms-title"
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.94, opacity: 0 }}
+        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl"
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-gray-100 p-5">
+          <div>
+            <h2 id="terms-title" className="text-lg font-bold text-gray-900">LogiCora istifadə şərtləri</h2>
+            <p className="mt-0.5 text-xs text-gray-500">Qısa MVP icmalı — tam hüquqi siyasət demo-dan sonra genişləndiriləcək.</p>
+          </div>
+          <button onClick={onClose} aria-label="Bağla"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="space-y-3 overflow-y-auto p-5">
+          <p className="text-sm text-gray-600">LogiCora-da qeydiyyatdan keçməklə aşağıdakıları qəbul edirsən:</p>
+          <ul className="space-y-2.5">
+            {TERMS_POINTS.map((t) => (
+              <li key={t} className="flex items-start gap-2.5 text-sm text-gray-700">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-indigo-50 text-indigo-600">
+                  <Check size={12} />
+                </span>
+                <span className="leading-relaxed">{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="border-t border-gray-100 p-4">
+          <button onClick={onClose}
+            className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+            Anladım, bağla
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
 
 // ── Progress bar ──────────────────────────────────────────────────────────
 function RegProgressBar({ step }: { step: number }) {
@@ -161,6 +222,9 @@ export default function Register() {
   const [direction, setDir] = useState<Direction>(1)
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [termsError, setTermsError] = useState('')
+  const [showTerms, setShowTerms] = useState(false)
 
   const {
     register, handleSubmit, watch, setValue, trigger,
@@ -202,6 +266,11 @@ export default function Register() {
   }
 
   async function onSubmit(data: RegisterValues) {
+    // İstifadə şərtləri qəbul edilməyibsə — backend-ə getmirik (dürüst frontend bloku).
+    if (!termsAccepted) {
+      setTermsError('Davam etmək üçün istifadə şərtlərini qəbul edin.')
+      return
+    }
     try {
       const ageGroup: AgeGroup = data.role === 'student' ? (data.ageGroup as AgeGroup) : '23+'
       const authData = await registerUser({
@@ -212,6 +281,8 @@ export default function Register() {
         phone: data.phone.trim(),
         role: data.role,
         ageGroup,
+        termsAccepted: true,
+        termsVersion: TERMS_VERSION,
       })
       dispatch(setCredentials({ user: authData.user, token: authData.accessToken }))
       toast.success(`Xoş gəldin, ${authData.user.name}! 🎉`)
@@ -412,7 +483,36 @@ export default function Register() {
                           </div>
                         ))}
                       </div>
-                      <motion.button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}
+                      {/* İstifadə şərtləri razılığı — qeydiyyatdan əvvəl mütləqdir */}
+                      <div>
+                        <div className="flex items-start gap-3">
+                          <button type="button" role="checkbox" aria-checked={termsAccepted} aria-label="İstifadə şərtlərini qəbul et"
+                            onClick={() => { setTermsAccepted((v) => !v); if (termsError) setTermsError('') }}
+                            className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${termsAccepted ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white hover:border-indigo-400'}`}>
+                            {termsAccepted && <Check size={12} />}
+                          </button>
+                          <p className="text-sm leading-relaxed text-gray-600">
+                            <button type="button" onClick={() => setShowTerms(true)}
+                              className="rounded font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">İstifadə şərtləri</button>
+                            {' '}və{' '}
+                            <button type="button" onClick={() => setShowTerms(true)}
+                              className="rounded font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">məxfilik qaydaları</button>
+                            {' '}ilə razıyam.
+                          </p>
+                        </div>
+                        {termsError && (
+                          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                            className="text-red-500 text-xs mt-1.5" role="alert">{termsError}</motion.p>
+                        )}
+                      </div>
+
+                      <motion.button
+                        onClick={() => {
+                          if (!termsAccepted) { setTermsError('Davam etmək üçün istifadə şərtlərini qəbul edin.'); return }
+                          setTermsError('')
+                          handleSubmit(onSubmit)()
+                        }}
+                        disabled={isSubmitting}
                         whileHover={!isSubmitting ? { scale: 1.015 } : {}} whileTap={!isSubmitting ? { scale: 0.985 } : {}}
                         className="w-full py-3.5 rounded-xl font-semibold text-white text-base bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
                         {isSubmitting ? 'Qeydiyyat...' : 'Qeydiyyatı tamamla'}
@@ -426,6 +526,11 @@ export default function Register() {
           </div>
         </div>
       </main>
+
+      {/* İstifadə şərtləri modalı */}
+      <AnimatePresence>
+        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+      </AnimatePresence>
     </div>
   )
 }

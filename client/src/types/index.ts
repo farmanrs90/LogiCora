@@ -14,6 +14,8 @@ export interface RegisterInput {
   password: string
   role: 'student' | 'teacher' | 'parent'
   ageGroup: AgeGroup
+  termsAccepted: boolean
+  termsVersion?: string
 }
 
 export interface AuthResponse {

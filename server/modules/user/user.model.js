@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
       default: '',
     },
     profileCompleted: { type: Boolean, default: false },
+    // İstifadə şərtlərinin qəbulu — yalnız yeni qeydiyyatda təyin olunur.
+    // Köhnə/seed/admin istifadəçilər üçün default false, tələb olunmur → login-ə təsir etmir.
+    termsAccepted: { type: Boolean, default: false },
+    termsAcceptedAt: { type: Date, default: null },
+    termsVersion: { type: String, default: '' },
     characterType: {
       type: String,
       enum: ['fast-thinker', 'deep-analyst', 'creative-explorer', null],

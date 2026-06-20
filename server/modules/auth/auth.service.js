@@ -22,8 +22,11 @@ const createRoleProfile = async (user) => {
   // admin / manager need no extra profile
 };
 
+// İstifadə şərtlərinin cari MVP versiyası — frontend versiya göndərməsə fallback.
+const TERMS_VERSION = '2026.06-mvp';
+
 const registerUser = async (payload) => {
-  const { name, surname, email, phone, password, role, ageGroup } = payload;
+  const { name, surname, email, phone, password, role, ageGroup, termsVersion } = payload;
 
   const existingByEmail = await User.findOne({ email });
   if (existingByEmail) {
@@ -40,6 +43,7 @@ const registerUser = async (payload) => {
   }
 
   const hashed = await hashPassword(password);
+  // termsAccepted Joi-də artıq true kimi təsdiqlənib — burada qəbul vaxtını real yazırıq.
   const created = await User.create({
     name,
     surname,
@@ -48,6 +52,9 @@ const registerUser = async (payload) => {
     password: hashed,
     role: role || 'student',
     ageGroup,
+    termsAccepted: true,
+    termsAcceptedAt: new Date(),
+    termsVersion: termsVersion || TERMS_VERSION,
   });
 
   // Create the matching role profile (Student+Gamification / Teacher / Parent)
