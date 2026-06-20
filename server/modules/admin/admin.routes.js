@@ -10,5 +10,8 @@ const adminController = require('./admin.controller');
 router.use(authenticate, roleCheck(['admin']));
 
 router.get('/overview', adminController.getOverview);
+router.get('/users', adminController.getUsers);
+router.get('/courses', adminController.getCourses);
+router.get('/groups', adminController.getGroups);
 
 module.exports = router;
