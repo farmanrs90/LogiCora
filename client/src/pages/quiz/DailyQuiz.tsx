@@ -321,6 +321,85 @@ function ResultScreen({
   )
 }
 
+// ── Completed today screen (light premium) ──────────────────────────────────
+
+function CompletedTodayScreen({ status }: { status: DailyStatusResponse }) {
+  const navigate = useNavigate()
+  const hasQuestionSummary = status.totalCount > 0
+  const hasXpSummary = Number.isFinite(status.xpEarned)
+  const hasStreakSummary = Number.isFinite(status.streak)
+  const summaryCount = [hasQuestionSummary, hasXpSummary, hasStreakSummary].filter(Boolean).length
+  const summaryGridClass = summaryCount >= 3 ? 'grid-cols-3' : summaryCount === 2 ? 'grid-cols-2' : 'grid-cols-1'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6 px-4 text-center"
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.25, ease: 'easeOut' as const }}
+        className="w-full max-w-md rounded-3xl border border-emerald-100 bg-white p-8 shadow-xl"
+      >
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-emerald-100 bg-emerald-50 text-3xl">✅</div>
+
+        <h2 className="mt-5 text-2xl font-extrabold tracking-tight text-gray-900">
+          Bugünkü sualları tamamlamısan ✅
+        </h2>
+        <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-gray-500">
+          Yeni suallar sabah gələcək. Bu gün isə kurslara davam edə, həftənin sirrinə baxa və ya nəticələrini izləyə bilərsən.
+        </p>
+
+        {(hasQuestionSummary || hasXpSummary || hasStreakSummary) && (
+          <div className={`mt-6 grid ${summaryGridClass} gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3`}>
+            {hasQuestionSummary && (
+              <div className="flex flex-col items-center">
+                <span className="text-lg font-black tabular-nums text-gray-900">{status.answeredCount}/{status.totalCount}</span>
+                <span className="text-[11px] text-gray-500">sual</span>
+              </div>
+            )}
+            {hasXpSummary && (
+              <div className="flex flex-col items-center">
+                <span className="text-lg font-black tabular-nums text-amber-500">+{status.xpEarned}</span>
+                <span className="text-[11px] text-gray-500">XP</span>
+              </div>
+            )}
+            {hasStreakSummary && (
+              <div className="flex flex-col items-center">
+                <span className="text-lg font-black tabular-nums text-orange-500">🔥 {status.streak}</span>
+                <span className="text-[11px] text-gray-500">gün sıra</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-7 flex flex-col gap-3">
+          <button
+            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+            className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          >
+            Dashboarda qayıt
+          </button>
+          <button
+            onClick={() => navigate(APP_ROUTES.COURSES)}
+            className="w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            Kurslara bax
+          </button>
+          <button
+            onClick={() => navigate(APP_ROUTES.WEEKLY_MYSTERY)}
+            className="text-sm font-semibold text-gray-500 transition-colors hover:text-gray-800"
+          >
+            Həftənin sirri
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // ── Main DailyQuiz ────────────────────────────────────────────────────────
 
 export default function DailyQuiz() {
@@ -350,8 +429,10 @@ export default function DailyQuiz() {
     refetchOnReconnect: false,
   })
 
+  const dailyAnsweredCount = dailyStatus?.answeredCount ?? 0
+  const dailyTotalCount = dailyStatus?.totalCount ?? 0
   const dailyCompleted = Boolean(
-    dailyStatus && (dailyStatus.completed || dailyStatus.answeredCount >= dailyStatus.totalCount),
+    dailyStatus?.completed || (dailyTotalCount > 0 && dailyAnsweredCount >= dailyTotalCount),
   )
   const canFetchDailyQuestions = Boolean(
     dailyStatus && !dailyCompleted && !isDailyStatusFetching && !isDailyStatusError,
@@ -573,39 +654,6 @@ export default function DailyQuiz() {
     )
   }
 
-  // ── Render: boş / xəta / gündəlik limit (light premium) ──────────────────
-  if (isDailyStatusError || dailyCompleted || isQuestionsError || !questions || questions.length === 0) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6 px-4 text-center">
-        <div className="grid h-16 w-16 place-items-center rounded-2xl border border-indigo-100 bg-indigo-50 text-3xl">🧩</div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">
-            {dailyCompleted ? 'Gündəlik limit tamamlandı' : 'Bugünkü suallar hazır deyil'}
-          </h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-gray-500">
-            {dailyCompleted
-              ? 'Bugünkü suallar tamamlanıb. Paneldən digər fəaliyyətlərə davam edə bilərsən.'
-              : 'Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.'}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={handleRetryDaily}
-            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-          >
-            Yenidən cəhd et
-          </button>
-          <button
-            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
-            className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-          >
-            Panelə qayıt
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   // ── Render: result ─────────────────────────────────────────────────────
 
   if (phase === 'result') {
@@ -631,6 +679,43 @@ export default function DailyQuiz() {
         isBuying={freezeMutation.isPending}
         onExit={goDashboard}
       />
+    )
+  }
+
+  // ── Render: completed today ─────────────────────────────────────────────
+
+  if (dailyCompleted && dailyStatus) {
+    return <CompletedTodayScreen status={dailyStatus} />
+  }
+
+  // ── Render: boş / xəta (light premium) ──────────────────────────────────
+  if (isDailyStatusError || isQuestionsError || !questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6 px-4 text-center">
+        <div className="grid h-16 w-16 place-items-center rounded-2xl border border-indigo-100 bg-indigo-50 text-3xl">🧩</div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">
+            Bugünkü suallar hazır deyil
+          </h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-gray-500">
+            Hazırda gündəlik sualları yükləyə bilmədik. Bir azdan yenidən cəhd et və ya paneldən digər fəaliyyətlərə davam et.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={handleRetryDaily}
+            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          >
+            Yenidən cəhd et
+          </button>
+          <button
+            onClick={() => navigate(APP_ROUTES.DASHBOARD.STUDENT)}
+            className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            Panelə qayıt
+          </button>
+        </div>
+      </div>
     )
   }
 
