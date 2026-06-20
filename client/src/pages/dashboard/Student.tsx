@@ -682,6 +682,7 @@ function QuickActions({ showKids }: { showKids: boolean }) {
   const actions: Array<{ title: string; icon: LucideIcon; path: string; tone: string }> = [
     { title: 'Yarış', icon: Swords, path: COMPETITION_JOIN_PATH, tone: 'text-amber-600' },
     { title: 'Dərslər', icon: BookOpen, path: APP_ROUTES.COURSES, tone: 'text-teal-600' },
+    { title: 'Nəticələrim', icon: CheckCircle2, path: APP_ROUTES.RESULTS, tone: 'text-emerald-600' },
     { title: 'Portfolio', icon: Trophy, path: APP_ROUTES.PORTFOLIO_ME, tone: 'text-violet-600' },
     { title: 'Klan', icon: Shield, path: APP_ROUTES.CLAN_LEADERBOARD, tone: 'text-indigo-600' },
     ...(showKids
