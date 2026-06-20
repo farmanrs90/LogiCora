@@ -61,7 +61,7 @@ const LANGUAGES: Lang[] = [
 
 const ROLES: { icon: LucideIcon; title: string; desc: string; cta: string; to: string }[] = [
   { icon: GraduationCap, title: 'Şagird', desc: 'Gündəlik quiz, kurslar, yarışlar və ömürlük portfolio ilə öyrən.', cta: 'Başla', to: APP_ROUTES.REGISTER },
-  { icon: Users, title: 'Müəllim', desc: 'Qrup, davamiyyət, tapşırıq və analitikanı bir paneldə idarə et.', cta: 'Başla', to: APP_ROUTES.REGISTER },
+  { icon: Users, title: 'Müəllim', desc: 'Qrup, dərs iştirakı, tapşırıq və analitikanı bir paneldə idarə et.', cta: 'Başla', to: APP_ROUTES.REGISTER },
   { icon: Eye, title: 'Valideyn', desc: 'Övladının fəaliyyətini və inkişafını şəffaf izlə.', cta: 'Başla', to: APP_ROUTES.REGISTER },
   { icon: Building2, title: 'Təhsil mərkəzi / Məktəb', desc: 'Müəllim və şagird axınını vahid sistemdə birləşdir.', cta: 'Daxil ol', to: APP_ROUTES.LOGIN },
 ]
@@ -70,7 +70,7 @@ const FEATURES: { icon: LucideIcon; title: string; desc: string; tint: string }[
   { icon: Brain, title: 'Gündəlik Quiz', desc: 'Hər gün qısa suallar, streak və XP ilə davamlı öyrənmə.', tint: 'bg-indigo-50 text-indigo-600' },
   { icon: BookOpen, title: 'Kurslar', desc: 'Mövzu-əsaslı dərslər və aydın öyrənmə yolu.', tint: 'bg-blue-50 text-blue-600' },
   { icon: Award, title: 'Portfolio / Education Passport', desc: 'Təsdiqlənmiş nailiyyətlər ömürlük pasportda toplanır.', tint: 'bg-amber-50 text-amber-600' },
-  { icon: LayoutDashboard, title: 'Müəllim idarə paneli', desc: 'Qrup, tapşırıq və davamiyyətin tək yerdən idarəsi.', tint: 'bg-purple-50 text-purple-600' },
+  { icon: LayoutDashboard, title: 'Müəllim idarə paneli', desc: 'Qrup, tapşırıq və dərs iştirakının tək yerdən idarəsi.', tint: 'bg-purple-50 text-purple-600' },
   { icon: Eye, title: 'Valideyn baxışı', desc: 'Övladın irəliləyişinə şəffaf nəzarət.', tint: 'bg-teal-50 text-teal-600' },
   { icon: Smile, title: 'Uşaq Klubu', desc: 'Kiçik yaşlar üçün sadə və əlçatan təhsil rejimi.', tint: 'bg-pink-50 text-pink-600' },
   { icon: Accessibility, title: 'Adaptiv öyrənmə', desc: 'Böyük düymələr və azaldılmış vizual yük ilə rahat təcrübə.', tint: 'bg-emerald-50 text-emerald-600' },
@@ -81,7 +81,7 @@ interface JourneyStep { title: string; text: string }
 const JOURNEY: JourneyStep[] = [
   { title: 'Qeydiyyat və rol seçimi', text: 'Şagird, müəllim və ya valideyn kimi qeydiyyatdan keç və öz panelinə daxil ol.' },
   { title: 'Gündəlik quiz və öyrənmə', text: 'Qısa gündəlik suallar, kurslar və yarışlarla davamlı öyrən.' },
-  { title: 'Müəllim paneli və davamiyyət', text: 'Müəllim qrupu, davamiyyəti və tapşırıqları bir yerdən idarə edir.' },
+  { title: 'Müəllim paneli və dərs iştirakı', text: 'Müəllim qrupu, dərs iştirakını və tapşırıqları bir yerdən idarə edir.' },
   { title: 'Valideyn izləməsi və adaptiv dəstək', text: 'Valideyn inkişafı şəffaf görür; adaptiv rejim əlçatanlığı artırır.' },
   { title: 'Portfolio / Education Passport', text: 'Bütün nailiyyətlər ömürlük təhsil pasportunda toplanır.' },
 ]
@@ -89,7 +89,7 @@ const JOURNEY: JourneyStep[] = [
 const TEACHER_FLOW: { icon: LucideIcon; title: string }[] = [
   { icon: Users, title: 'Qrup yarat' },
   { icon: CalendarDays, title: 'Dərs planla' },
-  { icon: ClipboardCheck, title: 'Davamiyyəti izlə' },
+  { icon: ClipboardCheck, title: 'Dərs iştirakını izlə' },
   { icon: BarChart3, title: 'Analitikanı yoxla' },
   { icon: BookOpen, title: 'Kurs və tapşırıqları idarə et' },
 ]
@@ -98,7 +98,7 @@ const BLOG_POSTS: { tag: string; title: string; desc: string; grad: string }[] =
   { tag: 'Motivasiya', title: 'Şagird motivasiyası', desc: 'Streak, XP və yarışların öyrənməyə təsiri.', grad: 'from-indigo-500 to-blue-500' },
   { tag: 'Valideyn', title: 'Valideyn nəzarəti', desc: 'Övladın inkişafını şəffaf izləmək.', grad: 'from-purple-500 to-indigo-500' },
   { tag: 'Əlçatanlıq', title: 'Adaptiv öyrənmə', desc: 'Daha rahat və əlçatan öyrənmə təcrübəsi.', grad: 'from-blue-500 to-cyan-500' },
-  { tag: 'Müəllim', title: 'Müəllim üçün rəqəmsal sinif', desc: 'Qrup, davamiyyət və analitikanı bir yerdə idarə et.', grad: 'from-emerald-500 to-teal-500' },
+  { tag: 'Müəllim', title: 'Müəllim üçün rəqəmsal sinif', desc: 'Qrup, dərs iştirakı və analitikanı bir yerdə idarə et.', grad: 'from-emerald-500 to-teal-500' },
 ]
 
 // Yaş mərhələləri — 3 yaşdan ömür boyu (fake data yoxdur)
@@ -210,7 +210,7 @@ function ProductPreview() {
 
       <div className="absolute -bottom-5 -left-5 hidden w-40 rotate-[-4deg] rounded-2xl border border-gray-200 bg-white p-3 shadow-lg sm:block">
         <p className="text-[10px] font-semibold uppercase text-gray-400">Müəllim paneli</p>
-        <p className="mt-1 text-xs font-bold text-gray-900">Qrup və davamiyyət</p>
+        <p className="mt-1 text-xs font-bold text-gray-900">Qrup və dərs iştirakı</p>
       </div>
       <div className="absolute -right-4 -top-5 hidden w-40 rotate-[4deg] rounded-2xl border border-gray-200 bg-white p-3 shadow-lg sm:block">
         <p className="text-[10px] font-semibold uppercase text-gray-400">Valideyn baxışı</p>
@@ -255,7 +255,7 @@ function JourneyMockup({ step }: { step: number }) {
   if (step === 2) {
     return (
       <div className={card} aria-hidden="true">
-        <p className="text-sm font-bold text-gray-900">Davamiyyət</p>
+        <p className="text-sm font-bold text-gray-900">Dərs iştirakı</p>
         <div className="mt-3 space-y-2">
           {['Qrup A', 'Qrup B', 'Qrup C'].map((g, i) => (
             <div key={g} className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600">
@@ -944,7 +944,7 @@ export default function Landing() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Müəllimlər üçün</p>
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Sinifdən analitikaya — vahid axın</h2>
-              <p className="mt-4 text-base leading-relaxed text-gray-600">Müəllim qrup, davamiyyət, kurs və analitikanı bir paneldən idarə edir.</p>
+              <p className="mt-4 text-base leading-relaxed text-gray-600">Müəllim qrup, dərs iştirakı, kurs və analitikanı bir paneldən idarə edir.</p>
               <ul className="mt-6 space-y-3">
                 {TEACHER_FLOW.map((t) => (
                   <li key={t.title} className="flex items-center gap-3">

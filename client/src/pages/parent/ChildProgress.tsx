@@ -249,7 +249,7 @@ export default function ChildProgress() {
 
   const radialData = [
     { name: 'Quiz', value: safeNumber(metrics.quizCompletion), fill: '#6366F1' },
-    { name: 'Davamiyyət', value: safeNumber(metrics.attendance), fill: '#8B5CF6' },
+    { name: 'Platforma aktivliyi', value: safeNumber(metrics.attendance), fill: '#8B5CF6' },
     { name: 'Yarış', value: safeNumber(metrics.competitionRate), fill: '#06B6D4' },
     { name: 'Kurs', value: safeNumber(metrics.courseProgress), fill: '#10B981' },
   ]
@@ -387,8 +387,11 @@ export default function ChildProgress() {
           </div>
         </Section>
 
-        {/* ── Bölmə 4 — Davamiyyət Calendar ─────────────────────────── */}
-        <Section title="📅 Davamiyyət Jurnalı">
+        {/* ── Bölmə 4 — Dərs iştirakı Calendar ──────────────────────── */}
+        <Section title="📅 Dərs iştirakı jurnalı">
+          <p className="text-xs text-white/40">
+            Bu göstərici rəsmi məktəb davamiyyəti deyil, platformadakı dərs və aktivlik iştirakını göstərir.
+          </p>
           {/* Calendar grid */}
           <div className="grid grid-cols-7 gap-1.5">
             {['B.e', 'Ç.a', 'Çar', 'C.a', 'Cüm', 'Şnb', 'Baz'].map(d => (

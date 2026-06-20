@@ -218,7 +218,7 @@ function MembersTab({ group, detail }: { group: Group; detail: GroupDetail }) {
               <div className="flex items-center gap-2 mt-0.5 text-xs text-white/40">
                 <span>Lv {member.level}</span>
                 <span>·</span>
-                <span className={member.attendancePct < 70 ? 'text-rose-400' : 'text-emerald-400'}>{member.attendancePct}% davamiyyət</span>
+                <span className={member.attendancePct < 70 ? 'text-rose-400' : 'text-emerald-400'}>{member.attendancePct}% dərs iştirakı</span>
                 <span>·</span>
                 <span>+{member.xpThisWeek} XP</span>
               </div>
@@ -273,8 +273,8 @@ function AttendanceTab({ group, detail }: { group: Group; detail: GroupDetail })
   const saveMutation = useMutation({
     mutationFn: () => api.post(API_ROUTES.GROUPS.ATTENDANCE(group.id), { date: selectedDate, records: Object.entries(records).map(([userId, status]) => ({ userId, status })) }).then(r => r.data),
     // Uğur yalnız backend cavabından sonra (düymə "✓ Saxlandı" isSuccess ilə işləyir).
-    onSuccess: () => { toast.success('Davamiyyət saxlanıldı.'); qc.invalidateQueries({ queryKey: ['group-detail', group.id] }) },
-    onError: () => toast.error('Davamiyyət saxlanmadı.'),
+    onSuccess: () => { toast.success('Dərs iştirakı saxlanıldı.'); qc.invalidateQueries({ queryKey: ['group-detail', group.id] }) },
+    onError: () => toast.error('Dərs iştirakı saxlanmadı.'),
   })
 
   const STATUS_OPTS: { value: AttendanceRecord['status']; label: string; color: string }[] = [
@@ -286,6 +286,9 @@ function AttendanceTab({ group, detail }: { group: Group; detail: GroupDetail })
 
   return (
     <div className="space-y-5">
+      <p className="text-xs text-white/35">
+        Bu göstərici rəsmi məktəb davamiyyəti deyil, platformadakı dərs və aktivlik iştirakını göstərir.
+      </p>
       <div className="flex items-center gap-3">
         <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
           className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
@@ -317,7 +320,7 @@ function AttendanceTab({ group, detail }: { group: Group; detail: GroupDetail })
 
       {/* Monthly attendance chart */}
       <div>
-        <p className="text-xs text-white/40 mb-2">Aylıq Davamiyyət (%)</p>
+        <p className="text-xs text-white/40 mb-2">Aylıq dərs iştirakı (%)</p>
         <div className="h-32">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={detail.analytics.monthlyAttendance} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
@@ -423,7 +426,7 @@ function AnalyticsTab({ detail }: { detail: GroupDetail }) {
           <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3">
             <p className="text-xs text-rose-400 font-semibold mb-1.5">⚠️ Diqqət Tələb Edir</p>
             <p className="text-sm font-medium">{detail.analytics.weakStudent.name}</p>
-            <p className="text-xs text-white/40">{detail.analytics.weakStudent.attendancePct}% davamiyyət</p>
+            <p className="text-xs text-white/40">{detail.analytics.weakStudent.attendancePct}% dərs iştirakı</p>
           </div>
         )}
       </div>
@@ -454,7 +457,7 @@ function GroupDrawer({ group, onClose }: { group: Group; onClose: () => void }) 
 
   const TABS: { key: DrawerTab; label: string }[] = [
     { key: 'members', label: '👥 Tələbələr' },
-    { key: 'attendance', label: '📋 Davamiyyət' },
+    { key: 'attendance', label: '📋 Dərs iştirakı' },
     { key: 'competitions', label: '🏆 Yarışlar' },
     { key: 'analytics', label: '📊 Analitika' },
   ]
@@ -555,7 +558,7 @@ function GroupCard({ group, onClick }: { group: Group; onClick: () => void }) {
         {/* Attendance */}
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
-            <span className="text-white/40">Davamiyyət</span>
+            <span className="text-white/40">Dərs iştirakı</span>
             <span className={group.attendancePct >= 80 ? 'text-emerald-400' : 'text-amber-400'}>{group.attendancePct}%</span>
           </div>
           <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">

@@ -152,7 +152,7 @@ function StudentRow({ student, rank, isWeak }: { student: StudentProgress; rank?
       ) : (
         <div className="flex items-center gap-2 shrink-0">
           <div className="text-right">
-            <p className="text-xs text-rose-500">{student.attendancePct}% davamiyyət</p>
+            <p className="text-xs text-rose-500">{student.attendancePct}% dərs iştirakı</p>
             <p className="text-xs text-gray-400">{student.lastSeen}</p>
           </div>
           <Link to={APP_ROUTES.CHAT} className="text-xs text-amber-700 border border-amber-200 bg-amber-50 px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors">
@@ -376,10 +376,10 @@ export default function TeacherAnalytics() {
     lines.push(['Göstərici', 'Dəyər', 'Trend %', 'Qeyd'].join(','))
     analytics.metrics.forEach((m) => lines.push([m.label, m.value, m.trend, m.sub].map(esc).join(',')))
     lines.push('')
-    lines.push(['Ən aktiv tələbə', 'XP artımı', 'Davamiyyət %', 'Son görünmə'].join(','))
+    lines.push(['Ən aktiv tələbə', 'XP artımı', 'Dərs iştirakı %', 'Son görünmə'].join(','))
     analytics.topStudents.forEach((s) => lines.push([s.name, s.xpGain, s.attendancePct, s.lastSeen].map(esc).join(',')))
     lines.push('')
-    lines.push(['Dəstək tələb edən tələbə', 'XP artımı', 'Davamiyyət %', 'Son görünmə'].join(','))
+    lines.push(['Dəstək tələb edən tələbə', 'XP artımı', 'Dərs iştirakı %', 'Son görünmə'].join(','))
     analytics.weakStudents.forEach((s) => lines.push([s.name, s.xpGain, s.attendancePct, s.lastSeen].map(esc).join(',')))
 
     const csv = '﻿' + lines.join('\n')   // BOM — Excel-də Azərbaycan hərfləri düzgün görünsün
