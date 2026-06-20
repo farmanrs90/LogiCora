@@ -53,7 +53,7 @@ export default function Login() {
     try {
       const authData = await login({
         email: values.email.trim().toLowerCase(),
-        password: values.password.trim(),
+        password: values.password, // şifrə dəyişdirilmir (boşluqlar istifadəçi niyyəti ola bilər)
       })
       dispatch(setCredentials({ user: authData.user, token: authData.accessToken }))
       toast.success(`Xoş gəldin, ${authData.user.name}! 👋`)
@@ -177,7 +177,6 @@ export default function Login() {
                   className={`${inputCls(!!errors.password)} pr-12`}
                   aria-invalid={!!errors.password}
                   {...passwordReg}
-                  onChange={(e) => { e.target.value = e.target.value.replace(/\s/g, ''); passwordReg.onChange(e) }}
                 />
                 <button
                   type="button"

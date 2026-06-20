@@ -127,9 +127,10 @@ function ProfileSection() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    const name = form.name.trim()
-    const surname = form.surname.trim()
-    const phone = form.phone.trim()
+    // Kənar boşluqlar kəsilir + təkrar boşluqlar tək boşluğa yığılır (Azərbaycan hərfləri qorunur).
+    const name = form.name.trim().replace(/\s+/g, ' ')
+    const surname = form.surname.trim().replace(/\s+/g, ' ')
+    const phone = form.phone.trim().replace(/\s+/g, ' ')
     if (name.length < 2) { setError('Ad ən azı 2 hərf olmalıdır.'); return }
     // phone backend-də min 7 max 20 — boşdursa göndərmirik (mövcud dəyər qalır).
     const payload: { name: string; surname: string; phone?: string } = { name, surname }

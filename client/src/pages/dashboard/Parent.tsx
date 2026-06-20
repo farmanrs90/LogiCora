@@ -312,7 +312,7 @@ function NotifSettings() {
       {[
         { label: 'SMS bildiriş', sub: 'Telefon nömrənizə', value: sms, onChange: (v: boolean) => prefMutation.mutate({ email, sms: v, instant }) },
         { label: 'Email bildiriş', sub: 'E-poçtunuza', value: email, onChange: (v: boolean) => prefMutation.mutate({ email: v, sms, instant }) },
-        { label: 'Gəlmədikdə dərhal xəbər ver', sub: 'Davamiyyət bildirişi', value: instant, onChange: (v: boolean) => prefMutation.mutate({ email, sms, instant: v }) },
+        { label: 'Qoşulmadıqda dərhal xəbər ver', sub: 'Dərs iştirakı bildirişi', value: instant, onChange: (v: boolean) => prefMutation.mutate({ email, sms, instant: v }) },
       ].map(({ label, sub, value, onChange }) => (
         <div key={label} className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -707,7 +707,7 @@ export default function ParentDashboard() {
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}
                 className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm"
               >
-                <p className="text-xs text-gray-500 mb-2">Davamiyyət</p>
+                <p className="text-xs text-gray-500 mb-2">Dərs iştirakı</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {stats.attendance.thisMonth}
                   <span className="text-sm text-gray-400">/{stats.attendance.total} gün</span>
@@ -811,9 +811,10 @@ export default function ParentDashboard() {
               <div className="lg:col-span-2 space-y-5">
                 {/* Attendance week grid + notification settings */}
                 <div id="attendance-section" className="scroll-mt-24 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-                  <h2 className="font-bold text-gray-900 mb-4">📋 Son Davamiyyət</h2>
+                  <h2 className="font-bold text-gray-900 mb-1">📋 Son dərs iştirakı</h2>
+                  <p className="text-[11px] text-gray-400 mb-4">Bu göstərici rəsmi məktəb davamiyyəti deyil, platformadakı dərs və aktivlik iştirakını göstərir.</p>
                   {attendanceError ? (
-                    <CardError label="Davamiyyət yüklənmədi." onRetry={() => refetchAttendance()} />
+                    <CardError label="Dərs iştirakı yüklənmədi." onRetry={() => refetchAttendance()} />
                   ) : attendance && attendance.length > 0 ? (
                     <>
                       <div className="flex gap-1.5 flex-wrap">
@@ -833,7 +834,7 @@ export default function ParentDashboard() {
                       </div>
                     </>
                   ) : attendance ? (
-                    <CardEmpty label="Hələ davamiyyət qeydi yoxdur." />
+                    <CardEmpty label="Hələ dərs iştirakı qeydi yoxdur." />
                   ) : null}
                   <NotifSettings />
                 </div>
@@ -949,7 +950,7 @@ export default function ParentDashboard() {
                   {[
                     { icon: '📊', label: 'Tam irəliləyiş', to: `/child/${selectedChildId}/progress` },
                     { icon: '💬', label: 'Müəllim ilə chat', to: '/chat' },
-                    { icon: '📋', label: 'Davamiyyət jurnalı', to: `/child/${selectedChildId}/progress` },
+                    { icon: '📋', label: 'Dərs iştirakı jurnalı', to: `/child/${selectedChildId}/progress` },
                   ].map(({ icon, label, to }) => (
                     <Link key={to + label} to={to}
                       className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors"

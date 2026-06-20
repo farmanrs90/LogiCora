@@ -278,8 +278,9 @@ export default function AttendanceQR() {
         className="text-center mb-8"
       >
         <div className="text-5xl mb-3">📱</div>
-        <h1 className="text-white font-black text-2xl">QR Davamiyyət</h1>
+        <h1 className="text-white font-black text-2xl">QR ilə dərs iştirakı</h1>
         <p className="text-[#9CA3AF] text-sm mt-1">Müəllimin ekranındakı QR-ı skan et</p>
+        <p className="text-[#9CA3AF] text-[11px] mt-1.5 max-w-xs mx-auto">Bu rəsmi məktəb davamiyyəti deyil — yalnız dərs iştirakını qeyd edir.</p>
       </motion.div>
 
       {/* State machine */}
@@ -399,7 +400,7 @@ export default function AttendanceQR() {
                 transition={{ delay: 0.3 }}
                 className="font-black text-2xl text-white mb-2"
               >
-                Davamiyyətin Qeyd Olundu!
+                İştirakın Qeyd Olundu!
               </motion.h2>
 
               {/* Info card */}
@@ -512,7 +513,7 @@ export default function AttendanceQR() {
         transition={{ delay: 0.5 }}
         className="absolute bottom-8 text-[#9CA3AF] text-xs"
       >
-        LogiCora · Davamiyyət Sistemi
+        LogiCora · Dərs iştirakı
       </motion.p>
     </div>
   )

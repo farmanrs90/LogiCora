@@ -40,8 +40,9 @@ export default function TeacherAttendance() {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">✅ Davamiyyət</h1>
-          <p className="text-white/40 text-sm mt-0.5">Qrupu seçib davamiyyət jurnalını qeyd edin</p>
+          <h1 className="text-2xl font-bold">✅ Dərs iştirakı</h1>
+          <p className="text-white/40 text-sm mt-0.5">Qrupu seçib dərs iştirakı jurnalını qeyd edin</p>
+          <p className="text-white/30 text-xs mt-1">Bu göstərici rəsmi məktəb davamiyyəti deyil, platformadakı dərs iştirakını göstərir.</p>
         </div>
 
         {isLoading ? (
@@ -65,7 +66,7 @@ export default function TeacherAttendance() {
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <div className="text-7xl">👥</div>
             <h2 className="text-xl font-bold">Hələ qrup yoxdur</h2>
-            <p className="text-white/50 text-sm max-w-xs">Davamiyyət qeyd etmək üçün əvvəlcə qrup yaradın.</p>
+            <p className="text-white/50 text-sm max-w-xs">Dərs iştirakını qeyd etmək üçün əvvəlcə qrup yaradın.</p>
             <button onClick={() => navigate('/groups')}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold transition-colors"
             >
@@ -96,7 +97,7 @@ export default function TeacherAttendance() {
                   <button onClick={() => navigate('/groups')}
                     className="w-full mt-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold transition-colors"
                   >
-                    📋 Davamiyyət jurnalı →
+                    📋 Dərs iştirakı jurnalı →
                   </button>
                 </motion.div>
               )

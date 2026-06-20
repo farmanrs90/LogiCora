@@ -493,7 +493,7 @@ function ConfirmEndModal({ onClose, onConfirm }: { onClose: () => void; onConfir
 type TeacherTab = 'attendance' | 'quiz' | 'poll' | 'participants'
 
 const TEACHER_TABS: { key: TeacherTab; label: string; emoji: string }[] = [
-  { key: 'attendance',   label: 'Davamiyyət',  emoji: '📋' },
+  { key: 'attendance',   label: 'Dərs iştirakı',  emoji: '📋' },
   { key: 'quiz',         label: 'Canlı Quiz',  emoji: '❓' },
   { key: 'poll',         label: 'Sorğu',       emoji: '📊' },
   { key: 'participants', label: 'İştirakçılar', emoji: '👥' },
@@ -741,9 +741,12 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                   className="rounded-2xl p-5 mb-5 flex flex-col items-center"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <p className="text-white text-sm font-bold mb-1">QR ilə davamiyyət</p>
-                  <p className="text-[#9CA3AF] text-xs mb-4 text-center">
-                    Sessiya aktiv olduqda tələbələr QR skanı və ya PIN kod ilə davamiyyət qeyd edə bilər.
+                  <p className="text-white text-sm font-bold mb-1">QR ilə dərs iştirakı</p>
+                  <p className="text-[#9CA3AF] text-xs mb-1 text-center">
+                    Sessiya aktiv olduqda tələbələr QR skanı və ya PIN kod ilə dərs iştirakını qeyd edə bilər.
+                  </p>
+                  <p className="text-[#9CA3AF] text-[11px] mb-4 text-center">
+                    Bu rəsmi məktəb davamiyyəti deyil — platformadakı dərs iştirakını göstərir.
                   </p>
 
                   {/* Animated border around QR */}
@@ -814,7 +817,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                 {attendance.length === 0 && (
                   <div className="text-center py-10">
                     <div className="text-5xl mb-4">📋</div>
-                    <p className="text-[#9CA3AF] text-sm">Hələ iştirakçı davamiyyəti yoxdur.</p>
+                    <p className="text-[#9CA3AF] text-sm">Hələ iştirak qeydi yoxdur.</p>
                   </div>
                 )}
                 <div className="space-y-2">
@@ -853,7 +856,7 @@ function TeacherView({ classroom, classroomId }: { classroom: ClassroomData; cla
                   💾 Hesabatı Saxla
                 </button>
                 <p className="text-center text-[#9CA3AF] text-xs mt-2">
-                  Davamiyyət dərsə qoşulma məlumatları ilə formalaşacaq.
+                  Dərs iştirakı dərsə qoşulma məlumatları ilə formalaşacaq.
                 </p>
               </div>
             )}
@@ -1091,7 +1094,7 @@ function StudentView({ classroom, classroomId }: { classroom: ClassroomData; cla
     mutationFn: () => api.post(API_ROUTES.CLASSROOM.JOIN(classroomId)),
     onSuccess: () => {
       setJoined(true)
-      toast.success('Davamiyyətin qeyd olundu ✅')
+      toast.success('Dərsə qoşulduğun qeyd olundu ✅')
       // Start heartbeat (distant tracking)
       heartbeatRef.current = setInterval(() => {
         api.post(API_ROUTES.CLASSROOM.HEARTBEAT(classroomId)).catch(() => {})
