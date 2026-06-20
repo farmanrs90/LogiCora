@@ -15,6 +15,7 @@ interface AuthContextType {
   login: (data: LoginInput) => Promise<AuthResponse>
   register: (data: RegisterInput) => Promise<AuthResponse>
   logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -57,6 +58,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  // Profil yeniləndikdən sonra app-daxili user-i təzələ (header/ad və s.).
+  // Keçici xəta baş verərsə mövcud user saxlanılır — sessiya silinmir.
+  const refreshUser = async () => {
+    try {
+      const { data } = await api.get(API_ROUTES.USER.PROFILE)
+      applyUser(data.data)
+    } catch {
+      // Keçici refresh xətası — mövcud user dəyişmir.
+    }
+  }
+
   const login = async (input: LoginInput): Promise<AuthResponse> => {
     const { data } = await api.post<{ data: AuthResponse }>(API_ROUTES.AUTH.LOGIN, input)
     localStorage.setItem('accessToken', data.data.accessToken)
@@ -89,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>
