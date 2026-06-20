@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Settings, LogOut, ChevronDown, X, Menu } from 'lucide-react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useQuery } from '@tanstack/react-query'
-import { markAllAsRead } from '../../features/notifications/notificationSlice'
-import type { RootState, AppDispatch } from '../../app/store'
-import type { AppNotification } from '../../features/notifications/notificationSlice'
+import { Bell, Settings, LogOut, ChevronDown, X, Menu, UserRound, SlidersHorizontal } from 'lucide-react'
+import { useSelector } from 'react-redux'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { RootState } from '../../app/store'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../lib/api'
 import { APP_ROUTES, API_ROUTES } from '../../constants'
@@ -15,6 +13,15 @@ import type { GamificationProfile, Role } from '../../types'
 // ── Nav items (Sidebar ilə eyni route-lar, yalnız label/path) ───────────────
 
 interface NavItem { label: string; path: string }
+
+interface NavbarNotification {
+  _id: string
+  type: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt?: string
+}
 
 const studentNav: NavItem[] = [
   { label: 'Ana səhifə', path: APP_ROUTES.DASHBOARD.STUDENT },
@@ -123,15 +130,38 @@ function AvatarCircle({ name, color, size = 36 }: { name: string; color: string;
 
 // ── Notification item ─────────────────────────────────────────────────────
 
-function NotifItem({ n }: { n: AppNotification }) {
-  const typeIcon: Record<AppNotification['type'], string> = {
-    info: '💬', success: '✅', warning: '⚠️', achievement: '🏆', challenge: '⚔️',
+function formatNotificationTime(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('az-AZ', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+function NotifItem({ n }: { n: NavbarNotification }) {
+  const typeIcon: Record<string, string> = {
+    assessment_result: '📝',
+    payment_due: '💳',
+    payment_received: '✅',
+    attendance_marked: '📅',
+    new_assessment: '🧪',
+    new_course: '📚',
+    system: '💬',
   }
+  const time = formatNotificationTime(n.createdAt)
+
   return (
-    <div className={`flex gap-3 p-3 rounded-xl transition-colors ${n.isRead ? 'opacity-70' : 'bg-indigo-50'}`}>
-      <span className="text-xl shrink-0 mt-0.5">{typeIcon[n.type]}</span>
+    <div className={`flex gap-3 p-3 rounded-xl transition-colors ${n.isRead ? 'opacity-80' : 'bg-indigo-50'}`}>
+      <span className="text-xl shrink-0 mt-0.5">{typeIcon[n.type] ?? '💬'}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-gray-900 text-sm font-medium leading-tight truncate">{n.title}</p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="min-w-0 truncate text-sm font-semibold leading-tight text-gray-900">{n.title}</p>
+          {time && <span className="shrink-0 text-[10px] font-medium text-gray-400">{time}</span>}
+        </div>
         <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{n.message}</p>
       </div>
       {!n.isRead && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />}
@@ -174,14 +204,12 @@ function Wordmark({ onClick }: { onClick?: () => void }) {
 // ── Navbar ────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
-  const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
   const { logout } = useAuth()
 
   const avatarColor = useSelector((s: RootState) => s.theme.avatarColor)
-  const notifications = useSelector((s: RootState) => s.notifications.notifications)
-  const unreadCount = useSelector((s: RootState) => s.notifications.unreadCount)
   const authUser = useSelector((s: RootState) => s.auth.user)
   const { user: ctxUser } = useAuth()
   const user = authUser ?? ctxUser
@@ -189,6 +217,7 @@ export default function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const notificationQueryKey = ['notifications', 'navbar', user?._id] as const
 
   const notifRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -200,6 +229,29 @@ export default function Navbar() {
     // Yalnız student üçün çağırılır; digər rollar üçün gp undefined qalır.
     enabled: user?.role === 'student',
     staleTime: 1000 * 60 * 2,
+  })
+
+  const {
+    data: notifications = [],
+    isLoading: notificationsLoading,
+    isError: notificationsError,
+    refetch: refetchNotifications,
+  } = useQuery<NavbarNotification[]>({
+    queryKey: notificationQueryKey,
+    queryFn: () => api.get<{ data: NavbarNotification[] }>(API_ROUTES.NOTIFICATIONS.LIST).then(r => r.data.data ?? []),
+    enabled: Boolean(user),
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: false,
+  })
+
+  const markAllMutation = useMutation({
+    mutationFn: () => api.patch(API_ROUTES.NOTIFICATIONS.MARK_ALL).then(r => r.data),
+    onSuccess: () => {
+      queryClient.setQueryData<NavbarNotification[]>(notificationQueryKey, (old) =>
+        old ? old.map((n) => ({ ...n, isRead: true })) : old,
+      )
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'notifications', 'list'] })
+    },
   })
 
   // Close dropdowns on outside click
@@ -249,6 +301,7 @@ export default function Navbar() {
 
   const tier = gp ? getTier(gp.totalXP) : null
   const recent5 = notifications.slice(0, 5)
+  const unreadCount = notifications.filter((n) => !n.isRead).length
 
   return (
     <>
@@ -347,10 +400,11 @@ export default function Navbar() {
                     <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
                         <button
-                          onClick={() => dispatch(markAllAsRead())}
-                          className="text-indigo-600 text-xs font-medium hover:underline"
+                          onClick={() => markAllMutation.mutate()}
+                          disabled={markAllMutation.isPending}
+                          className="text-indigo-600 text-xs font-medium hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Hamısını oxu
+                          {markAllMutation.isPending ? 'Oxunur...' : 'Hamısını oxu'}
                         </button>
                       )}
                       <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-700">
@@ -359,24 +413,31 @@ export default function Navbar() {
                     </div>
                   </div>
 
+                  {markAllMutation.isError && (
+                    <p className="px-4 pt-3 text-xs font-medium text-rose-600">
+                      Bildirişlər oxundu kimi işarələnmədi. Yenidən cəhd edin.
+                    </p>
+                  )}
+
                   <div className="p-2 max-h-72 overflow-y-auto space-y-1">
-                    {recent5.length === 0 ? (
-                      <p className="text-gray-500 text-sm text-center py-6">Bildiriş yoxdur</p>
+                    {notificationsLoading ? (
+                      <p className="text-center text-sm text-gray-500 py-6">Bildirişlər yüklənir...</p>
+                    ) : notificationsError ? (
+                      <div className="py-6 text-center">
+                        <p className="text-sm text-gray-500">Bildirişlər yüklənmədi.</p>
+                        <button
+                          onClick={() => { void refetchNotifications() }}
+                          className="mt-2 text-xs font-semibold text-indigo-600 hover:underline"
+                        >
+                          Yenidən yoxla
+                        </button>
+                      </div>
+                    ) : recent5.length === 0 ? (
+                      <p className="text-gray-500 text-sm text-center py-6">Yeni bildiriş yoxdur.</p>
                     ) : (
-                      recent5.map((n) => <NotifItem key={n.id} n={n} />)
+                      recent5.map((n) => <NotifItem key={n._id} n={n} />)
                     )}
                   </div>
-
-                  {notifications.length > 5 && (
-                    <div className="p-3 border-t border-gray-100">
-                      <button
-                        onClick={() => setNotifOpen(false)}
-                        className="w-full text-indigo-600 text-xs font-medium hover:underline"
-                      >
-                        Hamısına bax →
-                      </button>
-                    </div>
-                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -414,6 +475,7 @@ export default function Navbar() {
                   {user && (
                     <div className="p-4 border-b border-gray-100">
                       <p className="text-gray-900 font-bold text-sm leading-tight">{user.name} {user.surname}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">{roleLabelMap[user.role]}</p>
                       <p className="text-gray-500 text-xs mt-0.5 truncate">{user.email}</p>
                     </div>
                   )}
@@ -450,12 +512,21 @@ export default function Navbar() {
 
                   <div className="p-2 space-y-0.5">
                     <button
-                      onClick={() => { goTo(APP_ROUTES.SETTINGS) }}
+                      onClick={() => { goTo(`${APP_ROUTES.SETTINGS}#account`) }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
                                  text-gray-700 hover:text-gray-900 hover:bg-gray-100
                                  transition-colors text-sm"
                     >
-                      <Settings size={15} /> Tənzimləmələr
+                      <UserRound size={15} /> Profilim
+                    </button>
+
+                    <button
+                      onClick={() => { goTo(`${APP_ROUTES.SETTINGS}#adaptive`) }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                 text-gray-700 hover:text-gray-900 hover:bg-gray-100
+                                 transition-colors text-sm"
+                    >
+                      <SlidersHorizontal size={15} /> Tənzimləmələr
                     </button>
 
                     <button
@@ -556,7 +627,14 @@ export default function Navbar() {
               <div className="px-3 py-4 border-t border-gray-100 space-y-0.5">
                 <button
                   type="button"
-                  onClick={() => goTo(APP_ROUTES.SETTINGS)}
+                  onClick={() => goTo(`${APP_ROUTES.SETTINGS}#account`)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                >
+                  <UserRound size={16} /> Profilim
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goTo(`${APP_ROUTES.SETTINGS}#adaptive`)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                 >
                   <Settings size={16} /> Tənzimləmələr

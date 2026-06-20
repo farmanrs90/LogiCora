@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -142,7 +142,7 @@ function ProfileSection() {
   }
 
   return (
-    <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+    <section id="account" tabIndex={-1} className="scroll-mt-24 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4 focus:outline-none">
       <div>
         <h2 className="font-bold text-gray-900">Hesab məlumatları</h2>
         <p className="mt-0.5 text-xs text-gray-500">Ad, soyad, telefon və təhlükəsizlik məlumatlarını idarə et.</p>
@@ -236,7 +236,7 @@ function PasswordSection() {
   }
 
   return (
-    <section className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+    <section id="security" tabIndex={-1} className="scroll-mt-24 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4 focus:outline-none">
       <div>
         <h2 className="font-bold text-gray-900">Şifrəni dəyiş</h2>
         <p className="mt-0.5 text-xs text-gray-500">Təhlükəsizlik üçün güclü, unikal şifrə seçin.</p>
@@ -415,6 +415,7 @@ function ParentChildSupport() {
 
 export default function Settings() {
   const navigate = useNavigate()
+  const location = useLocation()
   const qc = useQueryClient()
   const { user } = useAuth()
   const [local, setLocal] = useState<AccessibilityConfig>(DEFAULT_CONFIG)
@@ -432,6 +433,23 @@ export default function Settings() {
     const px = FONT_SIZES.find(f => f.value === local.fontSize)?.px ?? 16
     document.documentElement.style.fontSize = `${px}px`
   }, [local.fontSize])
+
+  // Navbar hash linkləri (/settings#account, /settings#adaptive) doğru bölməyə aparır.
+  useEffect(() => {
+    if (isLoading || !location.hash) return
+
+    const targetId = location.hash.replace('#', '')
+    if (!targetId) return
+
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById(targetId)
+      if (!target) return
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      target.focus({ preventScroll: true })
+    }, 80)
+
+    return () => window.clearTimeout(timer)
+  }, [isLoading, location.hash])
 
   const mutation = useMutation({
     mutationFn: (patch: Partial<AccessibilityConfig>) =>
@@ -506,7 +524,7 @@ export default function Settings() {
         </section>
 
         {/* Adaptive learning / Accessibility */}
-        <section className="bg-white border border-indigo-200 rounded-2xl p-5 shadow-sm">
+        <section id="adaptive" tabIndex={-1} className="scroll-mt-24 bg-white border border-indigo-200 rounded-2xl p-5 shadow-sm focus:outline-none">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shrink-0">♿</div>
             <div className="min-w-0">
