@@ -160,6 +160,10 @@ function StudentRow({ student, rank, isWeak }: { student: StudentProgress; rank?
           </Link>
         </div>
       )}
+      {/* Real nəticə axını — /results (müəllim tələbə nəticələri) */}
+      <Link to={APP_ROUTES.RESULTS} className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+        Nəticələr →
+      </Link>
     </div>
   )
 }
@@ -246,6 +250,15 @@ function CourseAnalyticsCard({ course }: { course: CourseAnalytics }) {
                   </ResponsiveContainer>
                 </div>
               </div>
+              {/* Real kurs səhifəsinə keçid (yalnız id varsa) */}
+              {course.id && (
+                <Link
+                  to={APP_ROUTES.COURSE(course.id)}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                >
+                  Kursu aç →
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

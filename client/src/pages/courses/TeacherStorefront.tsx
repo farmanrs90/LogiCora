@@ -676,25 +676,44 @@ export default function TeacherStorefront() {
         </div>
 
         {/* ── Stats bar ─────────────────────────────────────────────────────── */}
+        {/* Real tab datası olan kartlar kliklənir (Kurs→Kurslar, Reytinq→Rəylər);
+            qalanları statikdir — hover/cursor yoxdur (dürüst, dead deyil). */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 py-6 border-b border-gray-200">
-          {[
-            { label: 'Tələbə', value: totalStudents.toLocaleString(), icon: '👥' },
-            { label: 'Reytinq', value: rating.toFixed(1), icon: '⭐' },
-            { label: 'Kurs', value: courseCount.toString(), icon: '📚' },
-            { label: 'Təcrübə', value: `${yearsExperience} il`, icon: '🏆' },
-            { label: 'Impact Skoru', value: impactScore.toLocaleString(), icon: '⚡' },
-          ].map(({ label, value, icon }) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm"
-            >
-              <div className="text-2xl mb-1">{icon}</div>
-              <p className="text-lg font-bold text-gray-900">{value}</p>
-              <p className="text-xs text-gray-400">{label}</p>
-            </motion.div>
-          ))}
+          {([
+            { label: 'Tələbə', value: totalStudents.toLocaleString(), icon: '👥', tab: null },
+            { label: 'Reytinq', value: rating.toFixed(1), icon: '⭐', tab: 'Rəylər' as Tab },
+            { label: 'Kurs', value: courseCount.toString(), icon: '📚', tab: 'Kurslar' as Tab },
+            { label: 'Təcrübə', value: `${yearsExperience} il`, icon: '🏆', tab: null },
+            { label: 'Impact Skoru', value: impactScore.toLocaleString(), icon: '⚡', tab: null },
+          ] as { label: string; value: string; icon: string; tab: Tab | null }[]).map(({ label, value, icon, tab }) =>
+            tab ? (
+              <motion.button
+                key={label}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -3 }}
+                className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm cursor-pointer transition-all hover:border-indigo-300 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <div className="text-2xl mb-1">{icon}</div>
+                <p className="text-lg font-bold text-gray-900">{value}</p>
+                <p className="text-xs text-gray-400">{label}</p>
+                <p className="mt-0.5 text-[11px] font-medium text-indigo-600">Bax →</p>
+              </motion.button>
+            ) : (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm"
+              >
+                <div className="text-2xl mb-1">{icon}</div>
+                <p className="text-lg font-bold text-gray-900">{value}</p>
+                <p className="text-xs text-gray-400">{label}</p>
+              </motion.div>
+            )
+          )}
         </div>
 
         {/* ── Intro video ──────────────────────────────────────────────────── */}
